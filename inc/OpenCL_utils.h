@@ -6,6 +6,8 @@
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
 
+#include "run.h"
+
 class OpenCL {
 
   static cl::Context context;
@@ -113,13 +115,13 @@ public:
     return COMPATIBLE;
   }
 
-  // static void executeKernel(cl::Kernel kernel, ...) {
-  //   // check compatibility
-  //   auto cmpt = OpenCL::Check_compatibility(kernel, ...);
-  //   if (cmpt != COMPATIBLE) {
-  //     // report the error, and fail
-  //   }
-  //   static double time;
-  //   auto llocals
-  // }
+  static void executeKernel(cl::Kernel kernel, Run &run) {
+    // check compatibility
+    auto cmpt = OpenCL::Check_compatibility(kernel, ...);
+    if (cmpt != COMPATIBLE) {
+      // report the error, and fail
+    }
+    static double time;
+    auto llocals
+  }
 };

@@ -21,6 +21,7 @@ set(SOURCE_FILES
     src/kernel.cpp
     src/sparse_matrix.cpp
     src/OpenCL_utils.cpp
+    src/run.cpp
     )
 
 add_library (Executor ${SOURCE_FILES})

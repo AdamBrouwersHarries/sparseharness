@@ -22,7 +22,7 @@
 #include "csv_utils.h"
 #include "kernel.h"
 #include "options.h"
-// #include "run2.h"
+#include "run.h"
 #include "sparse_matrix.h"
 // #include "spmv_harness.h"
 // #include "spmvrun.h"
@@ -72,13 +72,21 @@ int main(int argc, char *argv[]) {
   const std::string kernel_filename = opt_kernel_file->require();
   const std::string runs_filename = opt_run_file->require();
 
-  std::cout << "matrix_filename " << matrix_filename << std::endl;
-  std::cout << "kernel_filename " << kernel_filename << std::endl;
+  std::cerr << "matrix_filename " << matrix_filename << std::endl;
+  std::cerr << "kernel_filename " << kernel_filename << std::endl;
 
+  // initialise a matrix, kernel, and set of run parameters from files
   SparseMatrix<float> matrix(matrix_filename);
   Kernel<float> kernel(kernel_filename);
-  auto csvtokens = CSV::load_csv(runs_filename);
+  auto csvlines = CSV::load_csv(runs_filename);
+  std::vector<Run> runs;
+  std::transform(csvlines.begin(), csvlines.end(), std::back_inserter(runs),
+                 [](CSV::csv_line line) -> Run { return Run(line); });
 
+  for (auto run : runs)
+    std::cerr << run << std::endl;
+
+  // check the matrix
   if (matrix.height() != matrix.width()) {
     std::cout << "Matrix is not square. Failing computation." << std::endl;
     std::cerr << "Matrix is not square. Failing computation." << std::endl;
