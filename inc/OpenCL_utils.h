@@ -92,7 +92,7 @@ public:
     INVALID_MEM_SIZE
   };
 
-  KernelCompatibility
+  static KernelCompatibility
   check_compatibility(cl::Kernel kernel, size_t num_work_items,
                       size_t sum_local_mem_kernel_args = 0) {
     size_t wg_size = 0;
@@ -117,11 +117,12 @@ public:
 
   static void executeKernel(cl::Kernel kernel, Run &run) {
     // check compatibility
-    auto cmpt = OpenCL::Check_compatibility(kernel, ...);
+    auto cmpt = OpenCL::check_compatibility(kernel, run.num_work_items());
     if (cmpt != COMPATIBLE) {
       // report the error, and fail
+      std::cout << "Invalid kernel!" << std::endl;
     }
     static double time;
-    auto llocals
+    // auto llocals
   }
 };
