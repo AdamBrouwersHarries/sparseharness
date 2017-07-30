@@ -7,10 +7,6 @@
 
 // Kernel
 
-template class Kernel<float>;
-template class Kernel<int>;
-template class Kernel<bool>;
-template class Kernel<double>;
 
 template <typename T> Kernel<T>::Kernel(std::string filename) {
   boost::property_tree::ptree tree;
@@ -119,3 +115,9 @@ KernelProperties::KernelProperties(std::string om, std::string im,
     : outerMap(om), innerMap(im), innerMap2(im2), splitSize(ss), chunkSize(cs) {
   // do nothing else for now
 }
+
+
+template class Kernel<float>;
+template class Kernel<int>;
+template class Kernel<bool>;
+template class Kernel<double>;

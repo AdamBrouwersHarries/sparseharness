@@ -2,11 +2,6 @@
 
 // CONSTRUCTORS
 
-template class SparseMatrix<float>;
-template class SparseMatrix<int>;
-template class SparseMatrix<bool>;
-template class SparseMatrix<double>;
-
 template <typename T> SparseMatrix<T>::SparseMatrix(std::string filename) {
   // Constructor from file
   load_from_file(filename);
@@ -365,3 +360,9 @@ template <typename T> int SparseMatrix<T>::getMeanRowEntries() {
   }
   return mean_row_entries;
 }
+
+
+template class SparseMatrix<float>;
+template class SparseMatrix<int>;
+template class SparseMatrix<bool>;
+template class SparseMatrix<double>;
