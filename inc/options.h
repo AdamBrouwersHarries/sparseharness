@@ -94,10 +94,9 @@ public:
 
   T require() const {
     if (_value_provided) {
-      std::cout << "found value!" << std::endl;
       return _value;
     } else {
-      std::cout << "Required argument " << _longopt << " not set." << std::endl;
+      std::cout << "Required argument \"" << _longopt << "\" not set." << std::endl;
       std::exit(-1);
     }
     return _value;
