@@ -16,16 +16,18 @@
 #include <vector>
 
 // [external includes]
-#include "OpenCL_utils.h"
+// #include "OpenCL_utils.h"
 
 // [local includes]
 #include "csv_utils.h"
-#include "kernel.h"
+#include "kernel_config.h"
 #include "options.h"
 #include "run.h"
 #include "sparse_matrix.h"
 // #include "spmv_harness.h"
 // #include "spmvrun.h"
+
+#include "Executor.h"
 
 int main(int argc, char *argv[]) {
   OptParser op(
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]) {
 
   // initialise a matrix, kernel, and set of run parameters from files
   SparseMatrix<float> matrix(matrix_filename);
-  Kernel<float> kernel(kernel_filename);
+  KernelConfig<float> kernel(kernel_filename);
   auto csvlines = CSV::load_csv(runs_filename);
   std::vector<Run> runs;
   std::transform(csvlines.begin(), csvlines.end(), std::back_inserter(runs),
@@ -103,23 +105,10 @@ int main(int argc, char *argv[]) {
 
   std::vector<int> size_args{v_Height_cl, v_Width_cl, v_Length_cl};
 
-  // === Loading exec CSV file ===
-  //   std::vector<std::shared_ptr<Run>> all_run = Csv::init(
-  //       [&](const std::vector<std::string> &values) -> std::shared_ptr<Run> {
+  // initialise the executor
+  initExecutor(opt_platform->get(), opt_device->get());
 
-  //         auto run = new Run(values);
-  //         return std::shared_ptr<Run>(run);
+  /// do some stuff
 
-  //       });
-  //   if (all_run.size() == 0)
-  //     return 0;
-
-  //   // === OpenCL init ===
-  //   OpenCL::timeout = opt_timeout->get();
-  OpenCL::init(opt_platform->get(), opt_device->get(), opt_iterations->get());
-
-  // run the harness
-
-  //   run_harness(all_run, M, N, O, roomtminus1_file, roomt_file, gold_file,
-  //               opt_force->get(), opt_threaded->get(), opt_binary->get());
+  shutdownExecutor();
 }

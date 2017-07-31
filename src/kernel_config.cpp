@@ -3,16 +3,9 @@
 
 // #include "file_utils.h"
 
-#include "kernel.h"
+#include "kernel_config.h"
 
-// Kernel
-
-template class Kernel<float>;
-template class Kernel<int>;
-template class Kernel<bool>;
-template class Kernel<double>;
-
-template <typename T> Kernel<T>::Kernel(std::string filename) {
+template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
   boost::property_tree::ptree tree;
 
   boost::property_tree::read_json(filename, tree);
@@ -55,15 +48,17 @@ template <typename T> Kernel<T>::Kernel(std::string filename) {
   }
 }
 
-template <typename T> std::string Kernel<T>::getSource() { return source; }
+template <typename T> std::string KernelConfig<T>::getSource() {
+  return source;
+}
 
-template <typename T> std::string Kernel<T>::getName() { return name; }
+template <typename T> std::string KernelConfig<T>::getName() { return name; }
 
-template <typename T> std::vector<KernelArg> Kernel<T>::getArgs() {
+template <typename T> std::vector<KernelArg> KernelConfig<T>::getArgs() {
   return args;
 }
 
-template <typename T> KernelProperties Kernel<T>::getProperties() {
+template <typename T> KernelProperties KernelConfig<T>::getProperties() {
   return kprops;
 }
 
@@ -78,8 +73,8 @@ std::vector<T> flatten(const std::vector<std::vector<T>> &orig) {
 }
 
 template <typename T>
-OpenCLSparseMatrix<T> Kernel<T>::specialiseMatrix(SparseMatrix<T> matrix,
-                                                  T zero) {
+OpenCLSparseMatrix<T> KernelConfig<T>::specialiseMatrix(SparseMatrix<T> matrix,
+                                                        T zero) {
   // get the matrix as standard ELLPACK
   auto rawmat = matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
 
@@ -119,3 +114,8 @@ KernelProperties::KernelProperties(std::string om, std::string im,
     : outerMap(om), innerMap(im), innerMap2(im2), splitSize(ss), chunkSize(cs) {
   // do nothing else for now
 }
+
+template class KernelConfig<float>;
+template class KernelConfig<int>;
+template class KernelConfig<bool>;
+template class KernelConfig<double>;

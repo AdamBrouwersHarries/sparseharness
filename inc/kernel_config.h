@@ -30,13 +30,13 @@ private:
   std::string argcache;
 };
 
-template <typename T> class Kernel {
+template <typename T> class KernelConfig {
 public:
   // Constructors
-  Kernel(std::string filename);
+  KernelConfig(std::string filename);
 
   // Destuctor
-  ~Kernel(){};
+  ~KernelConfig(){};
 
   // Getters
   std::string getSource();

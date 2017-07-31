@@ -19,7 +19,7 @@ public:
 
   friend std::ostream &operator<<(std::ostream &stream, const Run &r);
 
-private:
+  // private:
   // global ranges
   std::size_t global1 = 0;
   std::size_t global2 = 0;

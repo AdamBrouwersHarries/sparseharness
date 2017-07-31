@@ -13,16 +13,16 @@ class OpenCL {
   static cl::Context context;
   static cl::CommandQueue queue;
   static std::vector<cl::Device> devices;
-  static cl::Device &device;
+  static cl::Device device;
 
   static std::size_t device_max_workgroup_size;
   static std::vector<size_t> device_max_work_item_sizes;
 
   static cl_ulong device_local_mem_size;
 
-  static int iterations;
-
 public:
+  static int iterations;
+  static float timeout;
   // Initialise the opencl status and default devices
   static void init(const unsigned platform_idx, const unsigned device_idx,
                    const unsigned iters = 10) {
@@ -37,13 +37,21 @@ public:
 
     devices = {devices[device_idx]};
     context = cl::Context(devices);
-    auto &device = devices.front();
+    device = devices.front();
     queue = cl::CommandQueue(context, device, CL_QUEUE_PROFILING_ENABLE);
 
     device_local_mem_size = device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+    std::cout << "local mem size: " << device_local_mem_size << std::endl;
     device_max_workgroup_size = device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+    std::cout << "max workgroup size: " << device_max_workgroup_size
+              << std::endl;
     device_max_work_item_sizes =
         device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>();
+    std::cout << "max work item sizes: [";
+    for (auto size : device_max_work_item_sizes) {
+      std::cout << size << ",";
+    }
+    std::cout << "]" << std::endl;
 
     std::cout << "Executing on " << device.getInfo<CL_DEVICE_NAME>()
               << std::endl;
@@ -122,7 +130,21 @@ public:
       // report the error, and fail
       std::cout << "Invalid kernel!" << std::endl;
     }
-    static double time;
+    double time;
+
+    cl::Event ev;
+    queue.enqueueNDRangeKernel(kernel, cl::NullRange,
+                               {run.global1, run.global2, run.global3}, 8,
+                               nullptr, &ev);
+    ev.wait();
+    time = ev.getProfilingInfo<CL_PROFILING_COMMAND_START>() -
+           ev.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+
+    std::cout << "time: " << time << std::endl;
+
+    // auto numWorkItems =
+    // auto locals = (const :: size_t*)local_size;
+
     // auto llocals
   }
 };
