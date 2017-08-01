@@ -41,7 +41,7 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     std::string variable = arg.second.get<std::string>("variable");
     std::string addressSpace = arg.second.get<std::string>("addressSpace");
     std::string size = arg.second.get<std::string>("size");
-    args.push_back(KernelArg(variable, addressSpace, size));
+    args.push_back(ArgDescr(variable, addressSpace, size));
 
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << std::endl;
@@ -54,7 +54,7 @@ template <typename T> std::string KernelConfig<T>::getSource() {
 
 template <typename T> std::string KernelConfig<T>::getName() { return name; }
 
-template <typename T> std::vector<KernelArg> KernelConfig<T>::getArgs() {
+template <typename T> std::vector<ArgDescr> KernelConfig<T>::getArgs() {
   return args;
 }
 

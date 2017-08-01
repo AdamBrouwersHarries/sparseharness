@@ -24,6 +24,7 @@
 #include "options.h"
 #include "run.h"
 #include "sparse_matrix.h"
+#include "kernel_utils.h"
 // #include "spmv_harness.h"
 // #include "spmvrun.h"
 
@@ -108,7 +109,8 @@ int main(int argc, char *argv[]) {
   // initialise the executor
   initExecutor(opt_platform->get(), opt_device->get());
 
-  /// do some stuff
+  // get some arguments
+  auto args = executorEncodeMatrix(kernel, matrix, 0.0f);
 
   shutdownExecutor();
 }

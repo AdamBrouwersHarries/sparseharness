@@ -3,12 +3,12 @@
 
 #include "sparse_matrix.h"
 
-class KernelArg {
+class ArgDescr {
 public:
   const std::string variable;
   const std::string addressSpace;
   const std::string size;
-  KernelArg(std::string var, std::string aspce, std::string sz)
+  ArgDescr(std::string var, std::string aspce, std::string sz)
       : variable(var), addressSpace(aspce), size(sz){};
 };
 
@@ -41,7 +41,7 @@ public:
   // Getters
   std::string getSource();
   std::string getName();
-  std::vector<KernelArg> getArgs();
+  std::vector<ArgDescr> getArgs();
   KernelProperties getProperties();
 
   // Specialiser for a matrix - makes more sense here than in the matrix,
@@ -52,7 +52,7 @@ public:
 private:
   std::string source;
   std::string name;
-  std::vector<KernelArg> args;
+  std::vector<ArgDescr> args;
   KernelProperties kprops;
 };
 
