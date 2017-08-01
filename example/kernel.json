@@ -6,7 +6,7 @@
     "innerMap" : "slcl",
     "dotProduct" : "parallel"
   },
-  "args" : [ {
+  "inputArgs" : [ {
     "variable" : "v__2425",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2*v_MWidthC_1)"
@@ -31,6 +31,16 @@
     "addressSpace" : "private",
     "size" : "4"
   } ],
-  "paramVars" : [ ],
+  "tempArgs" : [ {
+    "variable" : "v__2443",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  } ],
+  "outputArg" : {
+    "variable" : "v__2437",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  },
+  "paramVars" : [ "MWidthC", "MHeight", "VLength" ],
   "outputSize" : "(4*v_MHeight_2)"
 }
