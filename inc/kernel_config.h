@@ -8,11 +8,12 @@ public:
   const std::string variable;
   const std::string addressSpace;
   const std::string size;
-  ArgDescr(std::string var, std::string aspce, std::string sz)
-      : variable(var), addressSpace(aspce), size(sz){};
+  ArgDescr(){};
+  ArgDescr(std::string var, std::string addrspace, std::string sz)
+      : variable(var), addressSpace(addrspace), size(sz){};
+  // need a copy constructor?
 };
 
-// ignore this for now - let's get stuff working for simple kernels first
 class KernelProperties {
 public:
   // Constructor
@@ -52,7 +53,9 @@ public:
 private:
   std::string source;
   std::string name;
-  std::vector<ArgDescr> args;
+  std::vector<ArgDescr> inputArgs;
+  std::vector<ArgDescr> tempArgs;
+  ArgDescr *outputArg;
   KernelProperties kprops;
 };
 

@@ -21,10 +21,11 @@
 // [local includes]
 #include "csv_utils.h"
 #include "kernel_config.h"
+#include "kernel_utils.h"
 #include "options.h"
 #include "run.h"
 #include "sparse_matrix.h"
-#include "kernel_utils.h"
+#include "vector_generator.h"
 // #include "spmv_harness.h"
 // #include "spmvrun.h"
 
@@ -98,19 +99,27 @@ int main(int argc, char *argv[]) {
 
   // specialise the matrix for the kernel given
   auto cl_matrix = kernel.specialiseMatrix(matrix, 0.0f);
-
   // extract size variables from it
   int v_Height_cl = cl_matrix.getCLVHeight();
   int v_Width_cl = cl_matrix.getCLVWidth();
   int v_Length_cl = cl_matrix.rows;
 
-  std::vector<int> size_args{v_Height_cl, v_Width_cl, v_Length_cl};
+  // size args of name/order:
+  // v_MWidthC_1, v_MHeight_2, v_VLength_3
+  std::vector<int> size_args{v_Width_cl, v_Height_cl, v_Length_cl};
 
   // initialise the executor
   initExecutor(opt_platform->get(), opt_device->get());
 
+  // generate a vector
+
+  ConstXVectorGenerator<float> tengen(10);
+  auto vector = tengen.generate(matrix, kernel);
+
+  ConstYVectorGenerator<float> onegen(1);
+
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0.0f);
+  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, onegen);
 
   shutdownExecutor();
 }
