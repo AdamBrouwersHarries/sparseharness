@@ -17,6 +17,7 @@ template <typename T> SparseMatrix<T>::SparseMatrix(std::string filename) {
 
 template <typename T>
 void SparseMatrix<T>::load_from_file(std::string filename) {
+  start_timer(load_from_file, SparseMatrix);
   int ret_code;
   MM_typecode matcode;
   FILE *f;
@@ -134,6 +135,7 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
 
 template <typename T>
 SparseMatrix<T>::ellpack_matrix<T> SparseMatrix<T>::asELLPACK(void) {
+  start_timer(asELLPACK, SparseMatrix);
   // allocate a sparse matrix of the right height
   ellpack_matrix<T> ellmatrix(height(), ellpack_row<T>(0));
   // iterate over the raw entries, and push them into the correct rows
@@ -165,6 +167,7 @@ SparseMatrix<T>::ellpack_matrix<T> SparseMatrix<T>::asELLPACK(void) {
 
 template <typename T>
 SparseMatrix<T>::soa_ellpack_matrix<T> SparseMatrix<T>::asSOAELLPACK(void) {
+  start_timer(asSOAELLPACK, SparseMatrix);
   // allocate a sparse matrix of the right height
   SparseMatrix::soa_ellpack_matrix<T> soaellmatrix(
       std::vector<std::vector<int>>(height(), std::vector<int>(0)),
@@ -197,6 +200,7 @@ SparseMatrix<T>::soa_ellpack_matrix<T> SparseMatrix<T>::asSOAELLPACK(void) {
 template <typename T>
 SparseMatrix<T>::soa_ellpack_matrix<T>
 SparseMatrix<T>::asPaddedSOAELLPACK(T zero, int modulo) {
+  start_timer(asPaddedSOAELLPACK, SparseMatrix);
   // get an unpadded soaell matrix
   auto soaellmatrix = asSOAELLPACK();
   // get our padlength - it's the maximum row length
@@ -360,7 +364,6 @@ template <typename T> int SparseMatrix<T>::getMeanRowEntries() {
   }
   return mean_row_entries;
 }
-
 
 template class SparseMatrix<float>;
 template class SparseMatrix<int>;

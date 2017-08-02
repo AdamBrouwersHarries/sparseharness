@@ -6,6 +6,7 @@
 #include "kernel_config.h"
 
 template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
+  start_timer(KernelConfig, KernelConfig);
   boost::property_tree::ptree tree;
 
   boost::property_tree::read_json(filename, tree);
@@ -125,6 +126,8 @@ std::vector<T> flatten(const std::vector<std::vector<T>> &orig) {
 template <typename T>
 OpenCLSparseMatrix<T> KernelConfig<T>::specialiseMatrix(SparseMatrix<T> matrix,
                                                         T zero) {
+  auto timer = CSDSTimer("specialiseMatrix", "KernelConfig");
+
   // get the matrix as standard ELLPACK
   auto rawmat = matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
 

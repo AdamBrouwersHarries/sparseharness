@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "arithexpr_evaluator.h"
+#include "csds_timer.h"
 #include "executor/Executor.h"
 #include "executor/GlobalArg.h"
 #include "executor/LocalArg.h"
@@ -39,6 +40,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
                      XVectorGenerator<T> &xgen, YVectorGenerator<T> &ygen,
                      int v_MWidth_1, int v_MHeight_2, int v_VLength_3,
                      T alpha = static_cast<T>(1), T beta = static_cast<T>(0)) {
+  start_timer(executorEncodeMatrix, kernel_utils);
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
   // get the matrix as standard ELLPACK

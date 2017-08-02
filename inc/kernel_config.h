@@ -1,6 +1,7 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
+#include "csds_timer.h"
 #include "sparse_matrix.h"
 
 class ArgDescr {

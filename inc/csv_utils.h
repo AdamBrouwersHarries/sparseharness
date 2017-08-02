@@ -1,12 +1,12 @@
 #pragma once
 
+#include "csds_timer.h"
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <vector>
-
 namespace CSV {
 
 using csv_token = std::string;
@@ -32,6 +32,7 @@ inline std::size_t read_size_t(const csv_token &str) {
 }
 
 inline std::vector<csv_line> load_csv(const std::string &filename) {
+  start_timer(load_csv, csv_utils);
   csv_line line_tokens;
   std::vector<csv_line> lines;
 

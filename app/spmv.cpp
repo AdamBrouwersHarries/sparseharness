@@ -32,7 +32,7 @@
 #include "Executor.h"
 
 int main(int argc, char *argv[]) {
-  auto t = CSDSTimer("main", "global");
+  start_timer(main, global);
   OptParser op(
       "Harness for SPMV sparse matrix dense vector multiplication benchmarks");
 
@@ -122,6 +122,7 @@ int main(int argc, char *argv[]) {
   auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, onegen,
                                    v_Width_cl, v_Height_cl, v_Length_cl);
   for (auto run : runs) {
+    start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << std::endl;
     std::vector<double> runtimes;
     benchmark(clkernel, run.local1, run.local2, run.local3, run.global1,

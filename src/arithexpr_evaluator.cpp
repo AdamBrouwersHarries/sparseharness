@@ -9,6 +9,7 @@ typedef exprtk::parser<double> parser_t;
 // todo, do I need to make some of this stuff static for performance?
 int Evaluator::evaluate(std::string expr, int v_MWidth_1, int v_MHeight_2,
                         int v_VLength_3) {
+  start_timer(evaluate, Evaluator);
   symbol_table_t symbol_table;
   parser_t parser;
   expression_t expression;

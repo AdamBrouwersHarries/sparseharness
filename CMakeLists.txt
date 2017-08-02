@@ -46,6 +46,7 @@ set(SPMV_SOURCE
     # src/OpenCL_utils.cpp
     src/run.cpp
     src/arithexpr_evaluator.cpp
+    src/csds_timer.cpp
     # src/kernel_with_args.cpp
     )
 
