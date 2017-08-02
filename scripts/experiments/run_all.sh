@@ -12,9 +12,11 @@ echo "KernelFolder: $kernelfolder"
 runfile=$4
 echo "runfile: $runfile"
 
-# platform=$5
-# echo "Platform: $platform"
+platform=$5
+echo "Platform: $platform"
 
+device=$6
+echo "Device: $device"
 
 # Get some unique data for the experiment ID
 now=$(date -Iminutes)
@@ -54,6 +56,8 @@ do
 			  -i 5 \
 			  -t 20 \
 			  -k $kernelfolder/$k \
+			  -p $platform \
+			  -d $device \
 			  -r $runfile &>results/results-$exID/result_$m_$kname.txt
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
