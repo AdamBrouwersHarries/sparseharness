@@ -29,19 +29,10 @@ mkdir -p .gold_results
 mkdir -p .gold
 mkdir -p "results/results-$exID"
 
-# build the kernels first
-# firstMatrix=$(tail -n 1 $datasetf/datasets.txt)
-# echo $firstMatrix
-# $spmv --save-kernels --all -g 32768 -l 128 --platform $platform $datasetf/$firstMatrix/$firstMatrix.mtx
-
-# Make gold output for each dataset
-# for f in $(cat $datasetf/datasets.txt);
-# do
-#     echo "matrix: $f"
-  
-#     echo "$spmv --load-kernels -g 32768 -l 128 -i 1 --check --saveOutput .gold/spmv-$f.gold --platform $platform $datasetf/$f/$f.mtx >> .gold_results/$f-results.txt"
-#     $spmv --load-kernels -g 32768 -l 128 -i 1 --check --saveOutput .gold/spmv-$f.gold  --platform $platform $datasetf/$f/$f.mtx >> .gold_results/$f-results.txt
-# done
+kernelcount=$(ls kernelfolder | wc -l)
+matrixcount=$(ls datasetf | wc -l)
+taskcount=$((kernelcount*matrixcount)) 
+echo "taskcount: $taskcount"
 
 for m in $(cat $datasetf/datasets.txt);
 do
