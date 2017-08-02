@@ -35,3 +35,6 @@ TODO
 
 # Open files
 *.swp
+ 
+# Data from experiments
+scripts/experiments/results
