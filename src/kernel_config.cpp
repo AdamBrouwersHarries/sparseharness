@@ -56,12 +56,21 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << std::endl;
   }
-  std::cerr << "temp arguments: " << std::endl;
-  for (auto &arg : tree.get_child("tempArgs")) {
+  std::cerr << "temp global arguments: " << std::endl;
+  for (auto &arg : tree.get_child("tempGlobals")) {
     std::string variable = arg.second.get<std::string>("variable");
     std::string addressSpace = arg.second.get<std::string>("addressSpace");
     std::string size = arg.second.get<std::string>("size");
-    tempArgs.push_back(ArgDescr(variable, addressSpace, size));
+    tempGlobals.push_back(ArgDescr(variable, addressSpace, size));
+    std::cout << "variable: " << variable << " address space: " << addressSpace
+              << " size: " << size << std::endl;
+  }
+  std::cerr << "temp local arguments: " << std::endl;
+  for (auto &arg : tree.get_child("tempLocals")) {
+    std::string variable = arg.second.get<std::string>("variable");
+    std::string addressSpace = arg.second.get<std::string>("addressSpace");
+    std::string size = arg.second.get<std::string>("size");
+    tempLocals.push_back(ArgDescr(variable, addressSpace, size));
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << std::endl;
   }
@@ -84,9 +93,19 @@ template <typename T> std::string KernelConfig<T>::getSource() {
 template <typename T> std::string KernelConfig<T>::getName() { return name; }
 
 template <typename T> std::vector<ArgDescr> KernelConfig<T>::getArgs() {
-  std::cout << "output arg: " << outputArg->variable << ","
-            << outputArg->addressSpace << "," << outputArg->size << std::endl;
   return inputArgs;
+}
+
+template <typename T> std::vector<ArgDescr> KernelConfig<T>::getTempGlobals() {
+  return tempGlobals;
+}
+
+template <typename T> std::vector<ArgDescr> KernelConfig<T>::getTempLocals() {
+  return tempLocals;
+}
+
+template <typename T> ArgDescr *KernelConfig<T>::getOutputArg() {
+  return outputArg;
 }
 
 template <typename T> KernelProperties KernelConfig<T>::getProperties() {

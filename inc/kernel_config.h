@@ -43,6 +43,9 @@ public:
   std::string getSource();
   std::string getName();
   std::vector<ArgDescr> getArgs();
+  std::vector<ArgDescr> getTempGlobals();
+  std::vector<ArgDescr> getTempLocals();
+  ArgDescr *getOutputArg();
   KernelProperties getProperties();
 
   // Specialiser for a matrix - makes more sense here than in the matrix,
@@ -54,7 +57,8 @@ private:
   std::string source;
   std::string name;
   std::vector<ArgDescr> inputArgs;
-  std::vector<ArgDescr> tempArgs;
+  std::vector<ArgDescr> tempGlobals;
+  std::vector<ArgDescr> tempLocals;
   ArgDescr *outputArg;
   KernelProperties kprops;
 };

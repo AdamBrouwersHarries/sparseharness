@@ -17,7 +17,6 @@
 
 // [external includes]
 // #include "OpenCL_utils.h"
-
 // [local includes]
 #include "csv_utils.h"
 #include "kernel_config.h"
@@ -100,8 +99,8 @@ int main(int argc, char *argv[]) {
   // specialise the matrix for the kernel given
   auto cl_matrix = kernel.specialiseMatrix(matrix, 0.0f);
   // extract size variables from it
-  int v_Height_cl = cl_matrix.getCLVHeight();
   int v_Width_cl = cl_matrix.getCLVWidth();
+  int v_Height_cl = cl_matrix.getCLVHeight();
   int v_Length_cl = cl_matrix.rows;
 
   // size args of name/order:
@@ -114,12 +113,24 @@ int main(int argc, char *argv[]) {
   // generate a vector
 
   ConstXVectorGenerator<float> tengen(10);
-  auto vector = tengen.generate(matrix, kernel);
-
   ConstYVectorGenerator<float> onegen(1);
 
+  auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "");
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, onegen);
+  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, onegen,
+                                   v_Width_cl, v_Height_cl, v_Length_cl);
+  for (auto run : runs) {
+    std::cout << "Benchmarking run: " << run << std::endl;
+    std::vector<double> runtimes;
+    benchmark(clkernel, run.local1, run.local2, run.local3, run.global1,
+              run.global2, run.global3, args, opt_iterations->get(),
+              opt_timeout->get(), runtimes);
+    std::cout << "runtimes: [";
+    for (auto time : runtimes) {
+      std::cout << "," << time;
+    }
+    std::cout << "]" << std::endl;
+  }
 
   shutdownExecutor();
 }

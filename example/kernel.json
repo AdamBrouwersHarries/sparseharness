@@ -31,7 +31,7 @@
     "addressSpace" : "private",
     "size" : "4"
   } ],
-  "tempArgs" : [ {
+  "tempGlobals" : [ {
     "variable" : "v__2443",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"
@@ -41,6 +41,7 @@
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2*v_MWidthC_1)"
   },
+  "tempLocals" : [ ],
   "paramVars" : [ "MWidthC", "MHeight", "VLength" ],
   "outputSize" : "(4*v_MHeight_2)"
 }

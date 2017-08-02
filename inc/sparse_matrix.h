@@ -27,7 +27,11 @@ public:
   // OpenCLSparseMatrix();
 
   int getCLVHeight() { return rows / chunksize; }
-  int getCLVWidth() { return rowlen / splitsize; }
+  int getCLVWidth() {
+    std::cout << "rowlen: " << rowlen << " splitsize: " << splitsize
+              << std::endl;
+    return rowlen / splitsize;
+  }
   const int rows;
   const int rowlen;
   const int chunksize;
