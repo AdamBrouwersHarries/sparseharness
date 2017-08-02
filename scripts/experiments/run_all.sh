@@ -48,6 +48,8 @@ do
 		echo "Processing matrix: $m" 
 		kname=$(basename $k .json)
 		echo "Using kernel: $kname"
+
+		runstart=$(date +%s)
 		$spmv -m $datasetf/$m/$m.mtx \
 			  -i 5 \
 			  -t 20 \
@@ -55,10 +57,12 @@ do
 			  -r $runfile &>results/results-$exID/result_$m_$kname.txt
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
-		cptime=$(date +%s)
-		runtime=$((cptime-start))
+		runend=$(date +%s)
+		runtime=$((runend-runstart))
 
-		echo "finished at $(date -Iminutes), took $runtime seconds"
+		scripttime=$((runend-start))
+
+		echo "Run took $runtime seconds, total time of $scripttime seconds"
 	done
 done
 
