@@ -18,6 +18,7 @@
 // [external includes]
 // #include "OpenCL_utils.h"
 // [local includes]
+#include "csds_timer.h"
 #include "csv_utils.h"
 #include "kernel_config.h"
 #include "kernel_utils.h"
@@ -31,6 +32,7 @@
 #include "Executor.h"
 
 int main(int argc, char *argv[]) {
+  auto t = CSDSTimer("main", "global");
   OptParser op(
       "Harness for SPMV sparse matrix dense vector multiplication benchmarks");
 

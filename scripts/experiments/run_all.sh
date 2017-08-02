@@ -29,8 +29,8 @@ mkdir -p .gold_results
 mkdir -p .gold
 mkdir -p "results/results-$exID"
 
-kernelcount=$(ls kernelfolder | wc -l)
-matrixcount=$(ls datasetf | wc -l)
+kernelcount=$(ls $kernelfolder | wc -l)
+matrixcount=$(ls $datasetf | wc -l)
 taskcount=$((kernelcount*matrixcount)) 
 echo "taskcount: $taskcount"
 
