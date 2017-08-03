@@ -4,12 +4,37 @@
 #include "executor/LocalArg.h"
 #include "executor/ValueArg.h"
 
+#include "common.h"
+#include "kernel_config.h"
 #include "run.h"
+#include "sparse_matrix.h"
 
 class Harness {
 public:
   Harness(cl::Kernel kernel, std::vector<KernelArg *> args)
       : _kernel(kernel), _args(args) {}
+
+  void print_sql_stats(const Run &run, const std::string &kname,
+                       const std::string &mname, const std::string &hname,
+                       const std::string &experiment_id,
+                       std::vector<double> &times) {
+    auto &devPtr = executor::globalDeviceList.front();
+    std::cout << "INSERT INTO table_name (time, correctness, kernel, "
+                 "global, local, host, device, matrix, iteration, trial, "
+                 "statistic, experiment_id) VALUES ";
+    int trial = 0;
+    for (auto t : times) {
+      if (trial != 0) {
+        std::cout << ",";
+      }
+      std::cout << "(" << t << ",\"notchecked\", \"" << kname << "\", "
+                << run.global1 << ", " << run.local1 << ", \"" << hname
+                << "\", \"" << devPtr->name() << "\", \"" << mname << "\", 0, "
+                << trial << ", \"RAW_RESULT\", \"" << experiment_id << "\")";
+      trial++;
+    }
+    std::cout << ";\n";
+  }
 
 protected:
   cl::Kernel _kernel;
