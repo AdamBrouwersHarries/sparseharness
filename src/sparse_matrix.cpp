@@ -24,15 +24,15 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
 
   // Open the file descriptor
   if ((f = fopen(filename.c_str(), "r")) == NULL) {
-    std::cerr << "Failed to open matrix file " << filename << std::endl;
+    std::cerr << "Failed to open matrix file " << filename << ENDL;
     exit(-1);
   }
   // Read in the banner
   if (mm_read_banner(f, &matcode) != 0) {
-    std::cerr << "Could not read matrix market banner" << std::endl;
+    std::cerr << "Could not read matrix market banner" << ENDL;
     exit(-1);
   }
-  std::cerr << "Matcode: " << matcode << std::endl;
+  std::cerr << "Matcode: " << matcode << ENDL;
   // Check the banner properties
   if (mm_is_matrix(matcode) && mm_is_coordinate(matcode) &&
       (mm_is_real(matcode) || mm_is_integer(matcode) ||
@@ -42,12 +42,11 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
     // do matrix reading
     // Find size of matrix
     if ((ret_code = mm_read_mtx_crd_size(f, &rows, &cols, &nonz)) != 0) {
-      std::cerr << "Cannot read matrix sizes and number of non-zeros"
-                << std::endl;
+      std::cerr << "Cannot read matrix sizes and number of non-zeros" << ENDL;
       return;
     }
     std::cerr << "Rows " << rows << " cols " << cols << " non-zeros " << nonz
-              << std::endl;
+              << ENDL;
     // read the entries from the file
     int I, J;
     double val;
@@ -67,7 +66,7 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
     }
   } else {
     std::cerr << "Cannot process this matrix type. Typecode: " << matcode
-              << std::endl;
+              << ENDL;
     exit(-1);
   }
 }
@@ -86,14 +85,14 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
 //   if (elements > length) {
 //     std::cerr << "Error: cannot intialise vector with more elements than
 //     length"
-//               << std::endl;
+//               << ENDL;
 //     exit(-2);
 //   } else {
 //     // initialise our temporary sparse vector
 //     std::vector<std::tuple<int, int, double>> elems(elements);
 //     if (elements == length) {
 //       std::clog << "Size/elements match - initialising pseudo-dense vector"
-//                 << std::endl;
+//                 << ENDL;
 //       // Initialise a dense "sparse" vector
 //       for (unsigned int i = 0; i < elems.size(); i++) {
 //         std::get<0>(elems[i]) = i;
@@ -103,7 +102,7 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
 //     } else {
 //       std::clog
 //           << "Numbers don't match, initialising using fisher-yates shuffle"
-//           << std::endl;
+//           << ENDL;
 //       // Initialise a vector of <elements> elements
 //       std::vector<std::tuple<int, int, double>> elems(elements);
 //       // Initialise a dense vector of indicies of len <length>
@@ -208,7 +207,7 @@ SparseMatrix<T>::asPaddedSOAELLPACK(T zero, int modulo) {
   // and pad that out
   auto padded_length = max_length + (modulo - (max_length % modulo));
   std::cout << "Max length: " << max_length << ", padded (by " << modulo
-            << "): " << padded_length << std::endl;
+            << "): " << padded_length << ENDL;
   // iterate over the rows and pad them out
   for (auto &idx_row : soaellmatrix.first) {
     idx_row.resize(padded_length, -1);
@@ -326,7 +325,7 @@ std::vector<std::tuple<int, int, T>> SparseMatrix<T>::getEntries() {
 
 template <typename T> std::vector<int> SparseMatrix<T>::getRowLengths() {
   if (!(row_lengths.size() > 0)) {
-    std::cerr << "Building row entries for first time." << std::endl;
+    std::cerr << "Building row entries for first time." << ENDL;
     std::vector<int> entries(rows, 0);
     int y;
     for (unsigned int i = 0; i < nz_entries.size(); i++) {

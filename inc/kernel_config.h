@@ -1,6 +1,7 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
+#include "common.h"
 #include "csds_timer.h"
 #include "sparse_matrix.h"
 

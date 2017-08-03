@@ -18,6 +18,8 @@
 // [external includes]
 // #include "OpenCL_utils.h"
 // [local includes]
+#include "Executor.h"
+#include "common.h"
 #include "csds_timer.h"
 #include "csv_utils.h"
 #include "kernel_config.h"
@@ -26,10 +28,6 @@
 #include "run.h"
 #include "sparse_matrix.h"
 #include "vector_generator.h"
-// #include "spmv_harness.h"
-// #include "spmvrun.h"
-
-#include "Executor.h"
 
 int main(int argc, char *argv[]) {
   start_timer(main, global);
@@ -77,8 +75,8 @@ int main(int argc, char *argv[]) {
   const std::string kernel_filename = opt_kernel_file->require();
   const std::string runs_filename = opt_run_file->require();
 
-  std::cerr << "matrix_filename " << matrix_filename << std::endl;
-  std::cerr << "kernel_filename " << kernel_filename << std::endl;
+  std::cerr << "matrix_filename " << matrix_filename << ENDL;
+  std::cerr << "kernel_filename " << kernel_filename << ENDL;
 
   // initialise a matrix, kernel, and set of run parameters from files
   SparseMatrix<float> matrix(matrix_filename);
@@ -89,12 +87,12 @@ int main(int argc, char *argv[]) {
                  [](CSV::csv_line line) -> Run { return Run(line); });
 
   for (auto run : runs)
-    std::cerr << run << std::endl;
+    std::cerr << run << ENDL;
 
   // check the matrix
   if (matrix.height() != matrix.width()) {
-    std::cout << "Matrix is not square. Failing computation." << std::endl;
-    std::cerr << "Matrix is not square. Failing computation." << std::endl;
+    std::cout << "Matrix is not square. Failing computation." << ENDL;
+    std::cerr << "Matrix is not square. Failing computation." << ENDL;
     std::exit(2);
   }
 
@@ -123,7 +121,7 @@ int main(int argc, char *argv[]) {
                                    v_Width_cl, v_Height_cl, v_Length_cl);
   for (auto run : runs) {
     start_timer(run_iteration, main);
-    std::cout << "Benchmarking run: " << run << std::endl;
+    std::cout << "Benchmarking run: " << run << ENDL;
     std::vector<double> runtimes;
     benchmark(clkernel, run.local1, run.local2, run.local3, run.global1,
               run.global2, run.global3, args, opt_iterations->get(),
@@ -132,7 +130,7 @@ int main(int argc, char *argv[]) {
     for (auto time : runtimes) {
       std::cout << "," << time;
     }
-    std::cout << "]" << std::endl;
+    std::cout << "]" << ENDL;
   }
 
   shutdownExecutor();

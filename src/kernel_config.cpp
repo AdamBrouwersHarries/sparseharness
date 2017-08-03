@@ -36,7 +36,7 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
                             unwrap_map(innerMap2), unwrap_param(splitSize),
                             unwrap_param(chunkSize));
 
-  std::cout << "Kernel: " << name << ", source: \n" << source << std::endl;
+  std::cout << "Kernel: " << name << ", source: \n" << source << ENDL;
 
   // for (auto &arg : tree.get_child("args")) {
   //   std::string variable = arg.second.get<std::string>("variable");
@@ -46,34 +46,34 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
 
   //   std::cout << "variable: " << variable << " address space: " <<
   //   addressSpace
-  //             << " size: " << size << std::endl;
+  //             << " size: " << size << ENDL;
   // }
-  std::cerr << "input arguments: " << std::endl;
+  std::cerr << "input arguments: " << ENDL;
   for (auto &arg : tree.get_child("inputArgs")) {
     std::string variable = arg.second.get<std::string>("variable");
     std::string addressSpace = arg.second.get<std::string>("addressSpace");
     std::string size = arg.second.get<std::string>("size");
     inputArgs.push_back(ArgDescr(variable, addressSpace, size));
     std::cout << "variable: " << variable << " address space: " << addressSpace
-              << " size: " << size << std::endl;
+              << " size: " << size << ENDL;
   }
-  std::cerr << "temp global arguments: " << std::endl;
+  std::cerr << "temp global arguments: " << ENDL;
   for (auto &arg : tree.get_child("tempGlobals")) {
     std::string variable = arg.second.get<std::string>("variable");
     std::string addressSpace = arg.second.get<std::string>("addressSpace");
     std::string size = arg.second.get<std::string>("size");
     tempGlobals.push_back(ArgDescr(variable, addressSpace, size));
     std::cout << "variable: " << variable << " address space: " << addressSpace
-              << " size: " << size << std::endl;
+              << " size: " << size << ENDL;
   }
-  std::cerr << "temp local arguments: " << std::endl;
+  std::cerr << "temp local arguments: " << ENDL;
   for (auto &arg : tree.get_child("tempLocals")) {
     std::string variable = arg.second.get<std::string>("variable");
     std::string addressSpace = arg.second.get<std::string>("addressSpace");
     std::string size = arg.second.get<std::string>("size");
     tempLocals.push_back(ArgDescr(variable, addressSpace, size));
     std::cout << "variable: " << variable << " address space: " << addressSpace
-              << " size: " << size << std::endl;
+              << " size: " << size << ENDL;
   }
   {
     auto &outputArgJson = tree.get_child("outputArg");
@@ -83,7 +83,7 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     outputArg = new ArgDescr(variable, addressSpace, size);
     std::cout << "Output arg -- variable: " << variable
               << " address space: " << addressSpace << " size: " << size
-              << std::endl;
+              << ENDL;
   }
 }
 

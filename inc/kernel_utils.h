@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "arithexpr_evaluator.h"
+#include "common.h"
 #include "csds_timer.h"
 #include "executor/Executor.h"
 #include "executor/GlobalArg.h"
@@ -77,7 +78,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
 
   // generate the vector inputs
   std::cerr << "Filling with these sizes: \n\tx = " << matrix.height()
-            << " \n\ty = " << mem_height << std::endl;
+            << " \n\ty = " << mem_height << ENDL;
   std::vector<T> xvector = xgen.generate(matrix.height(), matrix, kernel);
   std::vector<T> yvector = ygen.generate(mem_height, matrix, kernel);
 
@@ -114,19 +115,19 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // create temporary global buffers
   for (auto arg : kernel.getTempGlobals()) {
     std::cout << "Global temp arg: " << arg.variable << ", " << arg.addressSpace
-              << "," << arg.size << std::endl;
+              << "," << arg.size << ENDL;
     int memsize =
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    std::cout << "realsize: " << memsize << std::endl;
+    std::cout << "realsize: " << memsize << ENDL;
     kernel_args.push_back(GlobalArg::create(memsize));
   }
 
   // create output buffer
   {
-    std::cout << "expr: " << kernel.getOutputArg()->size << std::endl;
+    std::cout << "expr: " << kernel.getOutputArg()->size << ENDL;
     int outputMemsize = Evaluator::evaluate(
         kernel.getOutputArg()->size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    std::cout << "outputMemSize: " << outputMemsize << std::endl;
+    std::cout << "outputMemSize: " << outputMemsize << ENDL;
     kernel_args.push_back(GlobalArg::create(outputMemsize, true));
   }
 
@@ -134,10 +135,10 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
 
   for (auto arg : kernel.getTempLocals()) {
     std::cout << "Local temp arg: " << arg.variable << ", " << arg.addressSpace
-              << "," << arg.size << std::endl;
+              << "," << arg.size << ENDL;
     int memsize =
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    std::cout << "realsize: " << memsize << std::endl;
+    std::cout << "realsize: " << memsize << ENDL;
     kernel_args.push_back(LocalArg::create(memsize));
   }
 

@@ -7,6 +7,8 @@
 #include <sstream>
 #include <vector>
 
+#include "common.h"
+
 /**
  * Base class for a command line option. Contains the basic info but no data.
  */
@@ -65,7 +67,7 @@ public:
 /// @brief Define an operator to dump command line arguments to stream.
 std::ostream &operator<<(std::ostream &os, const OptionBase *a) {
   a->print(os);
-  os << std::endl;
+  os << ENDL;
   return os;
 }
 
@@ -96,7 +98,7 @@ public:
     if (_value_provided) {
       return _value;
     } else {
-      std::cout << "Required argument \"" << _longopt << "\" not set." << std::endl;
+      std::cout << "Required argument \"" << _longopt << "\" not set." << ENDL;
       std::exit(-1);
     }
     return _value;
@@ -206,14 +208,14 @@ public:
 
       // Oops, we didn't find a valid command for that...
       if (command == nullptr) {
-        cout << "Error: Invalid argument '" << argv[c] << "'." << std::endl;
+        cout << "Error: Invalid argument '" << argv[c] << "'." << ENDL;
         help->setValue(true);
         break;
       }
       // Otherwise try to parse the arguments, and abort if it fails
       else if (!command->parseArgs(argc, c, argv)) {
         cout << "Error: invalid argument for option " << command->getLong()
-             << std::endl;
+             << ENDL;
         help->setValue(true);
         break;
       }
@@ -248,7 +250,7 @@ public:
 
   void print(std::ostream &out = std::cout) {
     for (auto o : args) {
-      out << o << std::endl;
+      out << o << ENDL;
     }
   }
 };

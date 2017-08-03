@@ -36,6 +36,9 @@ echo "taskcount: $taskcount"
 
 for m in $(cat $datasetf/datasets.txt);
 do
+	rdir="results/results-$exID/$m/"
+	mkdir -p $rdir
+
 	for k in $(ls $kernelfolder);
 	do
 		echo "Processing matrix: $m" 
@@ -49,7 +52,7 @@ do
 			  -k $kernelfolder/$k \
 			  -p $platform \
 			  -d $device \
-			  -r $runfile &>results/results-$exID/result_$m_$kname.txt
+			  -r $runfile &>$rdir/result_$kname.txt
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
 		runend=$(date +%s)

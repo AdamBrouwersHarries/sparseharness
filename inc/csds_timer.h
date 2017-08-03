@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include <chrono>
 #include <ctime>
 #include <iostream>
@@ -9,15 +10,18 @@
 #define start_timer(name, context)                                             \
   auto _csds_timer = CSDSTimer(#name, #context);
 
+using clock_type = std::chrono::system_clock;
+
 class CSDSTimer {
 
 public:
   // Construct and start the timer
   // CSDSTimer(std::string name, std::string context = "global",
   //           std::ostream &stream = std::cout);
-  CSDSTimer(std::string name);
-  CSDSTimer(std::string name, std::string context);
-  CSDSTimer(std::string name, std::string context, std::ostream &stream);
+  CSDSTimer(const std::string &name);
+  CSDSTimer(const std::string &name, const std::string &context);
+  CSDSTimer(const std::string &name, const std::string &context,
+            std::ostream &stream);
 
   // Destruct and stop the timer, reporting the elapseed time
   ~CSDSTimer();
@@ -28,7 +32,7 @@ private:
   void reportEnd();
   std::string _name;
   std::string _context;
-  std::chrono::time_point<std::chrono::system_clock> _start, _end;
+  std::chrono::time_point<clock_type> _start;
   std::ostream *_default_str;
 
   // static std::ostream *_default_str;

@@ -14,6 +14,7 @@
 #include <tuple>
 #include <vector>
 
+#include "common.h"
 #include "csds_timer.h"
 
 // #include <SkelCL/Vector.h>
@@ -30,8 +31,7 @@ public:
 
   int getCLVHeight() { return rows / chunksize; }
   int getCLVWidth() {
-    std::cout << "rowlen: " << rowlen << " splitsize: " << splitsize
-              << std::endl;
+    std::cout << "rowlen: " << rowlen << " splitsize: " << splitsize << ENDL;
     return rowlen / splitsize;
   }
   const int rows;
