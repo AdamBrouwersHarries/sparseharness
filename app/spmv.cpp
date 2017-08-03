@@ -29,6 +29,8 @@
 #include "sparse_matrix.h"
 #include "vector_generator.h"
 
+#include "harness/harness_spmv.h"
+
 int main(int argc, char *argv[]) {
   start_timer(main, global);
   OptParser op(
@@ -115,17 +117,16 @@ int main(int argc, char *argv[]) {
   ConstXVectorGenerator<float> tengen(10);
   ConstYVectorGenerator<float> onegen(1);
 
-  auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "");
+  auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
   auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, onegen,
                                    v_Width_cl, v_Height_cl, v_Length_cl);
+  HarnessSpmv harness(clkernel, args);
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<double> runtimes;
-    benchmark(clkernel, run.local1, run.local2, run.local3, run.global1,
-              run.global2, run.global3, args, opt_iterations->get(),
-              opt_timeout->get(), runtimes);
+    std::vector<double> runtimes =
+        harness.benchmark(run, opt_iterations->get(), opt_timeout->get());
     std::cout << "runtimes: [";
     for (auto time : runtimes) {
       std::cout << "," << time;

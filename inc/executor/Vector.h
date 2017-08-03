@@ -1,7 +1,7 @@
 ///
 ///  Vector.h
 ///
-///	\author Michel Steuwer <michel.steuwer@ed.ac.uk>
+/// \author Michel Steuwer <michel.steuwer@ed.ac.uk>
 ///
 
 #ifndef VECTOR_H_
@@ -14,34 +14,30 @@
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
-#undef  __CL_ENABLE_EXCEPTIONS
+#undef __CL_ENABLE_EXCEPTIONS
 
 #include "Device.h"
 #include "DeviceBuffer.h"
 
 namespace executor {
 
-
 class Event;
 
 class Sizes {
 public:
   Sizes() : _sizes() {}
-  void push_back(DeviceBuffer::size_type size) {
-    _sizes.push_back(size);
-  }
+  void push_back(DeviceBuffer::size_type size) { _sizes.push_back(size); }
 
   cl_uint operator[](size_t index) const {
     return static_cast<cl_uint>(_sizes[index]);
   }
+
 private:
   std::vector<DeviceBuffer::size_type> _sizes;
 };
 
-
 /// TODO: move into detail namespace?
-template <typename T>
-class RegisterVectorDeviceFunctions {
+template <typename T> class RegisterVectorDeviceFunctions {
 public:
   RegisterVectorDeviceFunctions();
 };
@@ -68,8 +64,7 @@ public:
 /// \ingroup containers
 /// \ingroup vector
 ///
-template <typename T>
-class Vector {
+template <typename T> class Vector {
 public:
   /// \brief The type used to store the elements on the host
   ///
@@ -100,8 +95,8 @@ public:
   typedef typename host_buffer_type::reverse_iterator reverse_iterator;
   /// \brief The type of a const reverse iterator
   ///
-  typedef typename host_buffer_type::const_reverse_iterator
-          const_reverse_iterator;
+  typedef
+      typename host_buffer_type::const_reverse_iterator const_reverse_iterator;
   /// \brief The integral type used to define the number of the elements in the
   ///        Vector
   typedef typename host_buffer_type::size_type size_type;
@@ -125,14 +120,13 @@ public:
   ///                     new constructed Vector
   /// \param distribution Distribution to be used by the new constructed
   ///                     Vector
-  Vector(const size_type size,
-         const value_type& value = value_type());
+  Vector(const size_type size, const value_type &value = value_type());
 
   /// \brief Creates a new Vector with the content of the range
   ///          <tt>[first, last)</tt>.
   ///
   /// \b Complexity Linear in distance between \c first and \c last
-  /// 
+  ///
   /// \param first Begin of the range to copy the elements from
   /// \param last  End of the range to copy the elements from
   template <class InputIterator>
@@ -144,7 +138,7 @@ public:
   /// \b Complexity Linear in size of \c rhs
   /// \param rhs Another Vector to be used as source to initialize the elements
   ///            of the Vector with
-  Vector(const Vector<T>& rhs);
+  Vector(const Vector<T> &rhs);
 
   /// \brief Move constructor. Creates a new Vector by moving the content of
   ///        \c rhs.
@@ -152,7 +146,7 @@ public:
   /// \b Complexity Constant
   /// \param rhs Another Vector to be used as source to initialize the elements
   ///        of the Vector with
-  Vector(Vector<T>&& rhs);
+  Vector(Vector<T> &&rhs);
 
   ///
   /// \brief Copy assignment operator. Replaces the content with a copy of the
@@ -161,7 +155,7 @@ public:
   /// \b Complexity Linear in size pf \c rhs
   /// \param rhs Another Vector to be used as source to initialize the elements
   ///            of the Vector with
-  Vector<T>& operator=(const Vector<T>& rhs);
+  Vector<T> &operator=(const Vector<T> &rhs);
 
   ///
   /// \brief Move assignment operator. Replaces the content by moving the
@@ -170,7 +164,7 @@ public:
   /// \b Complexity Constant
   /// \param rhs Another Vector to be used as source to initialize the elements
   ///            of the Vector with
-  Vector<T>& operator=(Vector<T>&& rhs);
+  Vector<T> &operator=(Vector<T> &&rhs);
 
   /// \brief Destructs the Vector.
   ///
@@ -266,7 +260,7 @@ public:
   /// \b Complexity Linear in the size of the Vector
   /// \param count New size of the Vector
   /// \param value The value to initialize the new elements with
-  void resize( size_type count, T value = T() );
+  void resize(size_type count, T value = T());
 
   /// \brief Returns the number of elements that the Vector has currently
   ///        allocated space for.
@@ -292,7 +286,7 @@ public:
   ///
   /// \b Complexity At most linear in the size() of the Vector
   /// \param n New capacity of the Vector
-  void reserve( size_type n );
+  void reserve(size_type n);
 
   /// \brief Returns a reference to the element at the specified location
   ///        \c pos. No boundary checks are performed.
@@ -304,7 +298,7 @@ public:
   ///               Linear in size of the Vector otherwise.
   /// \param pos Position of the element to access
   /// \return Reference to the requested element
-  reference operator[]( size_type pos );
+  reference operator[](size_type pos);
 
   /// \brief Returns a constant reference to the element at the specified
   ///        location \c pos. No boundary checks are performed.
@@ -316,7 +310,7 @@ public:
   ///               Linear in size of the Vector otherwise.
   /// \param pos Position of the element to access
   /// \return Constant reference to the requested element
-  const_reference operator[]( size_type pos ) const;
+  const_reference operator[](size_type pos) const;
 
   /// \brief Returns a reference to the element at the specified location
   ///        \c pos. Boundary checks are performed.
@@ -331,7 +325,7 @@ public:
   ///               Linear in size of the Vector otherwise.
   /// \param pos Position of the element to access
   /// \return Reference to the requested element
-  reference at( size_type pos );
+  reference at(size_type pos);
 
   /// \brief Returns a constant reference to the element at the specified
   ///        location \c pos. Boundary checks are performed.
@@ -346,7 +340,7 @@ public:
   ///               Linear in size of the Vector otherwise.
   /// \param pos Position of the element to access
   /// \return Constant reference to the requested element
-  const_reference at( size_type pos ) const;
+  const_reference at(size_type pos) const;
 
   /// \brief Returns a reference to the first element in the Vector.
   ///        Calling front() on an empty Vector is undefined.
@@ -407,13 +401,13 @@ public:
   /// \b Complexity Linear in \c count
   /// \param count The new size of the Vector
   /// \param value  The value to initialize the elements of the Vector with
-  void assign(size_type count, const T& value = T());
+  void assign(size_type count, const T &value = T());
 
   /// \brief Appends a copy of the given element value to the end of the Vector.
   ///
   /// \b Complexity Amortized constant.
   /// \param value The value of the element to append
-  void push_back(const T& value);
+  void push_back(const T &value);
 
   /// \brief Removes the last element of the Vector.
   ///
@@ -430,7 +424,7 @@ public:
   ///            be inserted. \c pos may be the end() iterator.
   /// \param value Element value to insert
   /// \return Iterator pointing to the inserted value
-  iterator insert(iterator pos, const T& value);
+  iterator insert(iterator pos, const T &value);
 
   /// \brief Inserts \c count copy of \c value at the specified location in the
   ///        Vector.
@@ -442,7 +436,7 @@ public:
   /// \param count How many times value should be inserted into the Vector
   /// \param value Element value to insert
   /// \return Iterator pointing to the first inserted value
-  iterator insert( iterator pos, size_type count, const T& value );
+  iterator insert(iterator pos, size_type count, const T &value);
 
   /// \brief Inserts elements from range <tt>[first, last)</tt> at the
   ///        specified location in the Vector.
@@ -478,7 +472,7 @@ public:
   ///
   /// \b Complexity Constant
   /// \param rhs Vector to exchange the contents with
-  void swap( Vector<T>& rhs );
+  void swap(Vector<T> &rhs);
 
   /// \brief Removes all elements from the Vector.
   ///
@@ -553,6 +547,14 @@ public:
   /// \b Complexity Linear in the size of the vector.
   void copyDataToHost() const;
 
+  /// \brief Copies data from the devices involved in the current distribution
+  ///        to the host
+  ///
+  /// This function does not block, and returns an event that must be waited on
+  ///
+  /// \b Complexity Linear in the size of the vector.
+  Event copyDataToHostAsync() const;
+
   /// \brief Marks the data on the device as been modified
   ///
   /// \b Complexity Constant
@@ -592,7 +594,7 @@ public:
   /// \return A reference to the buffer object used for the given device.
   ///         Be careful if you use auto to use auto& to capture the reference
   ///         and not making an implicit copy by using plain auto.
-  const DeviceBuffer& deviceBuffer(const Device& device) const;
+  const DeviceBuffer &deviceBuffer(const Device &device) const;
 
   /// \brief Returns a reference to the underlying object storing the elements
   ///        on the given device
@@ -601,7 +603,7 @@ public:
   /// \param device The device for which the storage object should be returned
   /// \return A reference to the underlying object storing the elements on the
   ///         given device
-  DeviceBuffer& deviceBuffer(const Device& device);
+  DeviceBuffer &deviceBuffer(const Device &device);
 
   /// \brief Returns a reference to the underlying object storing the elements
   ///        on the host
@@ -609,7 +611,7 @@ public:
   /// \b Complexity Constant
   /// \return A reference to the underlying object storing the elements on the
   ///         host
-  host_buffer_type& hostBuffer() const;
+  host_buffer_type &hostBuffer() const;
 
   /// \brief Returns the source code of helper functions simplifying access to
   ///        the vector on the device.
@@ -625,12 +627,12 @@ private:
 
   static RegisterVectorDeviceFunctions<T> registerVectorDeviceFunctions;
 
-  size_type                                            _size;
-  mutable bool                                        _hostBufferUpToDate;
-  mutable bool                                        _deviceBuffersUpToDate;
-  mutable host_buffer_type                            _hostBuffer;
+  size_type _size;
+  mutable bool _hostBufferUpToDate;
+  mutable bool _deviceBuffersUpToDate;
+  mutable host_buffer_type _hostBuffer;
   // _deviceBuffers empty => buffers not created yet
-  mutable std::map<Device::id_type, DeviceBuffer>     _deviceBuffers;
+  mutable std::map<Device::id_type, DeviceBuffer> _deviceBuffers;
 };
 
 template <typename T>

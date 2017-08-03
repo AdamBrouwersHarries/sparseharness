@@ -63,4 +63,6 @@ double evaluate(const executor::Kernel &kernel, int localSize1, int localSize2,
                 int globalSize3, const std::vector<executor::KernelArg *> &args,
                 int iterations, double timeout);
 
+double getRuntimeInMilliseconds(cl::Event event);
+
 #endif // EXECUTOR_H_

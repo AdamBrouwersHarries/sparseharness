@@ -4,7 +4,6 @@
 /// \author Michel Steuwer <michel.steuwer@ed.ac.uk>
 ///
 
-
 #ifndef KERNEL_ARG_H_
 #define KERNEL_ARG_H_
 
@@ -20,7 +19,6 @@ public:
   virtual void download() = 0;
   virtual void clear();
 };
-
 }
 
 #endif // KERNEL_ARG_H_

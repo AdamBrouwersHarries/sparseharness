@@ -2,8 +2,6 @@
 #include <algorithm>
 #include <cassert>
 
-namespace {
-
 double getRuntimeInMilliseconds(cl::Event event) {
   cl_ulong start;
   cl_ulong end;
@@ -20,7 +18,6 @@ double getRuntimeInMilliseconds(cl::Event event) {
   ASSERT(err == CL_SUCCESS);
 
   return (end - start) * 1.0e-06;
-}
 }
 
 void initExecutor(int platformId, int deviceId) {

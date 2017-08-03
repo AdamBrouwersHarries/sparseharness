@@ -5,7 +5,7 @@
 #include <ctime>
 #include <iostream>
 
-#define TREE_PERF
+// #define TREE_PERF
 
 #define start_timer(name, context)                                             \
   auto _csds_timer = CSDSTimer(#name, #context);
