@@ -12,3 +12,4 @@ runfile=../../example/runfile2.csv
 
 # run it all!
 $harness -m $matrix -k $kernel -r $runfile -i 10 -t 200 
+
