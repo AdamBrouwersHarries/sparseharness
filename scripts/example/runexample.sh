@@ -9,7 +9,9 @@ kernel=../../example/kernel.json
 matrix=../../example/matrix2.mtx
 # The run parameters - i.e. local and global sizes
 runfile=../../example/runfile2.csv
+# our hostname
+hname=$HOSTNAME
 
 # run it all!
-$harness -m $matrix -k $kernel -r $runfile -i 10 -t 200 
+$harness -n $hname -m $matrix -k $kernel -r $runfile -i 10 -t 200 
 

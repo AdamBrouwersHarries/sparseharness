@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   auto opt_run_file =
       op.addOption<std::string>({'r', "runfile", "Run configuration file"});
   auto opt_host_name = op.addOption<std::string>(
-      {'h', "hostname", "Host the harness is running on"});
+      {'n', "hostname", "Host the harness is running on"});
 
   auto opt_timeout = op.addOption<float>(
       {'t', "timeout", "Timeout to avoid multiple executions (default 100ms).",
