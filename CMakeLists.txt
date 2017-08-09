@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(Executor)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -Wextra -Wno-implicit-fallthrough -Wno-unused-parameter -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -Wextra -Wno-implicit-fallthrough -Wno-unused-parameter -fPIC -DDEBUG")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 
 # include_directories(common)
@@ -56,7 +56,7 @@ add_library (SpmvLib ${SPMV_SOURCE})
 
 function(add_app name)
     add_executable(${name}_harness app/${name}.cpp)
-    target_link_libraries(${name}_harness ExecutorLib SpmvLib pthread 
+    target_link_libraries(${name}_harness ExecutorLib SpmvLib 
     	${OpenCL_LIBRARIES} ${Boost_LIBRARIES})
 endfunction()
 

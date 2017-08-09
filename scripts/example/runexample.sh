@@ -14,5 +14,5 @@ runfile=$projroot/example/runfile2.csv
 hname=$HOSTNAME
 
 # run it all!
-$harness -n $hname -m $matrix -k $kernel -r $runfile -i 10 -t 200 
+$harness -n $hname -m $matrix -k $kernel -d 1 -r $runfile -i 10 -t 200 
 
