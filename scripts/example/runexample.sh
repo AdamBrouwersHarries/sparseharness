@@ -1,14 +1,15 @@
 #!/bin/sh
 
+projroot=$1
 # This script runs an example kernel using the harness 
 # The harness executable
-harness=../../build/spmv_harness
+harness=$projroot/build/spmv_harness
 # A kernel to run with the harness
-kernel=../../example/kernel.json
+kernel=$projroot/example/kernel.json
 # The matrix to process
-matrix=../../example/matrix2.mtx
+matrix=$projroot/example/matrix2.mtx
 # The run parameters - i.e. local and global sizes
-runfile=../../example/runfile2.csv
+runfile=$projroot/example/runfile2.csv
 # our hostname
 hname=$HOSTNAME
 

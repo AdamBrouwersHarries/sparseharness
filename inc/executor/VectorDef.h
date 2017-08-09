@@ -40,8 +40,12 @@ Vector<T>::Vector()
     : _size(0), _hostBufferUpToDate(true), _deviceBuffersUpToDate(true),
       _hostBuffer(), _deviceBuffers() {
   (void)registerVectorDeviceFunctions;
-  LOG_DEBUG_INFO("Created new Vector object (", this, ") with ",
-                 getDebugInfo());
+  // WARNING:
+  // THE COMMENTED DEBUG LINE BELOW CAUSES A SEGFAULT ON OSX:
+  // WHY!!??
+  //
+  // LOG_DEBUG_INFO("Created new Vector object (", this, ") with ",
+  // getDebugInfo());
 }
 
 template <typename T>
