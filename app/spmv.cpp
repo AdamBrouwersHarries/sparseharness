@@ -87,13 +87,13 @@ private:
     auto event = devPtr->enqueue(
         _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
         cl::NDRange(localSize1, localSize2, localSize3));
-    // {
-    //   start_timer(arg_download, executeKernel);
-    //   for (auto &arg : _args) {
-    //     start_timer(download_indivdual_arg, arg_download);
-    //     arg->download();
-    //   }
-    // }
+    {
+      start_timer(arg_download, executeKernel);
+      for (auto &arg : _args) {
+        start_timer(download_indivdual_arg, arg_download);
+        arg->download();
+      }
+    }
 
     return getRuntimeInMilliseconds(event);
   }

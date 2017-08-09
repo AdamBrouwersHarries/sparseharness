@@ -60,6 +60,5 @@ function(add_app name)
     	${OpenCL_LIBRARIES} ${Boost_LIBRARIES})
 endfunction()
 
-# include_directories(app)
-
 add_app(spmv)
+add_app(bfs)
