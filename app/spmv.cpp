@@ -121,22 +121,13 @@ int main(int argc, char *argv[]) {
       op.addOption<std::string>({'k', "kernel", "Input kernel"});
   auto opt_run_file =
       op.addOption<std::string>({'r', "runfile", "Run configuration file"});
+  auto opt_host_name = op.addOption<std::string>(
+      {'h', "hostname", "Host the harness is running on"});
 
   auto opt_timeout = op.addOption<float>(
       {'t', "timeout", "Timeout to avoid multiple executions (default 100ms).",
        100.0f});
 
-  auto opt_double =
-      op.addOption<bool>({0, "double", "Use double precision.", false});
-  auto opt_threaded = op.addOption<bool>(
-      {'t', "threaded",
-       "Use a separate thread for compilation and execution (default true).",
-       true});
-
-  auto opt_force = op.addOption<bool>(
-      {'f', "force", "Override cached cross validation files.", false});
-  auto opt_clean = op.addOption<bool>(
-      {'c', "clean", "Clean temporary files and exit.", false});
   op.parse(argc, argv);
 
   using namespace std;
@@ -144,6 +135,7 @@ int main(int argc, char *argv[]) {
   const std::string matrix_filename = opt_matrix_file->require();
   const std::string kernel_filename = opt_kernel_file->require();
   const std::string runs_filename = opt_run_file->require();
+  const std::string hostname = opt_host_name->require();
 
   std::cerr << "matrix_filename " << matrix_filename << ENDL;
   std::cerr << "kernel_filename " << kernel_filename << ENDL;
