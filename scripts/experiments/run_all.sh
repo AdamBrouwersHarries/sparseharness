@@ -52,7 +52,7 @@ do
 			  -k $kernelfolder/$k \
 			  -p $platform \
 			  -d $device \
-			  -n $hostname \
+			  -n $HOSTNAME \
 			  -r $runfile &>$rdir/result_$kname.txt
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
