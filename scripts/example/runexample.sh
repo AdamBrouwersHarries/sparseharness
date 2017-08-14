@@ -12,7 +12,9 @@ matrix=$projroot/example/matrix2.mtx
 runfile=$projroot/example/runfile2.csv
 # our hostname
 hname=$HOSTNAME
+# a random experiemnt id
+exid=example_experiment
 
 # run it all!
-$harness -n $hname -m $matrix -k $kernel -d 1 -r $runfile -i 10 -t 200 
+$harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 10 -t 200 
 

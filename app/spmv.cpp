@@ -19,22 +19,22 @@
 #include "Executor.h"
 
 // [tools]
-#include "options.h"
 #include "common.h"
 #include "csds_timer.h"
 #include "csv_utils.h"
+#include "options.h"
 
 // [ocl tools]
+#include "harness.h"
 #include "kernel_config.h"
 #include "kernel_utils.h"
-#include "harness.h"
 
 // [application specific]
+#include "run.h"
 #include "sparse_matrix.h"
 #include "vector_generator.h"
-#include "run.h"
 
-class HarnessSpmv : Harness {
+class HarnessSpmv : public Harness {
 public:
   HarnessSpmv(cl::Kernel kernel, std::vector<KernelArg *> args)
       : Harness(kernel, args) {}
@@ -123,6 +123,8 @@ int main(int argc, char *argv[]) {
       op.addOption<std::string>({'r', "runfile", "Run configuration file"});
   auto opt_host_name = op.addOption<std::string>(
       {'n', "hostname", "Host the harness is running on"});
+  auto opt_experiment_id = op.addOption<std::string>(
+      {'e', "experiment", "An experiment ID for data reporting"});
 
   auto opt_timeout = op.addOption<float>(
       {'t', "timeout", "Timeout to avoid multiple executions (default 100ms).",
@@ -136,6 +138,7 @@ int main(int argc, char *argv[]) {
   const std::string kernel_filename = opt_kernel_file->require();
   const std::string runs_filename = opt_run_file->require();
   const std::string hostname = opt_host_name->require();
+  const std::string experiment = opt_experiment_id->require();
 
   std::cerr << "matrix_filename " << matrix_filename << ENDL;
   std::cerr << "kernel_filename " << kernel_filename << ENDL;
@@ -187,6 +190,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Benchmarking run: " << run << ENDL;
     std::vector<double> runtimes =
         harness.benchmark(run, opt_iterations->get(), opt_timeout->get());
+    harness.print_sql_stats(run, kernel.getName(), matrix_filename, hostname,
+                            experiment, runtimes);
     std::cout << "runtimes: [";
     for (auto time : runtimes) {
       std::cout << "," << time;

@@ -19,22 +19,22 @@
 #include "Executor.h"
 
 // [tools]
-#include "options.h"
 #include "common.h"
 #include "csds_timer.h"
 #include "csv_utils.h"
+#include "options.h"
 
 // [ocl tools]
+#include "harness.h"
 #include "kernel_config.h"
 #include "kernel_utils.h"
-#include "harness.h"
 
 // [application specific]
+#include "run.h"
 #include "sparse_matrix.h"
 #include "vector_generator.h"
-#include "run.h"
 
-class HarnessSpmv : Harness {
+class HarnessSpmv : public Harness {
 public:
   HarnessSpmv(cl::Kernel kernel, std::vector<KernelArg *> args)
       : Harness(kernel, args) {}

@@ -66,28 +66,3 @@ do
 done
 
 echo "finished experiments"
-
-# for l in ${l_sizes[@]};
-# do
-# 	echo "Local: $l"
-# 	for m in ${mult[@]}; 
-# 	do
-# 		echo "\t Mult: $m"
-# 		echo "\t $(($l * $m))"
-# 		global=$(($l * $m))
-# 		echo "Global: $global"
-# 		if [ $global -ge 16384 ] && [ $global -le 524288 ];
-# 		then
-# 			for f in $(cat $datasetf/datasets.txt);
-# 			do
-# 				echo "matrix: $f"
-# 				echo "global: $global"
-# 				echo "local: $local"
-# 				echo "Resultfile: result_$f-$global-$l.txt"
-# 				$spmv --experimentId $exID --load-kernels --loadOutput .gold/spmv-$f.gold 
-# 				-g $global -l $l -i 20 -t 25 --all --check $datasetf/$f/$f.mtx &>                 
-# 				 results-$exID/result_$f-$global-$l.txt
-# 			done
-# 		fi
-# 	done
-# done
