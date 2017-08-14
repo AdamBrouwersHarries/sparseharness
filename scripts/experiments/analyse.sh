@@ -21,11 +21,16 @@ echo "  -- (running sed on $profilefile)"
 # I'm not sure why this line isn't useful...
 # sed -i '' -e "s/\[====.*\] //g" $profilefile
 # remove any lines that come with with debug info. (might miss some profiling :( )
-sed -i '.bakup' -e "/.*DINFO.*/d" $profilefile
-sed -i '.bakup' -e "/^PROFILING_DATUM/!d" $profilefile
-sed -i '.bakup' -e "s/PROFILING_DATUM(//g" $profilefile
-sed -i '.bakup' -e "s/)//g" $profilefile
-sed -i '.bakup' -e "s/ //g" $profilefile
+
+if [ "$(uname)" == "Darwin" ]; then
+	sed -i '' -e "/.*DINFO.*/d" $profilefile
+	sed -i '' -e "/^PROFILING_DATUM/!d" $profilefile
+	sed -i '' -e "s/PROFILING_DATUM(//g" $profilefile
+	sed -i '' -e "s/)//g" $profilefile
+	sed -i '' -e "s/ //g" $profilefile
+else
+	sed -i -e "/.*DINFO.*/d" -e "/^PROFILING_DATUM/!d" -e "s/PROFILING_DATUM(//g" -e "s/)//g" -e "s/ //g" $profilefile
+fi
 
 echo "  .. running query over summary"
 
