@@ -1,13 +1,13 @@
 #!/bin/sh
 resultfolder=$1
 
-files=$(find $resultfolder -name "*.txt")
-touch aggregate_result.txt
+find $resultfolder -name "*.txt" > files.txt
+echo "" > aggregate_result.txt
 
-count=$(echo $files | wc -l)
+count=$(cat files.txt | wc -l)
 i=0
-for f in $files; do
+for f in $(cat files.txt); do
 	echo "reading data from $f - $i/$count"
-	i=$(($i++))
+	i=$(($i + 1))
 	cat $f >> aggregate_result.txt
 done
