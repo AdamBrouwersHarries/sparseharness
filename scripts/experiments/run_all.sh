@@ -65,6 +65,7 @@ do
 	done
 done
 
+echo "finished experiments"
 
 # for l in ${l_sizes[@]};
 # do
