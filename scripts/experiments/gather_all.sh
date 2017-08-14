@@ -1,6 +1,7 @@
 #!/bin/sh
+resultfolder=$1
 
-files=$(find -name "*.txt")
+files=$(find $resultfolder -name "*.txt")
 touch aggregate_result.txt
 
 for f in $files; do
