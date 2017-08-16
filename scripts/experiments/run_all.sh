@@ -34,6 +34,7 @@ matrixcount=$(ls $datasetf | wc -l)
 taskcount=$((kernelcount*matrixcount)) 
 echo "taskcount: $taskcount"
 
+i=0
 for m in $(cat $datasetf/datasets.txt);
 do
 	rdir="results/results-$exID/$m/"
@@ -41,7 +42,7 @@ do
 
 	for k in $(ls $kernelfolder);
 	do
-		echo "Processing matrix: $m" 
+		echo "Processing matrix: $m - $i/$taskcount" 
 		kname=$(basename $k .json)
 		echo "Using kernel: $kname"
 
@@ -62,6 +63,7 @@ do
 		scripttime=$((runend-start))
 
 		echo "Run took $runtime seconds, total time of $scripttime seconds"
+		i=$(($i + 1))
 	done
 done
 

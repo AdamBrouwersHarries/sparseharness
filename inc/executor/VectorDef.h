@@ -271,20 +271,28 @@ typename Vector<T>::const_reference Vector<T>::back() const {
 template <typename T>
 template <class InputIterator>
 void Vector<T>::assign(InputIterator first, InputIterator last) {
+  _hostBufferUpToDate = true;
+  _deviceBuffersUpToDate = false;
   _hostBuffer.assign(first, last);
 }
 
 template <typename T>
 void Vector<T>::assign(typename Vector<T>::size_type n, const T &u) {
+  _hostBufferUpToDate = true;
+  _deviceBuffersUpToDate = false;
   _hostBuffer.assign(n, u);
 }
 
 template <typename T> void Vector<T>::push_back(const T &x) {
+  _hostBufferUpToDate = true;
+  _deviceBuffersUpToDate = false;
   _hostBuffer.push_back(x);
   ++_size;
 }
 
 template <typename T> void Vector<T>::pop_back() {
+  _hostBufferUpToDate = true;
+  _deviceBuffersUpToDate = false;
   _hostBuffer.pop_back();
   --_size;
 }

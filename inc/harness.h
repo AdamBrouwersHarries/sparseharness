@@ -51,7 +51,8 @@ protected:
   void copy_into_arg(std::vector<char> &data, executor::KernelArg *arg) {
     // get the arg as a global arg
     executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
-    std::copy(data.begin(), data.end(), global_arg->data().begin());
+    // global_arg->data().assign(data.begin(), data.end());
+    // std::copy(data.begin(), data.end(), global_arg->data().begin());
   }
   virtual double executeKernel(Run run) = 0;
   cl::Kernel _kernel;
