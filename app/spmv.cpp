@@ -34,16 +34,15 @@
 #include "sparse_matrix.h"
 #include "vector_generator.h"
 
-class HarnessSpmv : public Harness {
+class HarnessSpmv : public Harness<double> {
 public:
-  HarnessSpmv(cl::Kernel kernel, std::vector<KernelArg *> args)
-      : Harness(kernel, args) {}
+  HarnessSpmv(cl::Kernel kernel, ArgConfig args) : Harness(kernel, args) {}
   std::vector<double> benchmark(Run run, int iterations, double timeout) {
     start_timer(benchmark, HarnessSpmv);
 
     // kernel setup
     int i = 0;
-    for (auto &arg : _args) {
+    for (auto &arg : _args.args) {
       arg->upload();
       arg->setAsKernelArg(_kernel, i);
       ++i;
@@ -56,7 +55,7 @@ public:
       start_timer(benchmark_iteration, HarnessSpmv);
       // std::cout << "Iteration: " << i << '\n';
 
-      for (auto &arg : _args) {
+      for (auto &arg : _args.args) {
         arg->clear();
       }
 
@@ -89,7 +88,7 @@ private:
         cl::NDRange(localSize1, localSize2, localSize3));
     {
       start_timer(arg_download, executeKernel);
-      for (auto &arg : _args) {
+      for (auto &arg : _args.args) {
         start_timer(download_indivdual_arg, arg_download);
         arg->download();
       }

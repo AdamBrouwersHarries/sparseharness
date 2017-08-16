@@ -34,16 +34,15 @@
 #include "sparse_matrix.h"
 #include "vector_generator.h"
 
-class HarnessSpmv : public Harness {
+class HarnessSpmv : public Harness<double> {
 public:
-  HarnessSpmv(cl::Kernel kernel, std::vector<KernelArg *> args)
-      : Harness(kernel, args) {}
+  HarnessSpmv(cl::Kernel kernel, ArgConfig args) : Harness(kernel, args) {}
   std::vector<double> benchmark(Run run, int iterations, double timeout) {
     start_timer(benchmark, HarnessSpmv);
 
     // kernel setup
     int i = 0;
-    for (auto &arg : _args) {
+    for (auto &arg : _args.args) {
       arg->upload();
       arg->setAsKernelArg(_kernel, i);
       ++i;
@@ -52,15 +51,31 @@ public:
     // iterations
     std::vector<double> runtimes(iterations);
 
+    // we need a cache for the input vector
+    // this seems _super_ hacky. I don't like casting around like this, even if
+    // it is legal. I'm worried.
+    std::vector<char> input_cache;
+    copy_from_arg(_args.args[_args.input], input_cache);
+
+    // run the benchmark for that many iterations
     for (int i = 0; i < iterations; i++) {
       start_timer(benchmark_iteration, HarnessSpmv);
       // std::cout << "Iteration: " << i << '\n';
 
-      for (auto &arg : _args) {
+      for (auto &arg : _args.args) {
         arg->clear();
+        arg->upload();
       }
 
-      double runtime = executeKernel(run);
+      // Run the algorithm
+      double runtime;
+      { // copy the cached input into the input arg:
+        // copy_into_arg(input_cache, _args.args[_args.input]);
+
+        // run the kernel
+
+        runtime = executeKernel(run);
+      }
 
       runtimes[i] = runtime;
 
@@ -87,9 +102,12 @@ private:
     auto event = devPtr->enqueue(
         _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
         cl::NDRange(localSize1, localSize2, localSize3));
+
+    // Download the args later - we don't care right now.
+    // getRuntimeInMilliseconds will wait for the event anyway :)
     // {
     //   start_timer(arg_download, executeKernel);
-    //   for (auto &arg : _args) {
+    //   for (auto &arg : _args.args) {
     //     start_timer(download_indivdual_arg, arg_download);
     //     arg->download();
     //   }

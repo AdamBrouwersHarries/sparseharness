@@ -32,10 +32,32 @@ R<typename Sub::value_type> flatten(Top const &all) {
   return accum;
 }
 
+typedef struct ArgConfig {
+  int input;
+  int output;
+  std::vector<KernelArg *> args;
+} ArgConfig;
+
+enum ArgType {
+  MatrixInput = 0,
+  VectorX,
+  VectorY,
+  VectorOutput,
+  ConstArg,
+  TempGlobal,
+  TempLocal
+};
+
+// I should use this soon...
+typedef struct SemanticArg {
+  ArgType type;
+  KernelArg *_arg;
+} SemanticArg;
+
 // given a loaded sparse matrix, encode it in a form that we can use in the
 // executor - i.e. as a set of kernel arguments
 template <typename T>
-std::vector<KernelArg *>
+ArgConfig
 executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
                      // std::vector<T> xvector, std::vector<T> yvector) {
                      XVectorGenerator<T> &xgen, YVectorGenerator<T> &ygen,
@@ -99,6 +121,8 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
       (void *)flat_values.data(), (size_t)flat_values.size() * sizeof(T)));
 
   // create args for the vector inputs
+  // TODO: do we actually need to make the x vector bigger when we pad
+  // vertically?
   kernel_args.push_back(GlobalArg::create((void *)xvector.data(),
                                           (size_t)xvector.size() * sizeof(T)));
   kernel_args.push_back(GlobalArg::create((void *)yvector.data(),
@@ -113,6 +137,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // Evaluator::initialise_variables(v_MWidth_1, v_MHeight_2, v_VLength_3);
 
   // create temporary global buffers
+  int arg_offset = 6;
   for (auto arg : kernel.getTempGlobals()) {
     std::cout << "Global temp arg: " << arg.variable << ", " << arg.addressSpace
               << "," << arg.size << ENDL;
@@ -120,6 +145,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
     std::cout << "realsize: " << memsize << ENDL;
     kernel_args.push_back(GlobalArg::create(memsize));
+    arg_offset++;
   }
 
   // create output buffer
@@ -147,5 +173,10 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   kernel_args.push_back(ValueArg::create(&v_MWidth_1, sizeof(int)));
   kernel_args.push_back(ValueArg::create(&v_VLength_3, sizeof(int)));
 
-  return kernel_args;
+  ArgConfig ac;
+  ac.input = 2;
+  ac.output = arg_offset;
+  ac.args = kernel_args;
+
+  return ac;
 }

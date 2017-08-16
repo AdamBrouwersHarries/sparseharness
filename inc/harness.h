@@ -4,19 +4,18 @@
 #include "executor/KernelArg.h"
 #include "executor/LocalArg.h"
 #include "executor/ValueArg.h"
+#include "kernel_utils.h"
 #include "run.h"
 
-class Harness {
+template <typename T> class Harness {
 public:
-  Harness(cl::Kernel kernel, std::vector<executor::KernelArg *> args)
-      : _kernel(kernel), _args(args) {}
+  Harness(cl::Kernel kernel, ArgConfig args) : _kernel(kernel), _args(args) {}
 
-  virtual std::vector<double> benchmark(Run run, int iterations,
-                                        double timeout) = 0;
+  virtual std::vector<T> benchmark(Run run, int iterations, double timeout) = 0;
   virtual void
   print_sql_stats(const Run &run, const std::string &kname,
                   const std::string &mname, const std::string &hname,
-                  const std::string &experiment_id, std::vector<double> &times)
+                  const std::string &experiment_id, std::vector<T> &times)
 
   {
     auto &devPtr = executor::globalDeviceList.front();
@@ -39,7 +38,22 @@ public:
   }
 
 protected:
+  // copy data from a global arg's host memory into another container
+  void copy_from_arg(executor::KernelArg *arg,
+                     std::vector<char> &newcontainer) {
+    // get the arg as a global arg
+    executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
+    std::copy(global_arg->data().begin(), global_arg->data().end(),
+              std::back_insert_iterator<std::vector<char>>(newcontainer));
+  }
+
+  // copy data from a container into a global arg's host memory
+  void copy_into_arg(std::vector<char> &data, executor::KernelArg *arg) {
+    // get the arg as a global arg
+    executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
+    std::copy(data.begin(), data.end(), global_arg->data().begin());
+  }
   virtual double executeKernel(Run run) = 0;
   cl::Kernel _kernel;
-  std::vector<executor::KernelArg *> _args;
+  ArgConfig _args;
 };
