@@ -37,7 +37,8 @@
 class HarnessSpmv : public Harness<double> {
 public:
   HarnessSpmv(cl::Kernel kernel, ArgConfig args) : Harness(kernel, args) {}
-  std::vector<double> benchmark(Run run, int iterations, double timeout) {
+  std::vector<double> benchmark(Run run, int iterations, double timeout,
+                                double delta) {
     start_timer(benchmark, HarnessSpmv);
 
     // kernel setup
@@ -188,7 +189,7 @@ int main(int argc, char *argv[]) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
     std::vector<double> runtimes =
-        harness.benchmark(run, opt_iterations->get(), opt_timeout->get());
+        harness.benchmark(run, opt_iterations->get(), opt_timeout->get(), 0.0f);
     harness.print_sql_stats(run, kernel.getName(), matrix_filename, hostname,
                             experiment, runtimes);
     std::cout << "runtimes: [";

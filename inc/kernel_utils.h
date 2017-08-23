@@ -62,7 +62,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
                      // std::vector<T> xvector, std::vector<T> yvector) {
                      XVectorGenerator<T> &xgen, YVectorGenerator<T> &ygen,
                      int v_MWidth_1, int v_MHeight_2, int v_VLength_3,
-                     T alpha = static_cast<T>(1), T beta = static_cast<T>(0)) {
+                     T alpha = static_cast<T>(1), T beta = static_cast<T>(1)) {
   start_timer(executorEncodeMatrix, kernel_utils);
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
@@ -115,6 +115,10 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   std::vector<KernelArg *> kernel_args;
 
   // create args for the matrix inputs
+  std::cout << "Input matrix mem arg: "
+            << (size_t)flat_indices.size() * sizeof(int) << "\n";
+  std::cout << "Input matrix mem arg: "
+            << (size_t)flat_indices.size() * sizeof(T) << "\n";
   kernel_args.push_back(GlobalArg::create(
       (void *)flat_indices.data(), (size_t)flat_indices.size() * sizeof(int)));
   kernel_args.push_back(GlobalArg::create(
@@ -123,8 +127,12 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // create args for the vector inputs
   // TODO: do we actually need to make the x vector bigger when we pad
   // vertically?
-  kernel_args.push_back(GlobalArg::create((void *)xvector.data(),
-                                          (size_t)xvector.size() * sizeof(T)));
+  std::cout << "Input vector arg: " << (size_t)xvector.size() * sizeof(T)
+            << "\n";
+  std::cout << "Input vector arg: " << (size_t)yvector.size() * sizeof(T)
+            << "\n";
+  kernel_args.push_back(GlobalArg::create(
+      (void *)xvector.data(), (size_t)xvector.size() * sizeof(T), true));
   kernel_args.push_back(GlobalArg::create((void *)yvector.data(),
                                           (size_t)yvector.size() * sizeof(T)));
 
@@ -138,6 +146,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
 
   // create temporary global buffers
   int arg_offset = 6;
+
   for (auto arg : kernel.getTempGlobals()) {
     std::cout << "Global temp arg: " << arg.variable << ", " << arg.addressSpace
               << "," << arg.size << ENDL;

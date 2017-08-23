@@ -8,7 +8,7 @@
 #define TREE_PERF
 
 #define start_timer(name, context)                                             \
-  auto _csds_timer = CSDSTimer(#name, #context);
+  auto _csds_timer = CSDSTimer(#name, #context, std::cerr);
 
 using clock_type = std::chrono::system_clock;
 

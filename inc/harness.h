@@ -11,7 +11,8 @@ template <typename T> class Harness {
 public:
   Harness(cl::Kernel kernel, ArgConfig args) : _kernel(kernel), _args(args) {}
 
-  virtual std::vector<T> benchmark(Run run, int iterations, double timeout) = 0;
+  virtual std::vector<T> benchmark(Run run, int iterations, double timeout,
+                                   double delta) = 0;
   virtual void
   print_sql_stats(const Run &run, const std::string &kname,
                   const std::string &mname, const std::string &hname,
@@ -49,12 +50,38 @@ protected:
 
   // copy data from a container into a global arg's host memory
   void copy_into_arg(std::vector<char> &data, executor::KernelArg *arg) {
-    // get the arg as a global arg
+    // get the arg as a global arg - let's hope this is valid!
     executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
-    // global_arg->data().assign(data.begin(), data.end());
-    // std::copy(data.begin(), data.end(), global_arg->data().begin());
+    global_arg->assign(data);
   }
+
+  template <typename U> void print_arg(executor::KernelArg *arg) {
+    executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
+    global_arg->download();
+    auto vectdata = global_arg->data().hostBuffer();
+    auto data = reinterpret_cast<U *>(vectdata.data());
+    auto len = vectdata.size() / sizeof(U);
+    std::cout << "[";
+    for (int i = 0; i < len; i++) {
+      std::cout << data[i] << ",";
+    }
+    std::cout << "]\n";
+  }
+
   virtual double executeKernel(Run run) = 0;
   cl::Kernel _kernel;
   ArgConfig _args;
+};
+
+// template <typename T> class IterativeHarness : public Harness<std::vector<T>>
+// {
+template <typename T> class IterativeHarness : public Harness<T> {
+public:
+  IterativeHarness(cl::Kernel kernel, ArgConfig args)
+      : Harness<T>(kernel, args) {}
+
+protected:
+  virtual bool should_terminate_iteration(executor::KernelArg *input,
+                                          executor::KernelArg *output,
+                                          double delta) = 0;
 };

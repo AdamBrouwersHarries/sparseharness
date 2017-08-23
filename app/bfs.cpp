@@ -1,6 +1,7 @@
 // [standard includes]
 #include <algorithm>
 #include <atomic>
+#include <bitset>
 #include <cmath>
 #include <condition_variable>
 #include <cstdio>
@@ -34,11 +35,13 @@
 #include "sparse_matrix.h"
 #include "vector_generator.h"
 
-class HarnessSpmv : public Harness<double> {
+class HarnessBFS : public IterativeHarness<double> {
 public:
-  HarnessSpmv(cl::Kernel kernel, ArgConfig args) : Harness(kernel, args) {}
-  std::vector<double> benchmark(Run run, int iterations, double timeout) {
-    start_timer(benchmark, HarnessSpmv);
+  HarnessBFS(cl::Kernel kernel, ArgConfig args)
+      : IterativeHarness(kernel, args) {}
+  std::vector<double> benchmark(Run run, int iterations, double timeout,
+                                double delta) {
+    start_timer(benchmark, HarnessBFS);
 
     // kernel setup
     int i = 0;
@@ -59,22 +62,55 @@ public:
 
     // run the benchmark for that many iterations
     for (int i = 0; i < iterations; i++) {
-      start_timer(benchmark_iteration, HarnessSpmv);
+      start_timer(benchmark_iteration, HarnessBFS);
       // std::cout << "Iteration: " << i << '\n';
 
-      for (auto &arg : _args.args) {
-        arg->clear();
-        arg->upload();
-      }
-
       // Run the algorithm
-      double runtime;
+      double runtime = 0.0f;
       { // copy the cached input into the input arg:
-        // copy_into_arg(input_cache, _args.args[_args.input]);
+        copy_into_arg(input_cache, _args.args[_args.input]);
+        // _args.args[_args.input]->clear();
+        // _args.args[_args.input]->upload();
 
+        bool should_terminate = false;
         // run the kernel
+        do {
+          std::cout << " ------------------- VALUES BEFORE RUN\n";
+          print_arg<float>(_args.args[_args.input]);
+          print_arg<float>(_args.args[_args.output]);
+          std::cout << "--------------- EXECUTING KERNEL\n";
+          runtime += executeKernel(run);
+          runtime += executeKernel(run);
+          std::cout << " ------------------- VALUES after RUN\n";
+          print_arg<float>(_args.args[_args.input]);
+          print_arg<float>(_args.args[_args.output]);
+          std::cout << "--------------- PERFORMING CHECK\n";
+          should_terminate = should_terminate_iteration(
+              _args.args[_args.input], _args.args[_args.output], delta);
+          // swap the pointers in the arg list
+          std::cout << "---------------- SWAPPING \n";
 
-        runtime = executeKernel(run);
+          // auto tmp = _args.args[_args.input];
+          // _args.args[_args.input] = _args.args[_args.output];
+          // _args.args[_args.output] = tmp;
+          std::cout << "preswap: in: " << _args.input
+                    << " out: " << _args.output << "\n";
+          auto tmp = _args.input;
+          _args.input = _args.output;
+          _args.output = tmp;
+          std::cout << "postswap: in: " << _args.input
+                    << " out: " << _args.output << "\n";
+
+          // reset the kernel args
+          _args.args[_args.output]->clear();
+          _args.args[_args.input]->upload();
+          _args.args[_args.output]->upload();
+
+          _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
+          _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
+
+        } while (!should_terminate);
+        // get the underlying vectors from the args that we care about
       }
 
       runtimes[i] = runtime;
@@ -89,7 +125,7 @@ public:
 
 private:
   double executeKernel(Run run) {
-    start_timer(executeKernel, HarnessSpmv);
+    start_timer(executeKernel, HarnessBFS);
     auto &devPtr = executor::globalDeviceList.front();
     // get our local and global sizes
     cl_uint localSize1 = run.local1;
@@ -103,23 +139,43 @@ private:
         _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
         cl::NDRange(localSize1, localSize2, localSize3));
 
-    // Download the args later - we don't care right now.
-    // getRuntimeInMilliseconds will wait for the event anyway :)
-    // {
-    //   start_timer(arg_download, executeKernel);
-    //   for (auto &arg : _args.args) {
-    //     start_timer(download_indivdual_arg, arg_download);
-    //     arg->download();
-    //   }
-    // }
-
     return getRuntimeInMilliseconds(event);
+  }
+
+  virtual bool should_terminate_iteration(executor::KernelArg *input,
+                                          executor::KernelArg *output,
+                                          double delta) {
+    start_timer(should_terminate_iteration, HarnessBFS);
+    {
+      start_timer(arg_download, should_terminate_iteration);
+      input->download();
+      output->download();
+    }
+    // get the host vectors from the arguments
+    std::vector<char> &input_vector =
+        static_cast<executor::GlobalArg *>(input)->data().hostBuffer();
+    std::vector<char> &output_vector =
+        static_cast<executor::GlobalArg *>(output)->data().hostBuffer();
+    // reinterpret it as double pointers, and get the lengths
+    auto input_ptr = reinterpret_cast<float *>(input_vector.data());
+    auto output_ptr = reinterpret_cast<float *>(output_vector.data());
+    auto input_length = input_vector.size() / sizeof(float);
+    auto output_length = output_vector.size() / sizeof(float);
+    // perform a comparison across the two of them, based on pointers
+    bool equal = true;
+    for (unsigned int i = 0;
+         equal == true && i < input_length && i < output_length; i++) {
+      equal = fabs(input_ptr[i] - output_ptr[i]) < delta;
+    }
+
+    return equal;
   }
 };
 
 int main(int argc, char *argv[]) {
   start_timer(main, global);
-  OptParser op("Harness for breadth first search benchmarks");
+  OptParser op(
+      "Harness for SPMV sparse matrix dense vector multiplication benchmarks");
 
   auto opt_platform = op.addOption<unsigned>(
       {'p', "platform", "OpenCL platform index (default 0).", 0});
@@ -140,6 +196,10 @@ int main(int argc, char *argv[]) {
       op.addOption<std::string>({'r', "runfile", "Run configuration file"});
   auto opt_host_name = op.addOption<std::string>(
       {'n', "hostname", "Host the harness is running on"});
+  auto opt_experiment_id = op.addOption<std::string>(
+      {'e', "experiment", "An experiment ID for data reporting"});
+  auto opt_float_delta = op.addOption<double>(
+      {'t', "delta", "Delta for floating point comparisons", 0.0001});
 
   auto opt_timeout = op.addOption<float>(
       {'t', "timeout", "Timeout to avoid multiple executions (default 100ms).",
@@ -153,6 +213,7 @@ int main(int argc, char *argv[]) {
   const std::string kernel_filename = opt_kernel_file->require();
   const std::string runs_filename = opt_run_file->require();
   const std::string hostname = opt_host_name->require();
+  const std::string experiment = opt_experiment_id->require();
 
   std::cerr << "matrix_filename " << matrix_filename << ENDL;
   std::cerr << "kernel_filename " << kernel_filename << ENDL;
@@ -191,19 +252,19 @@ int main(int argc, char *argv[]) {
 
   // generate a vector
 
-  ConstXVectorGenerator<float> tengen(10);
-  ConstYVectorGenerator<float> onegen(1);
+  ConstXVectorGenerator<float> tengen(1000.0f);
+  ConstYVectorGenerator<float> zerogen(0);
 
   auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, onegen,
+  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, zerogen,
                                    v_Width_cl, v_Height_cl, v_Length_cl);
-  HarnessSpmv harness(clkernel, args);
+  HarnessBFS harness(clkernel, args);
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<double> runtimes =
-        harness.benchmark(run, opt_iterations->get(), opt_timeout->get());
+    std::vector<double> runtimes = harness.benchmark(
+        run, opt_iterations->get(), opt_timeout->get(), opt_float_delta->get());
     std::cout << "runtimes: [";
     for (auto time : runtimes) {
       std::cout << "," << time;

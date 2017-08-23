@@ -19,7 +19,16 @@ KernelArg *GlobalArg::create(size_t size, bool isOutput) {
   return new GlobalArg{std::move(vector), isOutput};
 }
 
-const executor::Vector<char> &GlobalArg::data() const { return vector; }
+void GlobalArg::assign(void *data, size_t size) {
+  auto dataCharPtr = static_cast<char *>(data);
+  vector.assign(dataCharPtr, dataCharPtr + size);
+}
+
+void GlobalArg::assign(std::vector<char> &data) {
+  vector.assign(data.begin(), data.end());
+}
+
+executor::Vector<char> &GlobalArg::data() { return vector; }
 
 void GlobalArg::clear() {
   if (isOutput) {

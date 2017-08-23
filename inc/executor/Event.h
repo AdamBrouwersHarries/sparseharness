@@ -12,7 +12,7 @@
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
-#undef  __CL_ENABLE_EXCEPTIONS
+#undef __CL_ENABLE_EXCEPTIONS
 
 namespace executor {
 
@@ -20,23 +20,24 @@ class Event {
 public:
   Event();
 
-  Event(const std::vector<cl::Event>& events);
+  Event(const std::vector<cl::Event> &events);
 
   Event(std::initializer_list<cl::Event> events);
 
-  //Event(const Event& rhs) = default;
+  // Event(const Event& rhs) = default;
 
-  Event(Event&& rhs);
+  Event(Event &&rhs);
 
-  //Event& operator=(const Event& rhs) = default;
+  // Event& operator=(const Event& rhs) = default;
 
-  Event& operator=(Event&& rhs);
+  Event &operator=(Event &&rhs);
 
   //~Event() = default;
 
-  void insert(const cl::Event& event);
+  void insert(const cl::Event &event);
 
   void wait();
+
 private:
   std::vector<cl::Event> _events;
 };
@@ -44,4 +45,3 @@ private:
 } // namespace executor
 
 #endif // EVENT_H_
-

@@ -21,12 +21,16 @@ public:
                            bool isOutput = false);
   static KernelArg *create(size_t sizeInBytes, bool isOutput = false);
 
+  void assign(void *data, size_t sizeInBytes);
+
+  void assign(std::vector<char> &data);
+
   void setAsKernelArg(cl::Kernel kernel, int i);
   void upload();
   void download();
   Event downloadAsync();
 
-  const executor::Vector<char> &data() const;
+  executor::Vector<char> &data();
 
   void clear();
 
