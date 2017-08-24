@@ -39,9 +39,11 @@ void GlobalArg::clear() {
 }
 
 void GlobalArg::setAsKernelArg(cl::Kernel kernel, int i) {
-  LOG_DEBUG_INFO("Setting GlobalArg with size ", vector.size(),
-                 ", at position ", i);
   auto &devPtr = executor::globalDeviceList.front();
+  LOG_DEBUG_INFO("Setting GlobalArg with size ", vector.size(),
+                 ", at position ", i, " and buffer ",
+                 vector.deviceBuffer(*devPtr).clBuffer()());
+
   kernel.setArg(i, vector.deviceBuffer(*devPtr).clBuffer());
 }
 

@@ -76,22 +76,26 @@ public:
         // run the kernel
         do {
           std::cout << " ------------------- VALUES BEFORE RUN\n";
-          // print_arg<float>(_args.args[_args.input]);
-          // print_arg<float>(_args.args[_args.output]);
+          print_arg<float>(_args.args[_args.input]);
+          print_arg<float>(_args.args[_args.output]);
           std::cout << "--------------- EXECUTING KERNEL\n";
           runtime += executeKernel(run);
+          static_cast<executor::GlobalArg *>(_args.args[_args.output])
+              ->data()
+              .dataOnDeviceModified();
           std::cout << " ------------------- VALUES after RUN\n";
-          // print_arg<float>(_args.args[_args.input]);
-          // print_arg<float>(_args.args[_args.output]);
+          print_arg<float>(_args.args[_args.input]);
+          print_arg<float>(_args.args[_args.output]);
           std::cout << "--------------- PERFORMING CHECK\n";
           should_terminate = should_terminate_iteration(
               _args.args[_args.input], _args.args[_args.output], delta);
           // swap the pointers in the arg list
           std::cout << "---------------- SWAPPING \n";
 
-          executor::KernelArg *tmp = _args.args[_args.input];
-          _args.args[_args.input] = _args.args[_args.output];
-          _args.args[_args.output] = tmp;
+          // executor::KernelArg *tmp = _args.args[_args.input];
+          // _args.args[_args.input] = _args.args[_args.output];
+          // _args.args[_args.output] = tmp;
+          std::swap(_args.args[_args.input], _args.args[_args.output]);
           // std::cout << "preswap: in: " << _args.input
           //           << " out: " << _args.output << "\n";
           // auto tmp = _args.input;
@@ -111,6 +115,7 @@ public:
 
           _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
           _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
+
         } while (!should_terminate);
         // get the underlying vectors from the args that we care about
       }

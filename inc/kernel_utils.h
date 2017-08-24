@@ -38,21 +38,21 @@ typedef struct ArgConfig {
   std::vector<KernelArg *> args;
 } ArgConfig;
 
-enum ArgType {
-  MatrixInput = 0,
-  VectorX,
-  VectorY,
-  VectorOutput,
-  ConstArg,
-  TempGlobal,
-  TempLocal
-};
+// enum ArgType {
+//   MatrixInput = 0,
+//   VectorX,
+//   VectorY,
+//   VectorOutput,
+//   ConstArg,
+//   TempGlobal,
+//   TempLocal
+// };
 
-// I should use this soon...
-typedef struct SemanticArg {
-  ArgType type;
-  KernelArg *_arg;
-} SemanticArg;
+// // I should use this soon...
+// typedef struct SemanticArg {
+//   ArgType type;
+//   KernelArg *_arg;
+// } SemanticArg;
 
 // given a loaded sparse matrix, encode it in a form that we can use in the
 // executor - i.e. as a set of kernel arguments
