@@ -35,113 +35,124 @@
 #include "sparse_matrix.h"
 #include "vector_generator.h"
 
+// [OpenCL]
+#ifdef __APPLE__
+#include "OpenCL/opencl.h"
+#else
+#include "CL/cl.h"
+#endif
+
 class HarnessBFS : public IterativeHarness<double> {
 public:
-  HarnessBFS(cl::Kernel kernel, ArgConfig args)
-      : IterativeHarness(kernel, args) {}
+  HarnessBFS(std::string &kernel_source, unsigned int platform,
+             unsigned int device, ArgConfig args)
+      : IterativeHarness(kernel_source, platform, device, args) {}
   std::vector<double> benchmark(Run run, int iterations, double timeout,
                                 double delta) {
-    start_timer(benchmark, HarnessBFS);
+    return std::vector<double>{0.0, 0.1, 0.2};
+    // start_timer(benchmark, HarnessBFS);
 
-    // kernel setup
-    int i = 0;
-    for (auto &arg : _args.args) {
-      arg->upload();
-      arg->setAsKernelArg(_kernel, i);
-      ++i;
-    }
+    // // kernel setup
+    // int i = 0;
+    // for (auto &arg : _args.args) {
+    //   arg->upload();
+    //   arg->setAsKernelArg(_kernel, i);
+    //   ++i;
+    // }
 
-    // iterations
-    std::vector<double> runtimes(iterations);
+    // // iterations
+    // std::vector<double> runtimes(iterations);
 
-    // we need a cache for the input vector
-    // this seems _super_ hacky. I don't like casting around like this, even if
-    // it is legal. I'm worried.
-    std::vector<char> input_cache;
-    copy_from_arg(_args.args[_args.input], input_cache);
+    // // we need a cache for the input vector
+    // // this seems _super_ hacky. I don't like casting around like this, even
+    // if
+    // // it is legal. I'm worried.
+    // std::vector<char> input_cache;
+    // // copy_from_arg(_args.args[_args.input], input_cache);
 
-    // run the benchmark for that many iterations
-    for (int i = 0; i < iterations; i++) {
-      start_timer(benchmark_iteration, HarnessBFS);
-      // std::cout << "Iteration: " << i << '\n';
+    // // run the benchmark for that many iterations
+    // for (int i = 0; i < iterations; i++) {
+    //   start_timer(benchmark_iteration, HarnessBFS);
+    //   // std::cout << "Iteration: " << i << '\n';
 
-      // Run the algorithm
-      double runtime = 0.0f;
-      { // copy the cached input into the input arg:
-        copy_into_arg(input_cache, _args.args[_args.input]);
-        // _args.args[_args.input]->clear();
-        // _args.args[_args.input]->upload();
+    //   // Run the algorithm
+    //   double runtime = 0.0f;
+    //   { // copy the cached input into the input arg:
+    //     // copy_into_arg(input_cache, _args.args[_args.input]);
+    //     // _args.args[_args.input]->clear();
+    //     // _args.args[_args.input]->upload();
 
-        bool should_terminate = false;
-        // run the kernel
-        do {
-          std::cout << " ------------------- VALUES BEFORE RUN\n";
-          // print_arg<float>(_args.args[_args.input]);
-          // print_arg<float>(_args.args[_args.output]);
-          std::cout << "--------------- EXECUTING KERNEL\n";
-          runtime += executeKernel(run);
-          std::cout << " ------------------- VALUES after RUN\n";
-          // print_arg<float>(_args.args[_args.input]);
-          // print_arg<float>(_args.args[_args.output]);
-          std::cout << "--------------- PERFORMING CHECK\n";
-          should_terminate = should_terminate_iteration(
-              _args.args[_args.input], _args.args[_args.output], delta);
-          // swap the pointers in the arg list
-          std::cout << "---------------- SWAPPING \n";
+    //     bool should_terminate = false;
+    //     // run the kernel
+    //     do {
+    //       std::cout << " ------------------- VALUES BEFORE RUN\n";
+    //       // print_arg<float>(_args.args[_args.input]);
+    //       // print_arg<float>(_args.args[_args.output]);
+    //       std::cout << "--------------- EXECUTING KERNEL\n";
+    //       runtime += executeKernel(run);
+    //       std::cout << " ------------------- VALUES after RUN\n";
+    //       // print_arg<float>(_args.args[_args.input]);
+    //       // print_arg<float>(_args.args[_args.output]);
+    //       std::cout << "--------------- PERFORMING CHECK\n";
+    //       should_terminate = should_terminate_iteration(
+    //           _args.args[_args.input], _args.args[_args.output], delta);
+    //       // swap the pointers in the arg list
+    //       std::cout << "---------------- SWAPPING \n";
 
-          executor::KernelArg *tmp = _args.args[_args.input];
-          _args.args[_args.input] = _args.args[_args.output];
-          _args.args[_args.output] = tmp;
-          // std::cout << "preswap: in: " << _args.input
-          //           << " out: " << _args.output << "\n";
-          // auto tmp = _args.input;
-          // _args.input = _args.output;
-          // _args.output = tmp;
-          // std::cout << "postswap: in: " << _args.input
-          //           << " out: " << _args.output << "\n";
+    //       executor::KernelArg *tmp = _args.args[_args.input];
+    //       _args.args[_args.input] = _args.args[_args.output];
+    //       _args.args[_args.output] = tmp;
+    //       // std::cout << "preswap: in: " << _args.input
+    //       //           << " out: " << _args.output << "\n";
+    //       // auto tmp = _args.input;
+    //       // _args.input = _args.output;
+    //       // _args.output = tmp;
+    //       // std::cout << "postswap: in: " << _args.input
+    //       //           << " out: " << _args.output << "\n";
 
-          // copy the output buffer into the input
-          // copy_args(_args.args[_args.output], _args.args[_args.input]);
+    //       // copy the output buffer into the input
+    //       // copy_args(_args.args[_args.output], _args.args[_args.input]);
 
-          // reset the kernel args
-          // _args.args[_args.output]->clear();
+    //       // reset the kernel args
+    //       // _args.args[_args.output]->clear();
 
-          // _args.args[_args.input]->upload();
-          // _args.args[_args.output]->upload();
+    //       // _args.args[_args.input]->upload();
+    //       // _args.args[_args.output]->upload();
 
-          _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-          _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
-        } while (!should_terminate);
-        // get the underlying vectors from the args that we care about
-      }
+    //       _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
+    //       _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
+    //     } while (!should_terminate);
+    //     // get the underlying vectors from the args that we care about
+    //   }
 
-      runtimes[i] = runtime;
+    //   runtimes[i] = runtime;
 
-      if (timeout != 0.0 && runtime >= timeout) {
-        runtimes.resize(i + 1);
-        return runtimes;
-      }
-    }
-    return runtimes;
+    //   if (timeout != 0.0 && runtime >= timeout) {
+    //     runtimes.resize(i + 1);
+    //     return runtimes;
+    //   }
+    // }
+    // return runtimes;
   }
 
 private:
   double executeKernel(Run run) {
-    start_timer(executeKernel, HarnessBFS);
-    auto &devPtr = executor::globalDeviceList.front();
-    // get our local and global sizes
-    cl_uint localSize1 = run.local1;
-    cl_uint localSize2 = run.local2;
-    cl_uint localSize3 = run.local3;
-    cl_uint globalSize1 = run.global1;
-    cl_uint globalSize2 = run.global2;
-    cl_uint globalSize3 = run.global3;
+    return 0.0;
+    // start_timer(executeKernel, HarnessBFS);
+    // auto &devPtr = executor::globalDeviceList.front();
+    // // get our local and global sizes
+    // cl_uint localSize1 = run.local1;
+    // cl_uint localSize2 = run.local2;
+    // cl_uint localSize3 = run.local3;
+    // cl_uint globalSize1 = run.global1;
+    // cl_uint globalSize2 = run.global2;
+    // cl_uint globalSize3 = run.global3;
 
-    auto event = devPtr->enqueue(
-        _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
-        cl::NDRange(localSize1, localSize2, localSize3));
+    // auto event = devPtr->enqueue(
+    //     _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
+    //     cl::NDRange(localSize1, localSize2, localSize3));
 
-    return getRuntimeInMilliseconds(event);
+    // return getRuntimeInMilliseconds(event);
   }
 
   virtual bool should_terminate_iteration(executor::KernelArg *input,
@@ -257,11 +268,12 @@ int main(int argc, char *argv[]) {
   ConstXVectorGenerator<float> tengen(1000.0f);
   ConstYVectorGenerator<float> zerogen(0);
 
-  auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
+  // auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
   auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, zerogen,
                                    v_Width_cl, v_Height_cl, v_Length_cl);
-  HarnessBFS harness(clkernel, args);
+  HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
+                     args);
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;

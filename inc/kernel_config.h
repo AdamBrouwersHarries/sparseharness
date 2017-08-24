@@ -42,8 +42,8 @@ public:
   ~KernelConfig(){};
 
   // Getters
-  std::string getSource();
-  std::string getName();
+  std::string &getSource();
+  std::string &getName();
   std::vector<ArgDescr> getArgs();
   std::vector<ArgDescr> getTempGlobals();
   std::vector<ArgDescr> getTempLocals();

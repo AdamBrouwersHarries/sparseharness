@@ -87,11 +87,11 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
   }
 }
 
-template <typename T> std::string KernelConfig<T>::getSource() {
+template <typename T> std::string &KernelConfig<T>::getSource() {
   return source;
 }
 
-template <typename T> std::string KernelConfig<T>::getName() { return name; }
+template <typename T> std::string &KernelConfig<T>::getName() { return name; }
 
 template <typename T> std::vector<ArgDescr> KernelConfig<T>::getArgs() {
   return inputArgs;

@@ -5,11 +5,68 @@
 #include "executor/LocalArg.h"
 #include "executor/ValueArg.h"
 #include "kernel_utils.h"
+#include "opencl_utils.h"
+
 #include "run.h"
 
 template <typename T> class Harness {
 public:
-  Harness(cl::Kernel kernel, ArgConfig args) : _kernel(kernel), _args(args) {}
+  Harness(std::string &kernel_source, unsigned int platform,
+          unsigned int device, ArgConfig args)
+      : _kernel_source(kernel_source), _args(args) {
+
+    // initialise OpenCL:
+    // get the number of platforms
+    _platformIdCount = 0;
+    clGetPlatformIDs(0, nullptr, &_platformIdCount);
+
+    if (_platformIdCount == 0) {
+      std::cerr << "No OpenCL devices found! \n";
+    }
+
+    // make a vector of platform ids
+    std::vector<cl_platform_id> platformIds(_platformIdCount);
+    clGetPlatformIDs(_platformIdCount, platformIds.data(), nullptr);
+
+    // get the number of devices from the platform
+    _deviceIdCount = 0;
+    clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, 0, nullptr,
+                   &_deviceIdCount);
+
+    // get a list of devices from the platform
+    _deviceIds.resize(_deviceIdCount);
+    clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, _deviceIdCount,
+                   _deviceIds.data(), nullptr);
+
+    // create a context on that device (with some properties)
+    const cl_context_properties contextProperties[] = {
+        CL_CONTEXT_PLATFORM,
+        reinterpret_cast<cl_context_properties>(platformIds[platform]), 0, 0};
+
+    _context = clCreateContext(contextProperties, _deviceIdCount,
+                               _deviceIds.data(), nullptr, nullptr, &_error);
+    checkCLError(_error);
+
+    // create a kernel from the source
+
+    // recast the std::string as a size_t array and char array
+    size_t lengths[1] = {_kernel_source.size()};
+    const char *sources[1] = {_kernel_source.data()};
+    // create the program
+    cl_program program =
+        clCreateProgramWithSource(_context, 1, sources, lengths, &_error);
+    checkCLError(_error);
+
+    // build the program
+    _error = clBuildProgram(program, _deviceIdCount, _deviceIds.data(), "",
+                            nullptr, nullptr);
+    checkCLError(_error);
+
+    // create a kernel from the program
+    cl_kernel kernel = clCreateKernel(program, "KERNEL", &_error);
+    checkCLError(_error);
+    _kernel = kernel;
+  }
 
   virtual std::vector<T> benchmark(Run run, int iterations, double timeout,
                                    double delta) = 0;
@@ -39,49 +96,17 @@ public:
   }
 
 protected:
-  // copy data from a global arg's host memory into another container
-  void copy_from_arg(executor::KernelArg *arg,
-                     std::vector<char> &newcontainer) {
-    // get the arg as a global arg
-    executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
-    std::copy(global_arg->data().begin(), global_arg->data().end(),
-              std::back_insert_iterator<std::vector<char>>(newcontainer));
-  }
-
-  // copy data from a container into a global arg's host memory
-  void copy_into_arg(std::vector<char> &data, executor::KernelArg *arg) {
-    // get the arg as a global arg - let's hope this is valid!
-    executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
-    global_arg->assign(data);
-  }
-
-  void copy_args(executor::KernelArg *src, executor::KernelArg *dst) {
-    // cast them both as global args
-    executor::GlobalArg *global_src = static_cast<executor::GlobalArg *>(src);
-    executor::GlobalArg *global_dst = static_cast<executor::GlobalArg *>(dst);
-
-    // get the underlying buffers of the src:
-    std::vector<char> &src_buffer = global_src->data().hostBuffer();
-
-    // assign that to the global destination
-    global_dst->assign(src_buffer);
-  }
-
-  template <typename U> void print_arg(executor::KernelArg *arg) {
-    executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
-    global_arg->download();
-    auto vectdata = global_arg->data().hostBuffer();
-    auto data = reinterpret_cast<U *>(vectdata.data());
-    auto len = vectdata.size() / sizeof(U);
-    std::cout << "[";
-    for (int i = 0; i < len; i++) {
-      std::cout << data[i] << ",";
-    }
-    std::cout << "]\n";
-  }
-
   virtual double executeKernel(Run run) = 0;
-  cl::Kernel _kernel;
+  // stateful error code :(
+  cl_int _error;
+  std::string _kernel_source;
+  cl_kernel _kernel;
+  cl_uint _platformIdCount;
+  cl_uint _deviceIdCount;
+
+  std::vector<cl_device_id> _deviceIds;
+
+  cl_context _context;
   ArgConfig _args;
 };
 
@@ -89,8 +114,9 @@ protected:
 // {
 template <typename T> class IterativeHarness : public Harness<T> {
 public:
-  IterativeHarness(cl::Kernel kernel, ArgConfig args)
-      : Harness<T>(kernel, args) {}
+  IterativeHarness(std::string &kernel_source, unsigned int platform,
+                   unsigned int device, ArgConfig args)
+      : Harness<T>(kernel_source, platform, device, args) {}
 
 protected:
   virtual bool should_terminate_iteration(executor::KernelArg *input,
