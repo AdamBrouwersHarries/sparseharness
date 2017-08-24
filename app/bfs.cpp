@@ -42,10 +42,10 @@
 #include "CL/cl.h"
 #endif
 
-class HarnessBFS : public IterativeHarness<double> {
+class HarnessBFS : public IterativeHarness<double, float> {
 public:
   HarnessBFS(std::string &kernel_source, unsigned int platform,
-             unsigned int device, ArgConfig args)
+             unsigned int device, ArgContainer<float> args)
       : IterativeHarness(kernel_source, platform, device, args) {}
   std::vector<double> benchmark(Run run, int iterations, double timeout,
                                 double delta) {
@@ -83,47 +83,46 @@ public:
     //     // _args.args[_args.input]->upload();
 
     //     bool should_terminate = false;
-    //     // run the kernel
-    //     do {
-    //       std::cout << " ------------------- VALUES BEFORE RUN\n";
-    //       // print_arg<float>(_args.args[_args.input]);
-    //       // print_arg<float>(_args.args[_args.output]);
-    //       std::cout << "--------------- EXECUTING KERNEL\n";
-    //       runtime += executeKernel(run);
-    //       std::cout << " ------------------- VALUES after RUN\n";
-    //       // print_arg<float>(_args.args[_args.input]);
-    //       // print_arg<float>(_args.args[_args.output]);
-    //       std::cout << "--------------- PERFORMING CHECK\n";
-    //       should_terminate = should_terminate_iteration(
-    //           _args.args[_args.input], _args.args[_args.output], delta);
-    //       // swap the pointers in the arg list
-    //       std::cout << "---------------- SWAPPING \n";
+    // run the kernel
+    // do {
+    //   std::cout << " ------------------- VALUES BEFORE RUN\n";
+    //   // print_arg<float>(_args.args[_args.input]);
+    //   // print_arg<float>(_args.args[_args.output]);
+    //   std::cout << "--------------- EXECUTING KERNEL\n";
+    //   runtime += executeKernel(run);
+    //   std::cout << " ------------------- VALUES after RUN\n";
+    //   // print_arg<float>(_args.args[_args.input]);
+    //   // print_arg<float>(_args.args[_args.output]);
+    //   std::cout << "--------------- PERFORMING CHECK\n";
+    //   should_terminate = should_terminate_iteration(
+    //       _args.args[_args.input], _args.args[_args.output], delta);
+    //   // swap the pointers in the arg list
+    //   std::cout << "---------------- SWAPPING \n";
 
-    //       executor::KernelArg *tmp = _args.args[_args.input];
-    //       _args.args[_args.input] = _args.args[_args.output];
-    //       _args.args[_args.output] = tmp;
-    //       // std::cout << "preswap: in: " << _args.input
-    //       //           << " out: " << _args.output << "\n";
-    //       // auto tmp = _args.input;
-    //       // _args.input = _args.output;
-    //       // _args.output = tmp;
-    //       // std::cout << "postswap: in: " << _args.input
-    //       //           << " out: " << _args.output << "\n";
+    //   executor::KernelArg *tmp = _args.args[_args.input];
+    //   _args.args[_args.input] = _args.args[_args.output];
+    //   _args.args[_args.output] = tmp;
+    //   // std::cout << "preswap: in: " << _args.input
+    //   //           << " out: " << _args.output << "\n";
+    //   // auto tmp = _args.input;
+    //   // _args.input = _args.output;
+    //   // _args.output = tmp;
+    //   // std::cout << "postswap: in: " << _args.input
+    //   //           << " out: " << _args.output << "\n";
 
-    //       // copy the output buffer into the input
-    //       // copy_args(_args.args[_args.output], _args.args[_args.input]);
+    //   // copy the output buffer into the input
+    //   // copy_args(_args.args[_args.output], _args.args[_args.input]);
 
-    //       // reset the kernel args
-    //       // _args.args[_args.output]->clear();
+    //   // reset the kernel args
+    //   // _args.args[_args.output]->clear();
 
-    //       // _args.args[_args.input]->upload();
-    //       // _args.args[_args.output]->upload();
+    //   // _args.args[_args.input]->upload();
+    //   // _args.args[_args.output]->upload();
 
-    //       _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-    //       _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
-    //     } while (!should_terminate);
-    //     // get the underlying vectors from the args that we care about
-    //   }
+    //   _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
+    //   _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
+    // } while (!should_terminate);
+    // get the underlying vectors from the args that we care about
 
     //   runtimes[i] = runtime;
 

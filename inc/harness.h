@@ -9,10 +9,10 @@
 
 #include "run.h"
 
-template <typename T> class Harness {
+template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
-          unsigned int device, ArgConfig args)
+          unsigned int device, ArgContainer<SemiRingType> args)
       : _kernel_source(kernel_source), _args(args) {
 
     // initialise OpenCL:
@@ -68,12 +68,14 @@ public:
     _kernel = kernel;
   }
 
-  virtual std::vector<T> benchmark(Run run, int iterations, double timeout,
-                                   double delta) = 0;
-  virtual void
-  print_sql_stats(const Run &run, const std::string &kname,
-                  const std::string &mname, const std::string &hname,
-                  const std::string &experiment_id, std::vector<T> &times)
+  virtual std::vector<TimingType> benchmark(Run run, int iterations,
+                                            double timeout, double delta) = 0;
+
+  virtual void print_sql_stats(const Run &run, const std::string &kname,
+                               const std::string &mname,
+                               const std::string &hname,
+                               const std::string &experiment_id,
+                               std::vector<TimingType> &times)
 
   {
     auto &devPtr = executor::globalDeviceList.front();
@@ -107,16 +109,18 @@ protected:
   std::vector<cl_device_id> _deviceIds;
 
   cl_context _context;
-  ArgConfig _args;
+  ArgContainer<SemiRingType> _args;
 };
 
 // template <typename T> class IterativeHarness : public Harness<std::vector<T>>
 // {
-template <typename T> class IterativeHarness : public Harness<T> {
+template <typename TimingType, typename SemiRingType>
+class IterativeHarness : public Harness<TimingType, SemiRingType> {
 public:
   IterativeHarness(std::string &kernel_source, unsigned int platform,
-                   unsigned int device, ArgConfig args)
-      : Harness<T>(kernel_source, platform, device, args) {}
+                   unsigned int device, ArgContainer<SemiRingType> args)
+      : Harness<TimingType, SemiRingType>(kernel_source, platform, device,
+                                          args) {}
 
 protected:
   virtual bool should_terminate_iteration(executor::KernelArg *input,

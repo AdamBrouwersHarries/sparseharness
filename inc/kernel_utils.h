@@ -32,32 +32,39 @@ R<typename Sub::value_type> flatten(Top const &all) {
   return accum;
 }
 
-typedef struct ArgConfig {
-  int input;
-  int output;
-  std::vector<KernelArg *> args;
-} ArgConfig;
+template <typename T> std::vector<char> enchar(std::vector<T> in) {
+  // get a pointer to the underlying data
+  T *uptr = in.data();
+  // cast it into a char type
+  char *cptr = reinterpret_cast<char *>(uptr);
+  // get the length
+  unsigned int cptrlen = in.size() * (sizeof(T) / sizeof(char));
+  // build a vector from that
+  std::vector<char> result(cptr, cptr + cptrlen);
+  return result;
+}
 
-enum ArgType {
-  MatrixInput = 0,
-  VectorX,
-  VectorY,
-  VectorOutput,
-  ConstArg,
-  TempGlobal,
-  TempLocal
+typedef std::vector<char> raw_arg;
+
+template <typename T> class ArgContainer {
+public:
+  raw_arg m_ixs;
+  raw_arg m_vals;
+  raw_arg x_vect;
+  raw_arg y_vect;
+  T alpha;
+  T beta;
+  // the rest are just sizes ready for allocation!
+  std::vector<unsigned int> temp_globals;
+  unsigned int output;
+  std::vector<unsigned int> temp_locals;
+  std::vector<unsigned int> size_args;
 };
-
-// I should use this soon...
-typedef struct SemanticArg {
-  ArgType type;
-  KernelArg *_arg;
-} SemanticArg;
 
 // given a loaded sparse matrix, encode it in a form that we can use in the
 // executor - i.e. as a set of kernel arguments
 template <typename T>
-ArgConfig
+ArgContainer<T>
 executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
                      // std::vector<T> xvector, std::vector<T> yvector) {
                      XVectorGenerator<T> &xgen, YVectorGenerator<T> &ygen,
@@ -114,15 +121,17 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
 
   std::vector<KernelArg *> kernel_args;
 
+  // create an arg container!
+  ArgContainer<T> arg_cnt;
+
   // create args for the matrix inputs
   std::cout << "Input matrix mem arg: "
             << (size_t)flat_indices.size() * sizeof(int) << "\n";
   std::cout << "Input matrix mem arg: "
             << (size_t)flat_indices.size() * sizeof(T) << "\n";
-  kernel_args.push_back(GlobalArg::create(
-      (void *)flat_indices.data(), (size_t)flat_indices.size() * sizeof(int)));
-  kernel_args.push_back(GlobalArg::create(
-      (void *)flat_values.data(), (size_t)flat_values.size() * sizeof(T)));
+
+  arg_cnt.m_ixs = enchar<int>(flat_indices);
+  arg_cnt.m_vals = enchar<T>(flat_values);
 
   // create args for the vector inputs
   // TODO: do we actually need to make the x vector bigger when we pad
@@ -131,18 +140,13 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
             << "\n";
   std::cout << "Input vector arg: " << (size_t)yvector.size() * sizeof(T)
             << "\n";
-  kernel_args.push_back(GlobalArg::create(
-      (void *)xvector.data(), (size_t)xvector.size() * sizeof(T), true));
-  kernel_args.push_back(GlobalArg::create((void *)yvector.data(),
-                                          (size_t)yvector.size() * sizeof(T)));
+
+  arg_cnt.x_vect = enchar<T>(xvector);
+  arg_cnt.y_vect = enchar<T>(yvector);
 
   // create the alpha and beta args
-  kernel_args.push_back(ValueArg::create(&alpha, sizeof(T)));
-  kernel_args.push_back(ValueArg::create(&beta, sizeof(T)));
-
-  // start creating buffers with sizes that we need to evaluate
-  // initialise the evaluator to figure them out
-  // Evaluator::initialise_variables(v_MWidth_1, v_MHeight_2, v_VLength_3);
+  arg_cnt.alpha = alpha;
+  arg_cnt.beta = beta;
 
   // create temporary global buffers
   int arg_offset = 6;
@@ -152,8 +156,9 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
               << "," << arg.size << ENDL;
     int memsize =
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
+
     std::cout << "realsize: " << memsize << ENDL;
-    kernel_args.push_back(GlobalArg::create(memsize));
+    arg_cnt.temp_globals.push_back(memsize);
     arg_offset++;
   }
 
@@ -163,29 +168,23 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
     int outputMemsize = Evaluator::evaluate(
         kernel.getOutputArg()->size, v_MWidth_1, v_MHeight_2, v_VLength_3);
     std::cout << "outputMemSize: " << outputMemsize << ENDL;
-    kernel_args.push_back(GlobalArg::create(outputMemsize, true));
+    arg_cnt.output = outputMemsize;
   }
 
   // create temporary local buffers
-
   for (auto arg : kernel.getTempLocals()) {
     std::cout << "Local temp arg: " << arg.variable << ", " << arg.addressSpace
               << "," << arg.size << ENDL;
     int memsize =
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
     std::cout << "realsize: " << memsize << ENDL;
-    kernel_args.push_back(LocalArg::create(memsize));
+    arg_cnt.temp_locals.push_back(memsize);
   }
 
   // create size buffers
-  kernel_args.push_back(ValueArg::create(&v_MHeight_2, sizeof(int)));
-  kernel_args.push_back(ValueArg::create(&v_MWidth_1, sizeof(int)));
-  kernel_args.push_back(ValueArg::create(&v_VLength_3, sizeof(int)));
+  arg_cnt.size_args.push_back(v_MHeight_2);
+  arg_cnt.size_args.push_back(v_MWidth_1);
+  arg_cnt.size_args.push_back(v_VLength_3);
 
-  ArgConfig ac;
-  ac.input = 2;
-  ac.output = arg_offset;
-  ac.args = kernel_args;
-
-  return ac;
+  return arg_cnt;
 }
