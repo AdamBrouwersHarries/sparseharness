@@ -76,22 +76,22 @@ public:
         // run the kernel
         do {
           std::cout << " ------------------- VALUES BEFORE RUN\n";
-          print_arg<float>(_args.args[_args.input]);
-          print_arg<float>(_args.args[_args.output]);
+          // print_arg<float>(_args.args[_args.input]);
+          // print_arg<float>(_args.args[_args.output]);
           std::cout << "--------------- EXECUTING KERNEL\n";
           runtime += executeKernel(run);
           std::cout << " ------------------- VALUES after RUN\n";
-          print_arg<float>(_args.args[_args.input]);
-          print_arg<float>(_args.args[_args.output]);
+          // print_arg<float>(_args.args[_args.input]);
+          // print_arg<float>(_args.args[_args.output]);
           std::cout << "--------------- PERFORMING CHECK\n";
           should_terminate = should_terminate_iteration(
               _args.args[_args.input], _args.args[_args.output], delta);
           // swap the pointers in the arg list
           std::cout << "---------------- SWAPPING \n";
 
-          // auto tmp = _args.args[_args.input];
-          // _args.args[_args.input] = _args.args[_args.output];
-          // _args.args[_args.output] = tmp;
+          executor::KernelArg *tmp = _args.args[_args.input];
+          _args.args[_args.input] = _args.args[_args.output];
+          _args.args[_args.output] = tmp;
           // std::cout << "preswap: in: " << _args.input
           //           << " out: " << _args.output << "\n";
           // auto tmp = _args.input;
@@ -101,16 +101,16 @@ public:
           //           << " out: " << _args.output << "\n";
 
           // copy the output buffer into the input
-          copy_args(_args.args[_args.output], _args.args[_args.input]);
+          // copy_args(_args.args[_args.output], _args.args[_args.input]);
 
           // reset the kernel args
-          _args.args[_args.output]->clear();
+          // _args.args[_args.output]->clear();
 
-          _args.args[_args.input]->upload();
-          _args.args[_args.output]->upload();
+          // _args.args[_args.input]->upload();
+          // _args.args[_args.output]->upload();
 
-          // _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-          // _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
+          _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
+          _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
         } while (!should_terminate);
         // get the underlying vectors from the args that we care about
       }
@@ -150,7 +150,7 @@ private:
     start_timer(should_terminate_iteration, HarnessBFS);
     {
       start_timer(arg_download, should_terminate_iteration);
-      input->download();
+      // input->download();
       output->download();
     }
     // get the host vectors from the arguments
