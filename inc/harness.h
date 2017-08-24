@@ -55,6 +55,18 @@ protected:
     global_arg->assign(data);
   }
 
+  void copy_args(executor::KernelArg *src, executor::KernelArg *dst) {
+    // cast them both as global args
+    executor::GlobalArg *global_src = static_cast<executor::GlobalArg *>(src);
+    executor::GlobalArg *global_dst = static_cast<executor::GlobalArg *>(dst);
+
+    // get the underlying buffers of the src:
+    std::vector<char> &src_buffer = global_src->data().hostBuffer();
+
+    // assign that to the global destination
+    global_dst->assign(src_buffer);
+  }
+
   template <typename U> void print_arg(executor::KernelArg *arg) {
     executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
     global_arg->download();

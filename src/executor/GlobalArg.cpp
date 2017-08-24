@@ -25,6 +25,7 @@ void GlobalArg::assign(void *data, size_t size) {
 }
 
 void GlobalArg::assign(std::vector<char> &data) {
+  vector.dataOnDeviceModified();
   vector.assign(data.begin(), data.end());
 }
 

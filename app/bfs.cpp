@@ -80,7 +80,6 @@ public:
           print_arg<float>(_args.args[_args.output]);
           std::cout << "--------------- EXECUTING KERNEL\n";
           runtime += executeKernel(run);
-          runtime += executeKernel(run);
           std::cout << " ------------------- VALUES after RUN\n";
           print_arg<float>(_args.args[_args.input]);
           print_arg<float>(_args.args[_args.output]);
@@ -93,22 +92,25 @@ public:
           // auto tmp = _args.args[_args.input];
           // _args.args[_args.input] = _args.args[_args.output];
           // _args.args[_args.output] = tmp;
-          std::cout << "preswap: in: " << _args.input
-                    << " out: " << _args.output << "\n";
-          auto tmp = _args.input;
-          _args.input = _args.output;
-          _args.output = tmp;
-          std::cout << "postswap: in: " << _args.input
-                    << " out: " << _args.output << "\n";
+          // std::cout << "preswap: in: " << _args.input
+          //           << " out: " << _args.output << "\n";
+          // auto tmp = _args.input;
+          // _args.input = _args.output;
+          // _args.output = tmp;
+          // std::cout << "postswap: in: " << _args.input
+          //           << " out: " << _args.output << "\n";
+
+          // copy the output buffer into the input
+          copy_args(_args.args[_args.output], _args.args[_args.input]);
 
           // reset the kernel args
           _args.args[_args.output]->clear();
+
           _args.args[_args.input]->upload();
           _args.args[_args.output]->upload();
 
-          _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-          _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
-
+          // _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
+          // _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
         } while (!should_terminate);
         // get the underlying vectors from the args that we care about
       }
