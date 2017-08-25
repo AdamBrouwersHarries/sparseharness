@@ -40,11 +40,23 @@ void GlobalArg::clear() {
 
 void GlobalArg::setAsKernelArg(cl::Kernel kernel, int i) {
   auto &devPtr = executor::globalDeviceList.front();
+
+        size_t size;
+        clGetKernelArgInfo(kernel(), i,  CL_KERNEL_ARG_NAME, 0, NULL, &size);
+        char * name = (char*)malloc(size);
+        clGetKernelArgInfo(kernel(), i,  CL_KERNEL_ARG_NAME, size, name, 0);
+        std::cout << "setKernelArg for " << i << ": " << name << " buffer: " << 
+                 vector.deviceBuffer(*devPtr).clBuffer()() << "\n";
+        free(name);
+
   LOG_DEBUG_INFO("Setting GlobalArg with size ", vector.size(),
                  ", at position ", i, " and buffer ",
                  vector.deviceBuffer(*devPtr).clBuffer()());
 
-  kernel.setArg(i, vector.deviceBuffer(*devPtr).clBuffer());
+  auto err = kernel.setArg(i, vector.deviceBuffer(*devPtr).clBuffer());
+  if (err != CL_SUCCESS) {
+    LOG_ERROR("ERROR SET KERNEL ARG: ", err);
+  }
 }
 
 void GlobalArg::upload() {
@@ -55,9 +67,9 @@ void GlobalArg::upload() {
 }
 
 void GlobalArg::download() {
-  if (isOutput) {
+  //if (isOutput) {
     vector.dataOnDeviceModified();
     vector.copyDataToHost();
-  }
+  //}
 }
 }

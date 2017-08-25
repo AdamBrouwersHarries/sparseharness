@@ -1,0 +1,232 @@
+PFTimerStart("main", "global")
+matrix_filename example/matrix.mtx
+kernel_filename example/kernel4.json
+PFTimerStart("load_from_file", "SparseMatrix")
+Matcode: MCRS¯ þ
+Rows 1138 cols 1138 non-zeros 2596
+PROFILING_DATUM("load_from_file", "SparseMatrix", 1, "C++")
+PFTimerEnd("load_from_file", "SparseMatrix")
+PFTimerStart("KernelConfig", "KernelConfig")
+input arguments: 
+temp global arguments: 
+temp local arguments: 
+PROFILING_DATUM("KernelConfig", "KernelConfig", 1, "C++")
+PFTimerEnd("KernelConfig", "KernelConfig")
+PFTimerStart("load_csv", "csv_utils")
+PROFILING_DATUM("load_csv", "csv_utils", 0, "C++")
+PFTimerEnd("load_csv", "csv_utils")
+{128000 1 1 / 32 1 1}
+PFTimerStart("asPaddedSOAELLPACK", "SparseMatrix")
+PFTimerStart("asSOAELLPACK", "SparseMatrix")
+PFTimerStart("asELLPACK", "SparseMatrix")
+PROFILING_DATUM("asELLPACK", "SparseMatrix", 0, "C++")
+PFTimerEnd("asELLPACK", "SparseMatrix")
+PROFILING_DATUM("asSOAELLPACK", "SparseMatrix", 1, "C++")
+PFTimerEnd("asSOAELLPACK", "SparseMatrix")
+Building row entries for first time.
+PROFILING_DATUM("asPaddedSOAELLPACK", "SparseMatrix", 2, "C++")
+PFTimerEnd("asPaddedSOAELLPACK", "SparseMatrix")
+[======Device.cpp:80   000.123s  INFO] Using device `GeForce GTX 1060 3GB' with id: 0 from platform `NVIDIA CUDA'
+[==DeviceList.cpp:119  000.123s  INFO] Using 1 OpenCL device(s) in total
+PFTimerStart("executorEncodeMatrix", "kernel_utils")
+PFTimerStart("asPaddedSOAELLPACK", "SparseMatrix")
+PFTimerStart("asSOAELLPACK", "SparseMatrix")
+PFTimerStart("asELLPACK", "SparseMatrix")
+PROFILING_DATUM("asELLPACK", "SparseMatrix", 0, "C++")
+PFTimerEnd("asELLPACK", "SparseMatrix")
+PROFILING_DATUM("asSOAELLPACK", "SparseMatrix", 2, "C++")
+PFTimerEnd("asSOAELLPACK", "SparseMatrix")
+Building row entries for first time.
+PROFILING_DATUM("asPaddedSOAELLPACK", "SparseMatrix", 3, "C++")
+PFTimerEnd("asPaddedSOAELLPACK", "SparseMatrix")
+Filling with these sizes: 
+	x = 1138 
+	y = 1138
+[=====VectorDef.h:68   000.128s DINFO] Created new Vector object (0x7ffea00bab40) with size: 109248, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:93   000.128s DINFO] Created new Vector object (0x5629648ae118) by moving from (0x7ffea00bab40) with size: 109248, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:68   000.129s DINFO] Created new Vector object (0x7ffea00bab40) with size: 109248, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:93   000.129s DINFO] Created new Vector object (0x5629648ae188) by moving from (0x7ffea00bab40) with size: 109248, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:68   000.129s DINFO] Created new Vector object (0x7ffea00bab40) with size: 4552, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:93   000.129s DINFO] Created new Vector object (0x5629648ae1f8) by moving from (0x7ffea00bab40) with size: 4552, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:68   000.129s DINFO] Created new Vector object (0x7ffea00bab40) with size: 4552, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:93   000.129s DINFO] Created new Vector object (0x5629648af838) by moving from (0x7ffea00bab40) with size: 4552, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+PFTimerStart("evaluate", "Evaluator")
+PROFILING_DATUM("evaluate", "Evaluator", 0, "C++")
+PFTimerEnd("evaluate", "Evaluator")
+[=====VectorDef.h:208  000.129s DINFO] Vector object (0x7ffea00bab40) resized, now with size: 4, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:93   000.129s DINFO] Created new Vector object (0x5629648f08b8) by moving from (0x7ffea00bab40) with size: 4, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+PFTimerStart("evaluate", "Evaluator")
+PROFILING_DATUM("evaluate", "Evaluator", 0, "C++")
+PFTimerEnd("evaluate", "Evaluator")
+[=====VectorDef.h:208  000.130s DINFO] Vector object (0x7ffea00bab40) resized, now with size: 4552, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+[=====VectorDef.h:93   000.130s DINFO] Created new Vector object (0x5629648ae268) by moving from (0x7ffea00bab40) with size: 4552, deviceBuffersCreated: false, hostBufferUpToDate: true, deviceBuffersUpToDate: false, hostBuffer: 
+PFTimerStart("evaluate", "Evaluator")
+PROFILING_DATUM("evaluate", "Evaluator", 0, "C++")
+PFTimerEnd("evaluate", "Evaluator")
+PROFILING_DATUM("executorEncodeMatrix", "kernel_utils", 5, "C++")
+PFTimerEnd("executorEncodeMatrix", "kernel_utils")
+PFTimerStart("run_iteration", "main")
+PFTimerStart("benchmark", "HarnessBFS")
+[DeviceBuffer.cpp:53   000.130s DINFO] Created new DeviceBuffer object (0x7ffea00bad70) with device: 0, size: 109248, flags: 1, buffer: 0x5629648f8620
+[DeviceBuffer.cpp:76   000.130s DINFO] Created new DeviceBuffer object (0x7ffea00bad38) by moving with device: 0, size: 109248, flags: 1, buffer: 0x5629648f8620
+[======Device.cpp:309  000.131s DINFO] Enqueued copy buffer for device 0 (from: 0x5629648f8620, to: 0x562964877070, size: 109248, fromOffset: 0, toOffset: 0)
+[DeviceBuffer.cpp:64   000.131s DINFO] Created new DeviceBuffer object (0x5629648f88b8) by copying (0x7ffea00bad38) with device: 0, size: 109248, flags: 1, buffer: 0x562964877070
+[DeviceBuffer.cpp:116  000.131s DINFO] DeviceBuffer object (0x7ffea00bad38) destroyed
+[DeviceBuffer.cpp:114  000.131s DINFO] Empty DeviceBuffer object (0x7ffea00bad70) destroyed
+[======Device.cpp:179  000.131s DINFO] Enqueued write buffer for device 0 (size: 109248, clBuffer: 0x562964877070, deviceOffset: 0, hostPointer: 0x5629648cf180, hostOffset: 0)
+[=====VectorDef.h:384  000.131s DINFO] Started data upload to 1 device (size: 109248)
+[===GlobalArg.cpp:54   000.131s DINFO] Setting GlobalArg with size 109248, at position 0 and buffer 0x562964877070
+[DeviceBuffer.cpp:53   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad70) with device: 0, size: 109248, flags: 1, buffer: 0x5629648f8620
+[DeviceBuffer.cpp:76   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad38) by moving with device: 0, size: 109248, flags: 1, buffer: 0x5629648f8620
+[======Device.cpp:309  000.131s DINFO] Enqueued copy buffer for device 0 (from: 0x5629648f8620, to: 0x5629648ec230, size: 109248, fromOffset: 0, toOffset: 0)
+[DeviceBuffer.cpp:64   000.131s DINFO] Created new DeviceBuffer object (0x56296480ebd8) by copying (0x7ffea00bad38) with device: 0, size: 109248, flags: 1, buffer: 0x5629648ec230
+[DeviceBuffer.cpp:116  000.131s DINFO] DeviceBuffer object (0x7ffea00bad38) destroyed
+[DeviceBuffer.cpp:114  000.131s DINFO] Empty DeviceBuffer object (0x7ffea00bad70) destroyed
+[======Device.cpp:179  000.131s DINFO] Enqueued write buffer for device 0 (size: 109248, clBuffer: 0x5629648ec230, deviceOffset: 0, hostPointer: 0x56296495c820, hostOffset: 0)
+[=====VectorDef.h:384  000.131s DINFO] Started data upload to 1 device (size: 109248)
+[===GlobalArg.cpp:54   000.131s DINFO] Setting GlobalArg with size 109248, at position 1 and buffer 0x5629648ec230
+[DeviceBuffer.cpp:53   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad70) with device: 0, size: 4552, flags: 1, buffer: 0x5629648f8620
+[DeviceBuffer.cpp:76   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad38) by moving with device: 0, size: 4552, flags: 1, buffer: 0x5629648f8620
+[======Device.cpp:309  000.131s DINFO] Enqueued copy buffer for device 0 (from: 0x5629648f8620, to: 0x5629648ae340, size: 4552, fromOffset: 0, toOffset: 0)
+[DeviceBuffer.cpp:64   000.131s DINFO] Created new DeviceBuffer object (0x5629648f83b8) by copying (0x7ffea00bad38) with device: 0, size: 4552, flags: 1, buffer: 0x5629648ae340
+[DeviceBuffer.cpp:116  000.131s DINFO] DeviceBuffer object (0x7ffea00bad38) destroyed
+[DeviceBuffer.cpp:114  000.131s DINFO] Empty DeviceBuffer object (0x7ffea00bad70) destroyed
+[======Device.cpp:179  000.131s DINFO] Enqueued write buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:384  000.131s DINFO] Started data upload to 1 device (size: 4552)
+[===GlobalArg.cpp:54   000.131s DINFO] Setting GlobalArg with size 4552, at position 2 and buffer 0x5629648ae340
+[DeviceBuffer.cpp:53   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad70) with device: 0, size: 4552, flags: 1, buffer: 0x5629648f8620
+[DeviceBuffer.cpp:76   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad38) by moving with device: 0, size: 4552, flags: 1, buffer: 0x5629648f8620
+[======Device.cpp:309  000.131s DINFO] Enqueued copy buffer for device 0 (from: 0x5629648f8620, to: 0x5629648ecd50, size: 4552, fromOffset: 0, toOffset: 0)
+[DeviceBuffer.cpp:64   000.131s DINFO] Created new DeviceBuffer object (0x56296480eb78) by copying (0x7ffea00bad38) with device: 0, size: 4552, flags: 1, buffer: 0x5629648ecd50
+[DeviceBuffer.cpp:116  000.131s DINFO] DeviceBuffer object (0x7ffea00bad38) destroyed
+[DeviceBuffer.cpp:114  000.131s DINFO] Empty DeviceBuffer object (0x7ffea00bad70) destroyed
+[======Device.cpp:179  000.131s DINFO] Enqueued write buffer for device 0 (size: 4552, clBuffer: 0x5629648ecd50, deviceOffset: 0, hostPointer: 0x5629648eae20, hostOffset: 0)
+[=====VectorDef.h:384  000.131s DINFO] Started data upload to 1 device (size: 4552)
+[===GlobalArg.cpp:54   000.131s DINFO] Setting GlobalArg with size 4552, at position 3 and buffer 0x5629648ecd50
+[====ValueArg.cpp:22   000.131s DINFO] Setting ValueArg with size 4, at position 4
+[====ValueArg.cpp:22   000.131s DINFO] Setting ValueArg with size 4, at position 5
+[DeviceBuffer.cpp:53   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad70) with device: 0, size: 4, flags: 1, buffer: 0x5629648f8620
+[DeviceBuffer.cpp:76   000.131s DINFO] Created new DeviceBuffer object (0x7ffea00bad38) by moving with device: 0, size: 4, flags: 1, buffer: 0x5629648f8620
+[======Device.cpp:309  000.132s DINFO] Enqueued copy buffer for device 0 (from: 0x5629648f8620, to: 0x5629648f1040, size: 4, fromOffset: 0, toOffset: 0)
+[DeviceBuffer.cpp:64   000.132s DINFO] Created new DeviceBuffer object (0x5629648af0b8) by copying (0x7ffea00bad38) with device: 0, size: 4, flags: 1, buffer: 0x5629648f1040
+[DeviceBuffer.cpp:116  000.132s DINFO] DeviceBuffer object (0x7ffea00bad38) destroyed
+[DeviceBuffer.cpp:114  000.132s DINFO] Empty DeviceBuffer object (0x7ffea00bad70) destroyed
+[======Device.cpp:179  000.132s DINFO] Enqueued write buffer for device 0 (size: 4, clBuffer: 0x5629648f1040, deviceOffset: 0, hostPointer: 0x56296480ed90, hostOffset: 0)
+[=====VectorDef.h:384  000.132s DINFO] Started data upload to 1 device (size: 4)
+[===GlobalArg.cpp:54   000.132s DINFO] Setting GlobalArg with size 4, at position 6 and buffer 0x5629648f1040
+[DeviceBuffer.cpp:53   000.132s DINFO] Created new DeviceBuffer object (0x7ffea00bad70) with device: 0, size: 4552, flags: 1, buffer: 0x5629648f8620
+[DeviceBuffer.cpp:76   000.132s DINFO] Created new DeviceBuffer object (0x7ffea00bad38) by moving with device: 0, size: 4552, flags: 1, buffer: 0x5629648f8620
+[======Device.cpp:309  000.132s DINFO] Enqueued copy buffer for device 0 (from: 0x5629648f8620, to: 0x5629648f22c0, size: 4552, fromOffset: 0, toOffset: 0)
+[DeviceBuffer.cpp:64   000.132s DINFO] Created new DeviceBuffer object (0x5629648ecfb8) by copying (0x7ffea00bad38) with device: 0, size: 4552, flags: 1, buffer: 0x5629648f22c0
+[DeviceBuffer.cpp:116  000.132s DINFO] DeviceBuffer object (0x7ffea00bad38) destroyed
+[DeviceBuffer.cpp:114  000.132s DINFO] Empty DeviceBuffer object (0x7ffea00bad70) destroyed
+[======Device.cpp:179  000.132s DINFO] Enqueued write buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:384  000.132s DINFO] Started data upload to 1 device (size: 4552)
+[===GlobalArg.cpp:54   000.132s DINFO] Setting GlobalArg with size 4552, at position 7 and buffer 0x5629648f22c0
+[====LocalArg.cpp:19   000.132s DINFO] Setting LocalArg with size 12, at position 8
+[====ValueArg.cpp:22   000.132s DINFO] Setting ValueArg with size 4, at position 9
+[====ValueArg.cpp:22   000.132s DINFO] Setting ValueArg with size 4, at position 10
+[====ValueArg.cpp:22   000.132s DINFO] Setting ValueArg with size 4, at position 11
+PFTimerStart("benchmark_iteration", "HarnessBFS")
+[=====VectorDef.h:433  000.132s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.132s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.132s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.132s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.132s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.132s DINFO] Started data download from 1 device (size: 4552)
+PFTimerStart("executeKernel", "HarnessBFS")
+[===GlobalArg.cpp:54   000.133s DINFO] Setting GlobalArg with size 4552, at position 2 and buffer 0x5629648ae340
+[===GlobalArg.cpp:54   000.133s DINFO] Setting GlobalArg with size 4552, at position 7 and buffer 0x5629648f22c0
+[======Device.cpp:147  000.133s DINFO] Kernel for device 0 enqueued with global range: { 128000, 1, 1 }, local: { 32, 1, 1 }, offset: {  }
+PROFILING_DATUM("executeKernel", "HarnessBFS", 0, "C++")
+PFTimerEnd("executeKernel", "HarnessBFS")
+[=====VectorDef.h:433  000.133s DINFO] Data on devices marked as modified
+[=====VectorDef.h:433  000.133s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.133s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.133s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.133s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.133s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.133s DINFO] Started data download from 1 device (size: 4552)
+PFTimerStart("should_terminate_iteration", "HarnessBFS")
+PFTimerStart("arg_download", "should_terminate_iteration")
+[=====VectorDef.h:433  000.133s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.133s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.134s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.134s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.134s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.134s DINFO] Started data download from 1 device (size: 4552)
+PROFILING_DATUM("arg_download", "should_terminate_iteration", 0, "C++")
+PFTimerEnd("arg_download", "should_terminate_iteration")
+PROFILING_DATUM("should_terminate_iteration", "HarnessBFS", 0, "C++")
+PFTimerEnd("should_terminate_iteration", "HarnessBFS")
+[=====VectorDef.h:433  000.134s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.134s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.134s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.134s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.134s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.134s DINFO] Started data download from 1 device (size: 4552)
+PFTimerStart("executeKernel", "HarnessBFS")
+[===GlobalArg.cpp:54   000.134s DINFO] Setting GlobalArg with size 4552, at position 2 and buffer 0x5629648f22c0
+[===GlobalArg.cpp:54   000.134s DINFO] Setting GlobalArg with size 4552, at position 7 and buffer 0x5629648ae340
+[======Device.cpp:147  000.134s DINFO] Kernel for device 0 enqueued with global range: { 128000, 1, 1 }, local: { 32, 1, 1 }, offset: {  }
+PROFILING_DATUM("executeKernel", "HarnessBFS", 0, "C++")
+PFTimerEnd("executeKernel", "HarnessBFS")
+[=====VectorDef.h:433  000.134s DINFO] Data on devices marked as modified
+[=====VectorDef.h:433  000.134s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.134s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.134s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.135s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.135s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.135s DINFO] Started data download from 1 device (size: 4552)
+PFTimerStart("should_terminate_iteration", "HarnessBFS")
+PFTimerStart("arg_download", "should_terminate_iteration")
+[=====VectorDef.h:433  000.135s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.135s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.135s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.135s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.135s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.135s DINFO] Started data download from 1 device (size: 4552)
+PROFILING_DATUM("arg_download", "should_terminate_iteration", 0, "C++")
+PFTimerEnd("arg_download", "should_terminate_iteration")
+PROFILING_DATUM("should_terminate_iteration", "HarnessBFS", 0, "C++")
+PFTimerEnd("should_terminate_iteration", "HarnessBFS")
+[=====VectorDef.h:433  000.135s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.135s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.135s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.136s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.136s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.136s DINFO] Started data download from 1 device (size: 4552)
+PFTimerStart("executeKernel", "HarnessBFS")
+[===GlobalArg.cpp:54   000.136s DINFO] Setting GlobalArg with size 4552, at position 2 and buffer 0x5629648ae340
+[===GlobalArg.cpp:54   000.136s DINFO] Setting GlobalArg with size 4552, at position 7 and buffer 0x5629648f22c0
+[======Device.cpp:147  000.136s DINFO] Kernel for device 0 enqueued with global range: { 128000, 1, 1 }, local: { 32, 1, 1 }, offset: {  }
+PROFILING_DATUM("executeKernel", "HarnessBFS", 0, "C++")
+PFTimerEnd("executeKernel", "HarnessBFS")
+[=====VectorDef.h:433  000.136s DINFO] Data on devices marked as modified
+[=====VectorDef.h:433  000.136s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.136s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.136s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.136s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.136s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.136s DINFO] Started data download from 1 device (size: 4552)
+PFTimerStart("should_terminate_iteration", "HarnessBFS")
+PFTimerStart("arg_download", "should_terminate_iteration")
+[=====VectorDef.h:433  000.137s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.137s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648ae340, deviceOffset: 0, hostPointer: 0x5629648e9c50, hostOffset: 0)
+[=====VectorDef.h:413  000.137s DINFO] Started data download from 1 device (size: 4552)
+[=====VectorDef.h:433  000.137s DINFO] Data on devices marked as modified
+[======Device.cpp:245  000.137s DINFO] Enqueued read buffer for device 0 (size: 4552, clBuffer: 0x5629648f22c0, deviceOffset: 0, hostPointer: 0x5629648f8d10, hostOffset: 0)
+[=====VectorDef.h:413  000.137s DINFO] Started data download from 1 device (size: 4552)
+PROFILING_DATUM("arg_download", "should_terminate_iteration", 0, "C++")
+PFTimerEnd("arg_download", "should_terminate_iteration")
+PROFILING_DATUM("should_terminate_iteration", "HarnessBFS", 0, "C++")
+PFTimerEnd("should_terminate_iteration", "HarnessBFS")
+PROFILING_DATUM("benchmark_iteration", "HarnessBFS", 4, "C++")
+PFTimerEnd("benchmark_iteration", "HarnessBFS")
+PROFILING_DATUM("benchmark", "HarnessBFS", 6, "C++")
+PFTimerEnd("benchmark", "HarnessBFS")
+PROFILING_DATUM("run_iteration", "main", 6, "C++")
+PFTimerEnd("run_iteration", "main")
+[========Core.cpp:51   000.137s  INFO] Executor terminating. Freeing all resources.
+PROFILING_DATUM("main", "global", 137, "C++")
+PFTimerEnd("main", "global")
