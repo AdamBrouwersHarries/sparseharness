@@ -51,14 +51,32 @@ public:
       ++i;
     }
 
+    // for (auto j = 0; j < i; j++) {
+    //     cl_kernel_arg_address_qualifier add_qualifier;
+    //     clGetKernelArgInfo(_kernel(), j,  CL_KERNEL_ARG_ADDRESS_QUALIFIER, sizeof(cl_kernel_arg_access_qualifier), &add_qualifier, 0);
+    //     std::cout << "CL_KERNEL_ARG_ADDRESS_QUALIFIER for " << j << ": " << std::hex << add_qualifier << "\n";
+
+    //     cl_kernel_arg_access_qualifier acc_qualifier;
+    //     clGetKernelArgInfo(_kernel(), j,  CL_KERNEL_ARG_ACCESS_QUALIFIER, sizeof(cl_kernel_arg_access_qualifier), &acc_qualifier, 0);
+    //     std::cout << "CL_KERNEL_ARG_ACCESS_QUALIFIER for " << j << ": " << std::hex << acc_qualifier << "\n";
+
+    //     size_t size;
+    //     clGetKernelArgInfo(_kernel(), j,  CL_KERNEL_ARG_NAME, 0, NULL, &size);
+    //     char * name = (char*)malloc(size);
+    //     clGetKernelArgInfo(_kernel(), j,  CL_KERNEL_ARG_NAME, size, name, 0);
+    //     std::cout << "CL_KERNEL_ARG_NAME for " << j << ": " << name << "\n";
+    //     free(name);
+    // }
+
+
     // iterations
     std::vector<double> runtimes(iterations);
 
     // we need a cache for the input vector
     // this seems _super_ hacky. I don't like casting around like this, even if
     // it is legal. I'm worried.
-    std::vector<char> input_cache;
-    copy_from_arg(_args.args[_args.input], input_cache);
+    //std::vector<char> input_cache;
+    //copy_from_arg(_args.args[_args.input], input_cache);
 
     // run the benchmark for that many iterations
     for (int i = 0; i < iterations; i++) {
@@ -68,11 +86,12 @@ public:
       // Run the algorithm
       double runtime = 0.0f;
       { // copy the cached input into the input arg:
-        copy_into_arg(input_cache, _args.args[_args.input]);
+        //copy_into_arg(input_cache, _args.args[_args.input]);
         // _args.args[_args.input]->clear();
         // _args.args[_args.input]->upload();
 
         bool should_terminate = false;
+        auto k = 0;
         // run the kernel
         do {
           std::cout << " ------------------- VALUES BEFORE RUN\n";
@@ -81,8 +100,8 @@ public:
           std::cout << "--------------- EXECUTING KERNEL\n";
           runtime += executeKernel(run);
           static_cast<executor::GlobalArg *>(_args.args[_args.output])
-              ->data()
-              .dataOnDeviceModified();
+                       ->data()
+                       .dataOnDeviceModified();
           std::cout << " ------------------- VALUES after RUN\n";
           print_arg<float>(_args.args[_args.input]);
           print_arg<float>(_args.args[_args.output]);
@@ -90,32 +109,11 @@ public:
           should_terminate = should_terminate_iteration(
               _args.args[_args.input], _args.args[_args.output], delta);
           // swap the pointers in the arg list
-          std::cout << "---------------- SWAPPING \n";
-
-          // executor::KernelArg *tmp = _args.args[_args.input];
-          // _args.args[_args.input] = _args.args[_args.output];
-          // _args.args[_args.output] = tmp;
+          std::cout << "---------------- SWAPPING \n\n";
           std::swap(_args.args[_args.input], _args.args[_args.output]);
-          // std::cout << "preswap: in: " << _args.input
-          //           << " out: " << _args.output << "\n";
-          // auto tmp = _args.input;
-          // _args.input = _args.output;
-          // _args.output = tmp;
-          // std::cout << "postswap: in: " << _args.input
-          //           << " out: " << _args.output << "\n";
 
-          // copy the output buffer into the input
-          // copy_args(_args.args[_args.output], _args.args[_args.input]);
-
-          // reset the kernel args
-          // _args.args[_args.output]->clear();
-
-          // _args.args[_args.input]->upload();
-          // _args.args[_args.output]->upload();
-
-          _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-          _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
-
+          k++;
+          if (k > 8) should_terminate = true;
         } while (!should_terminate);
         // get the underlying vectors from the args that we care about
       }
@@ -142,11 +140,18 @@ private:
     cl_uint globalSize2 = run.global2;
     cl_uint globalSize3 = run.global3;
 
+    _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
+    _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
+
     auto event = devPtr->enqueue(
         _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
         cl::NDRange(localSize1, localSize2, localSize3));
 
-    return getRuntimeInMilliseconds(event);
+    auto time = getRuntimeInMilliseconds(event);
+
+    std::cout << " ------------------- KERNEL RUNTIME: " << time << "ms\n";
+
+    return time;
   }
 
   virtual bool should_terminate_iteration(executor::KernelArg *input,
@@ -155,7 +160,7 @@ private:
     start_timer(should_terminate_iteration, HarnessBFS);
     {
       start_timer(arg_download, should_terminate_iteration);
-      // input->download();
+      input->download();
       output->download();
     }
     // get the host vectors from the arguments
@@ -262,7 +267,7 @@ int main(int argc, char *argv[]) {
   ConstXVectorGenerator<float> tengen(1000.0f);
   ConstYVectorGenerator<float> zerogen(0);
 
-  auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
+  auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "-cl-kernel-arg-info").build();
   // get some arguments
   auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, zerogen,
                                    v_Width_cl, v_Height_cl, v_Length_cl);

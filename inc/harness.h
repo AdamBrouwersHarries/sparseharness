@@ -69,10 +69,11 @@ protected:
 
   template <typename U> void print_arg(executor::KernelArg *arg) {
     executor::GlobalArg *global_arg = static_cast<executor::GlobalArg *>(arg);
+    //auto hostBuffer = global_arg->data().hostBuffer();
+    //hostBuffer.assign(hostBuffer.size(), 0);
     global_arg->download();
-    auto vectdata = global_arg->data().hostBuffer();
-    auto data = reinterpret_cast<U *>(vectdata.data());
-    auto len = vectdata.size() / sizeof(U);
+    auto data = reinterpret_cast<U *>(global_arg->data().hostBuffer().data());
+    auto len = global_arg->data().hostBuffer().size() / sizeof(U);
     std::cout << "[";
     for (int i = 0; i < len; i++) {
       std::cout << data[i] << ",";
