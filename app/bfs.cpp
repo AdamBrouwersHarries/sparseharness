@@ -42,26 +42,118 @@
 #include "CL/cl.h"
 #endif
 
-class HarnessBFS : public IterativeHarness<double, float> {
+class HarnessBFS : public IterativeHarness<std::chrono::milliseconds, float> {
 public:
   HarnessBFS(std::string &kernel_source, unsigned int platform,
              unsigned int device, ArgContainer<float> args)
       : IterativeHarness(kernel_source, platform, device, args) {}
-  std::vector<double> benchmark(Run run, int iterations, double timeout,
-                                double delta) {
-    return std::vector<double>{0.0, 0.1, 0.2};
-    // start_timer(benchmark, HarnessBFS);
+  std::vector<std::chrono::milliseconds>
+  benchmark(Run run, int iterations, double timeout, double delta) {
 
-    // // kernel setup
-    // int i = 0;
-    // for (auto &arg : _args.args) {
-    //   arg->upload();
-    //   arg->setAsKernelArg(_kernel, i);
-    //   ++i;
-    // }
+    start_timer(benchmark, HarnessBFS);
 
-    // // iterations
-    // std::vector<double> runtimes(iterations);
+    // set up the kernel
+    cl_uint arg_index = 0;
+    cl_uint input_idx = 2;
+    cl_uint output_idx = 0;
+
+    // build the matrix arguments
+    cl_mem matrix_idxs_ma = createAndUploadGlobalArg(_args.m_idxs);
+    setGlobalArg(arg_index++, &matrix_idxs_ma);
+
+    cl_mem matrix_vals_ma = createAndUploadGlobalArg(_args.m_vals);
+    setGlobalArg(arg_index++, &matrix_vals_ma);
+
+    // build the vector arguments
+    cl_mem x_vect_ma = createAndUploadGlobalArg(_args.x_vect, true);
+    setGlobalArg(arg_index++, &x_vect_ma);
+
+    cl_mem y_vect_ma = createAndUploadGlobalArg(_args.y_vect, true);
+    setGlobalArg(arg_index++, &y_vect_ma);
+
+    // build the constant arguments
+    setValueArg<float>(arg_index++, &(_args.alpha));
+    setValueArg<float>(arg_index++, &(_args.beta));
+
+    // build temp globals
+    // do we need to save them at all???
+    // std::vector<cl_mem> temp_globals(_args.temp_globals.size());
+    // THIS MIGHT SEGFAULT AWFULLY :D
+    for (auto size : _args.temp_globals) {
+      cl_mem temp_arg = createGlobalArg(size);
+      setGlobalArg(arg_index++, &temp_arg);
+    }
+
+    // set the output arg
+    output_idx = arg_index;
+    cl_mem output_mem = createGlobalArg(_args.output);
+    setGlobalArg(arg_index++, &output_mem);
+
+    // build temp locals
+    for (auto size : _args.temp_locals) {
+      setLocalArg(arg_index++, size);
+    }
+
+    // set the size arguments
+    for (auto size : _args.size_args) {
+      setValueArg<unsigned int>(arg_index++, &(size));
+    }
+
+    // finally, create buffers to copy the input and output into
+    std::vector<char> input_host_buffer(_args.x_vect.begin(),
+                                        _args.x_vect.end());
+    std::vector<char> output_host_buffer(_args.output, 0);
+
+    std::vector<char> blank_output_buffer(_args.output, 0);
+
+    // run the kernel!
+    std::vector<std::chrono::milliseconds> runtimes;
+    for (int i = 0; i < iterations; i++) {
+      start_timer(benchmark_iteration, HarnessBFS);
+
+      // get pointers to the input + output mem args
+      cl_mem *input_mem_ptr = &x_vect_ma;
+      cl_mem *output_mem_ptr = &output_mem;
+
+      // and pointers to the input + output host args
+      std::vector<char> *input_host_ptr = &input_host_buffer;
+      std::vector<char> *output_host_ptr = &output_host_buffer;
+
+      bool should_terminate = false;
+      int itcnt = 0;
+      do {
+        std::cout << "Host vectors before: \n\tInput:";
+        printCharVector<float>(*input_host_ptr);
+        std::cout << "\tOutput:";
+        printCharVector<float>(*output_host_ptr);
+
+        // run the kernel
+        runtimes.push_back(executeKernel(run));
+
+        // copy the output back down
+        readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
+        std::cout << "Host vectors after: \n\tInput:";
+        printCharVector<float>(*input_host_ptr);
+        std::cout << "\tOutput:";
+        printCharVector<float>(*output_host_ptr);
+
+        should_terminate = should_terminate_iteration(*input_host_ptr,
+                                                      *output_host_ptr, delta);
+        // swap the pointers over
+        std::swap(input_mem_ptr, output_mem_ptr);
+        std::swap(input_host_ptr, output_host_ptr);
+
+        // reupload the input
+        writeToGlobalArg(*input_host_ptr, *input_mem_ptr);
+        // writeToGlobalArg(blank_output_buffer, *output_mem_ptr);
+
+        // set the kernel args
+        // setGlobalArg(input_idx, input_mem_ptr);
+        // setGlobalArg(output_idx, output_mem_ptr);
+
+        itcnt++;
+      } while (!should_terminate && itcnt < 3);
+    }
 
     // // we need a cache for the input vector
     // // this seems _super_ hacky. I don't like casting around like this, even
@@ -131,53 +223,29 @@ public:
     //     return runtimes;
     //   }
     // }
-    // return runtimes;
+    return runtimes;
   }
 
 private:
-  double executeKernel(Run run) {
-    return 0.0;
-    // start_timer(executeKernel, HarnessBFS);
-    // auto &devPtr = executor::globalDeviceList.front();
-    // // get our local and global sizes
-    // cl_uint localSize1 = run.local1;
-    // cl_uint localSize2 = run.local2;
-    // cl_uint localSize3 = run.local3;
-    // cl_uint globalSize1 = run.global1;
-    // cl_uint globalSize2 = run.global2;
-    // cl_uint globalSize3 = run.global3;
+  std::chrono::milliseconds executeRun(Run run) { return executeKernel(run); }
 
-    // auto event = devPtr->enqueue(
-    //     _kernel, cl::NDRange(globalSize1, globalSize2, globalSize3),
-    //     cl::NDRange(localSize1, localSize2, localSize3));
-
-    // return getRuntimeInMilliseconds(event);
-  }
-
-  virtual bool should_terminate_iteration(executor::KernelArg *input,
-                                          executor::KernelArg *output,
+  virtual bool should_terminate_iteration(std::vector<char> &input,
+                                          std::vector<char> &output,
                                           double delta) {
     start_timer(should_terminate_iteration, HarnessBFS);
-    {
-      start_timer(arg_download, should_terminate_iteration);
-      // input->download();
-      output->download();
-    }
-    // get the host vectors from the arguments
-    std::vector<char> &input_vector =
-        static_cast<executor::GlobalArg *>(input)->data().hostBuffer();
-    std::vector<char> &output_vector =
-        static_cast<executor::GlobalArg *>(output)->data().hostBuffer();
-    // reinterpret it as double pointers, and get the lengths
-    auto input_ptr = reinterpret_cast<float *>(input_vector.data());
-    auto output_ptr = reinterpret_cast<float *>(output_vector.data());
-    auto input_length = input_vector.size() / sizeof(float);
-    auto output_length = output_vector.size() / sizeof(float);
+
+    // reinterpret the args as double pointers, and get the lengths
+    auto input_ptr = reinterpret_cast<float *>(input.data());
+    auto output_ptr = reinterpret_cast<float *>(output.data());
+    auto input_length = input.size() / sizeof(float);
+    auto output_length = output.size() / sizeof(float);
     // perform a comparison across the two of them, based on pointers
     bool equal = true;
     for (unsigned int i = 0;
          equal == true && i < input_length && i < output_length; i++) {
       equal = fabs(input_ptr[i] - output_ptr[i]) < delta;
+      std::cout << "Comparing: (" << input_ptr[i] << "," << output_ptr[i]
+                << "), result: " << equal << "\n";
     }
 
     return equal;
@@ -276,11 +344,11 @@ int main(int argc, char *argv[]) {
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<double> runtimes = harness.benchmark(
+    std::vector<std::chrono::milliseconds> runtimes = harness.benchmark(
         run, opt_iterations->get(), opt_timeout->get(), opt_float_delta->get());
     std::cout << "runtimes: [";
     for (auto time : runtimes) {
-      std::cout << "," << time;
+      std::cout << "," << time.count();
     }
     std::cout << "]" << ENDL;
   }

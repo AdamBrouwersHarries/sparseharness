@@ -8,6 +8,7 @@
 #include "opencl_utils.h"
 
 #include "run.h"
+#include <chrono>
 
 template <typename TimingType, typename SemiRingType> class Harness {
 public:
@@ -66,16 +67,20 @@ public:
     cl_kernel kernel = clCreateKernel(program, "KERNEL", &_error);
     checkCLError(_error);
     _kernel = kernel;
+
+    // finally, create a command queue from the device and context);
+    _queue = clCreateCommandQueue(_context, _deviceIds[device],
+                                  CL_QUEUE_PROFILING_ENABLE, &_error);
+    checkCLError(_error);
   }
 
   virtual std::vector<TimingType> benchmark(Run run, int iterations,
                                             double timeout, double delta) = 0;
 
-  virtual void print_sql_stats(const Run &run, const std::string &kname,
-                               const std::string &mname,
-                               const std::string &hname,
-                               const std::string &experiment_id,
-                               std::vector<TimingType> &times)
+  virtual void
+  print_sql_stats(const Run &run, const std::string &kname,
+                  const std::string &mname, const std::string &hname,
+                  const std::string &experiment_id, std::vector<double> &times)
 
   {
     auto &devPtr = executor::globalDeviceList.front();
@@ -98,13 +103,174 @@ public:
   }
 
 protected:
-  virtual double executeKernel(Run run) = 0;
+  virtual TimingType executeRun(Run run) = 0;
+
+  std::chrono::milliseconds executeKernel(Run run) {
+    cl_event ev;
+    const size_t global_range[3] = {run.global1, run.global2, run.global3};
+    const size_t local_range[3] = {run.local1, run.local2, run.local3};
+    checkCLError(clEnqueueNDRangeKernel(_queue, _kernel, 3, NULL, global_range,
+                                        local_range, 0, NULL, &ev));
+    clWaitForEvents(1, &ev);
+
+    // check the event:
+    cl_int status;
+    checkCLError(clGetEventInfo(ev, CL_EVENT_COMMAND_EXECUTION_STATUS,
+                                sizeof(cl_int), &status, NULL));
+    switch (status) {
+    case CL_QUEUED:
+      std::cout << "+++++++ Event CL_QUEUED\n";
+      break;
+    case CL_SUBMITTED:
+      std::cout << "+++++++ Event CL_SUBMITTED\n";
+      break;
+    case CL_RUNNING:
+      std::cout << "+++++++ Event CL_RUNNING\n";
+      break;
+    case CL_COMPLETE:
+      std::cout << "+++++++ Event CL_COMPLETE\n";
+      break;
+    default:
+      std::cout << "+++++++ EVENT FAILED WITH ERROR CODE: " << status << "\n";
+    }
+
+    // find how long the kernel took.
+    cl_ulong start;
+    cl_ulong end;
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START,
+                                         sizeof(cl_ulong), (void *)&start,
+                                         NULL));
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END,
+                                         sizeof(cl_ulong), (void *)&end, NULL));
+
+    report_timing(clEnqueueNDRangeKernel, harness, end - start);
+
+    std::chrono::nanoseconds elapsed_ns(end - start);
+    return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_ns);
+  }
+
+  cl_mem createAndUploadGlobalArg(std::vector<char> &arg, bool output = false) {
+    start_timer(createAndUploadGlobalArg, harness);
+    // get a pointer to the underlying arg:
+    char *data = arg.data();
+    size_t len = arg.size() * sizeof(char);
+
+    std::cout << "creating arg of size: " << len
+              << " from pointer: " << static_cast<void *>(data) << "\n";
+
+    // create a mem argument
+    cl_mem_flags flags = output ? CL_MEM_READ_WRITE : CL_MEM_READ_ONLY;
+    cl_mem buffer =
+        clCreateBuffer(_context, CL_MEM_READ_WRITE, (size_t)len, NULL, &_error);
+    checkCLError(_error);
+
+    // enqueue a write into that buffer
+    cl_event ev; // do something with this event eventually!
+    checkCLError(clEnqueueWriteBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
+                                      NULL, &ev));
+
+    clWaitForEvents(1, &ev);
+
+    // find how long the copy took.
+    cl_ulong start;
+    cl_ulong end;
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START,
+                                         sizeof(cl_ulong), (void *)&start,
+                                         NULL));
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END,
+                                         sizeof(cl_ulong), (void *)&end, NULL));
+
+    report_timing(clEnqueueWriteBuffer, createAndUploadGlobalArg, end - start);
+    return buffer;
+  }
+
+  void writeToGlobalArg(std::vector<char> &arg, cl_mem buffer) {
+    start_timer(writeToGlobalArg, harness);
+    // get a pointer to the underlying arg:
+    char *data = arg.data();
+    size_t len = arg.size() * sizeof(char);
+
+    std::cout << "uploading arg of size: " << len
+              << " from pointer: " << static_cast<void *>(data) << "\n";
+
+    // enqueue a write into that buffer
+    cl_event ev; // do something with this event eventually!
+    checkCLError(clEnqueueWriteBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
+                                      NULL, &ev));
+
+    clWaitForEvents(1, &ev);
+
+    // find how long the copy took.
+    cl_ulong start;
+    cl_ulong end;
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START,
+                                         sizeof(cl_ulong), (void *)&start,
+                                         NULL));
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END,
+                                         sizeof(cl_ulong), (void *)&end, NULL));
+
+    report_timing(clEnqueueWriteBuffer, writeToGlobalArg, end - start);
+  }
+
+  void readFromGlobalArg(std::vector<char> &arg, cl_mem buffer) {
+    start_timer(readFromGlobalArg, harness);
+    // get a pointer to the underlying arg:
+    char *data = arg.data();
+    size_t len = arg.size() * sizeof(char);
+
+    std::cout << "downloading arg of size: " << len
+              << " into pointer: " << static_cast<void *>(data) << "\n";
+
+    cl_event ev;
+    checkCLError(clEnqueueReadBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
+                                     NULL, &ev));
+    clWaitForEvents(1, &ev);
+
+    // find how long the copy took.
+    cl_ulong start;
+    cl_ulong end;
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START,
+                                         sizeof(cl_ulong), (void *)&start,
+                                         NULL));
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END,
+                                         sizeof(cl_ulong), (void *)&end, NULL));
+
+    report_timing(clEnqueueReadBuffer, readFromGlobalArg, end - start);
+  }
+
+  cl_mem createGlobalArg(unsigned int size) {
+    start_timer(createGlobalArg, harness);
+    cl_mem buffer = clCreateBuffer(_context, CL_MEM_READ_WRITE, (size_t)size,
+                                   NULL, &_error);
+    checkCLError(_error);
+
+    return buffer;
+  }
+
+  void setGlobalArg(cl_int arg, cl_mem *mem) {
+    start_timer(setGlobalArg, harness);
+    std::cout << "setting arg : " << arg << " from memory "
+              << static_cast<void *>(mem) << "\n";
+    checkCLError(clSetKernelArg(_kernel, arg, sizeof(cl_mem), mem));
+  }
+
+  template <typename ValueType> void setValueArg(cl_uint arg, ValueType *val) {
+    start_timer(setValueArg, harness);
+    checkCLError(clSetKernelArg(_kernel, arg, sizeof(ValueType), val));
+  }
+
+  void setLocalArg(cl_uint arg, size_t size) {
+    start_timer(setLocalArg, harness);
+    checkCLError(clSetKernelArg(_kernel, arg, size, NULL));
+  }
+
   // stateful error code :(
   cl_int _error;
   std::string _kernel_source;
   cl_kernel _kernel;
   cl_uint _platformIdCount;
   cl_uint _deviceIdCount;
+  cl_command_queue _queue;
 
   std::vector<cl_device_id> _deviceIds;
 
@@ -112,7 +278,8 @@ protected:
   ArgContainer<SemiRingType> _args;
 };
 
-// template <typename T> class IterativeHarness : public Harness<std::vector<T>>
+// template <typename T> class IterativeHarness : public
+// Harness<std::vector<T>>
 // {
 template <typename TimingType, typename SemiRingType>
 class IterativeHarness : public Harness<TimingType, SemiRingType> {
@@ -123,7 +290,7 @@ public:
                                           args) {}
 
 protected:
-  virtual bool should_terminate_iteration(executor::KernelArg *input,
-                                          executor::KernelArg *output,
+  virtual bool should_terminate_iteration(std::vector<char> &input,
+                                          std::vector<char> &output,
                                           double delta) = 0;
 };

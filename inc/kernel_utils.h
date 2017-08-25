@@ -48,7 +48,7 @@ typedef std::vector<char> raw_arg;
 
 template <typename T> class ArgContainer {
 public:
-  raw_arg m_ixs;
+  raw_arg m_idxs;
   raw_arg m_vals;
   raw_arg x_vect;
   raw_arg y_vect;
@@ -130,7 +130,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   std::cout << "Input matrix mem arg: "
             << (size_t)flat_indices.size() * sizeof(T) << "\n";
 
-  arg_cnt.m_ixs = enchar<int>(flat_indices);
+  arg_cnt.m_idxs = enchar<int>(flat_indices);
   arg_cnt.m_vals = enchar<T>(flat_values);
 
   // create args for the vector inputs

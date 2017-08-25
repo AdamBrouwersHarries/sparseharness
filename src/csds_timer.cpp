@@ -35,6 +35,15 @@ CSDSTimer::~CSDSTimer() {
 #endif
 }
 
+void CSDSTimer::reportTiming(const std::string &name,
+                             const std::string &context,
+                             std::chrono::nanoseconds elapsed_ns) {
+  auto elapsed_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_ns);
+  std::cout << "PROFILING_DATUM(\"" << name << "\", \"" << context << "\", "
+            << elapsed_ms.count() << ", \"C++\")" << ENDL;
+}
+
 void CSDSTimer::reportStart() {
   *_default_str << "PFTimerStart(\"" << _name << "\", \"" << _context << "\")"
                 << ENDL;

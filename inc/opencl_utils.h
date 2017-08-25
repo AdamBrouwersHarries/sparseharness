@@ -2,6 +2,7 @@
 #include "CL/cl.h"
 #include <iostream>
 #include <string>
+#include <vector>
 
 // give the function names
 std::string getErrorString(cl_int);
@@ -162,4 +163,20 @@ std::string getErrorString(cl_int err) {
   }
   ostr << " (code: " << err << ")";
   return ostr.str();
+}
+
+template <typename T> void printCharVector(std::vector<char> &v) {
+  // get the underlying pointer, and the length in terms of t
+  // then recast in terms of T
+  T *data = reinterpret_cast<T *>(v.data());
+  unsigned int length = (v.size() * sizeof(char)) / sizeof(T);
+  // print it out
+  std::cout << "[";
+  for (int i = 0; i < length; i++) {
+    if (i != 0) {
+      std::cout << ",";
+    }
+    std::cout << data[i];
+  }
+  std::cout << "]\n";
 }
