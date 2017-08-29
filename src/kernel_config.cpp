@@ -57,6 +57,16 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << ENDL;
   }
+  std::cerr << "output argument: " << ENDL;
+  {
+    auto &outputArgJson = tree.get_child("outputArg");
+    std::string variable = outputArgJson.get<std::string>("variable");
+    std::string addressSpace = outputArgJson.get<std::string>("addressSpace");
+    std::string size = outputArgJson.get<std::string>("size");
+    outputArg = new ArgDescr(variable, addressSpace, size);
+    std::cout << "variable: " << variable << " address space: " << addressSpace
+              << " size: " << size << ENDL;
+  }
   std::cerr << "temp global arguments: " << ENDL;
   for (auto &arg : tree.get_child("tempGlobals")) {
     std::string variable = arg.second.get<std::string>("variable");
@@ -75,23 +85,13 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << ENDL;
   }
-  {
-    auto &outputArgJson = tree.get_child("outputArg");
-    std::string variable = outputArgJson.get<std::string>("variable");
-    std::string addressSpace = outputArgJson.get<std::string>("addressSpace");
-    std::string size = outputArgJson.get<std::string>("size");
-    outputArg = new ArgDescr(variable, addressSpace, size);
-    std::cout << "Output arg -- variable: " << variable
-              << " address space: " << addressSpace << " size: " << size
-              << ENDL;
-  }
 }
 
-template <typename T> std::string KernelConfig<T>::getSource() {
+template <typename T> std::string &KernelConfig<T>::getSource() {
   return source;
 }
 
-template <typename T> std::string KernelConfig<T>::getName() { return name; }
+template <typename T> std::string &KernelConfig<T>::getName() { return name; }
 
 template <typename T> std::vector<ArgDescr> KernelConfig<T>::getArgs() {
   return inputArgs;

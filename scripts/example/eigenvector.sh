@@ -6,9 +6,9 @@ harness=$2
 # The harness executable
 # harness=$projroot/build/bfs_harness
 # A kernel to run with the harness
-kernel=$projroot/example/kernel2.json
+kernel=$projroot/example/kernel.json
 # The matrix to process
-matrix=$projroot/example/matrix.mtx
+matrix=$projroot/example/matrix3.mtx
 # The run parameters - i.e. local and global sizes
 runfile=$projroot/example/shortrunfile.csv
 # our hostname
@@ -17,4 +17,8 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-$harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 1 -t 10 
+mkdir -p results
+for f in $(ls $projroot/example/ | grep json); do
+	kernel=$projroot/example/$f
+	oclgrind $harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 1 -t 0.5 &> results/output-$f.cpp
+done 

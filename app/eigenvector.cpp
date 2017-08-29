@@ -39,15 +39,16 @@
 #include "CL/cl.h"
 #endif
 
-class HarnessBFS : public IterativeHarness<std::chrono::milliseconds, float> {
+class HarnessEigenvector
+    : public IterativeHarness<std::chrono::milliseconds, float> {
 public:
-  HarnessBFS(std::string &kernel_source, unsigned int platform,
-             unsigned int device, ArgContainer<float> args)
+  HarnessEigenvector(std::string &kernel_source, unsigned int platform,
+                     unsigned int device, ArgContainer<float> args)
       : IterativeHarness(kernel_source, platform, device, args) {}
   std::vector<std::chrono::milliseconds>
   benchmark(Run run, int iterations, double timeout, double delta) {
 
-    start_timer(benchmark, HarnessBFS);
+    start_timer(benchmark, HarnessEigenvector);
 
     // set up the kernel
     cl_uint arg_index = 0;
@@ -55,6 +56,7 @@ public:
     cl_uint output_idx = 0;
 
     // build the matrix arguments
+    std::cerr << "Setting matrix arguments" << ENDL;
     cl_mem matrix_idxs_ma = createAndUploadGlobalArg(_args.m_idxs);
     setGlobalArg(arg_index++, &matrix_idxs_ma);
 
@@ -62,6 +64,7 @@ public:
     setGlobalArg(arg_index++, &matrix_vals_ma);
 
     // build the vector arguments
+    std::cerr << "Setting vector arguments" << ENDL;
     cl_mem x_vect_ma = createAndUploadGlobalArg(_args.x_vect, true);
     setGlobalArg(arg_index++, &x_vect_ma);
 
@@ -69,29 +72,33 @@ public:
     setGlobalArg(arg_index++, &y_vect_ma);
 
     // build the constant arguments
+    std::cerr << "Setting constant arguments" << ENDL;
     setValueArg<float>(arg_index++, &(_args.alpha));
     setValueArg<float>(arg_index++, &(_args.beta));
 
+    // set the output arg
+    std::cerr << "Setting the output argument" << ENDL;
+    output_idx = arg_index;
+    cl_mem output_mem = createGlobalArg(_args.output);
+    setGlobalArg(arg_index++, &output_mem);
     // build temp globals
     // do we need to save them at all???
     // std::vector<cl_mem> temp_globals(_args.temp_globals.size());
     // THIS MIGHT SEGFAULT AWFULLY :D
+    std::cerr << "Setting temp global arguments" << ENDL;
     for (auto size : _args.temp_globals) {
       cl_mem temp_arg = createGlobalArg(size);
       setGlobalArg(arg_index++, &temp_arg);
     }
 
-    // set the output arg
-    output_idx = arg_index;
-    cl_mem output_mem = createGlobalArg(_args.output);
-    setGlobalArg(arg_index++, &output_mem);
-
     // build temp locals
+    std::cerr << "Setting temp local arguments" << ENDL;
     for (auto size : _args.temp_locals) {
       setLocalArg(arg_index++, size);
     }
 
     // set the size arguments
+    std::cerr << "Setting size arguments" << ENDL;
     for (auto size : _args.size_args) {
       setValueArg<unsigned int>(arg_index++, &(size));
     }
@@ -106,7 +113,7 @@ public:
     // run the kernel!
     std::vector<std::chrono::milliseconds> runtimes;
     for (int i = 0; i < iterations; i++) {
-      start_timer(benchmark_iteration, HarnessBFS);
+      start_timer(benchmark_iteration, HarnessEigenvector);
 
       // get pointers to the input + output mem args
       cl_mem *input_mem_ptr = &x_vect_ma;
@@ -129,6 +136,7 @@ public:
 
         // copy the output back down
         readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
+
         std::cout << "Host vectors after: \n\tInput:";
         printCharVector<float>(*input_host_ptr);
         std::cout << "\tOutput:";
@@ -140,16 +148,12 @@ public:
         std::swap(input_mem_ptr, output_mem_ptr);
         std::swap(input_host_ptr, output_host_ptr);
 
-        // reupload the input
-        // writeToGlobalArg(*input_host_ptr, *input_mem_ptr);
-        // writeToGlobalArg(blank_output_buffer, *output_mem_ptr);
-
         // set the kernel args
         setGlobalArg(input_idx, input_mem_ptr);
         setGlobalArg(output_idx, output_mem_ptr);
 
         itcnt++;
-      } while (!should_terminate && itcnt < 300);
+      } while (!should_terminate && itcnt < 10);
     }
 
     // // we need a cache for the input vector
@@ -161,7 +165,7 @@ public:
 
     // // run the benchmark for that many iterations
     // for (int i = 0; i < iterations; i++) {
-    //   start_timer(benchmark_iteration, HarnessBFS);
+    //   start_timer(benchmark_iteration, HarnessEigenvector);
     //   // std::cout << "Iteration: " << i << '\n';
 
     //   // Run the algorithm
@@ -229,7 +233,7 @@ private:
   virtual bool should_terminate_iteration(std::vector<char> &input,
                                           std::vector<char> &output,
                                           double delta) {
-    start_timer(should_terminate_iteration, HarnessBFS);
+    start_timer(should_terminate_iteration, HarnessEigenvector);
 
     // reinterpret the args as double pointers, and get the lengths
     auto input_ptr = reinterpret_cast<float *>(input.data());
@@ -311,6 +315,9 @@ int main(int argc, char *argv[]) {
     std::cout << "Matrix is not square. Failing computation." << ENDL;
     std::cerr << "Matrix is not square. Failing computation." << ENDL;
     std::exit(2);
+  } else {
+    std::cout << " Matrix is square - width = " << matrix.width()
+              << " and height = " << matrix.height() << "\n";
   }
 
   // specialise the matrix for the kernel given
@@ -318,23 +325,28 @@ int main(int argc, char *argv[]) {
   // extract size variables from it
   int v_Width_cl = cl_matrix.getCLVWidth();
   int v_Height_cl = cl_matrix.getCLVHeight();
-  int v_Length_cl = cl_matrix.rows;
+  int v_Length_cl = matrix.width();
+
+  std::cout << "v_Width_cl = " << v_Width_cl << "\n";
+  std::cout << "v_Height_cl = " << v_Height_cl << "\n";
+  std::cout << "v_Length_cl = " << v_Length_cl << "\n";
 
   // size args of name/order:
   // v_MWidthC_1, v_MHeight_2, v_VLength_3
-  std::vector<int> size_args{v_Width_cl, v_Height_cl, v_Length_cl};
+  // std::vector<int> size_args{v_Width_cl, v_Width_cl, v_Length_cl};
 
   // generate a vector
 
-  ConstXVectorGenerator<float> tengen(1000.0f);
+  ConstXVectorGenerator<float> onegen(1.0f);
   ConstYVectorGenerator<float> zerogen(0);
 
   // auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, tengen, zerogen,
-                                   v_Width_cl, v_Height_cl, v_Length_cl);
-  HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
-                     args);
+  auto args =
+      executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, v_Width_cl,
+                           v_Height_cl, v_Length_cl, 1.0f, 0.0f);
+  HarnessEigenvector harness(kernel.getSource(), opt_platform->get(),
+                             opt_device->get(), args);
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
