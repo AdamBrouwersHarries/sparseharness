@@ -6,7 +6,7 @@ harness=$2
 # The harness executable
 # harness=$projroot/build/bfs_harness
 # A kernel to run with the harness
-kernel=$projroot/example/kernel5.json
+kernel=$projroot/example/kernel2.json
 # The matrix to process
 matrix=$projroot/example/matrix.mtx
 # The run parameters - i.e. local and global sizes
@@ -17,4 +17,4 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-$harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 1 -t 200 
+$harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 1 -t 10 

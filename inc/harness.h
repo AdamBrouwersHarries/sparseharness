@@ -1,9 +1,4 @@
 #pragma once
-#include "executor/Executor.h"
-#include "executor/GlobalArg.h"
-#include "executor/KernelArg.h"
-#include "executor/LocalArg.h"
-#include "executor/ValueArg.h"
 #include "kernel_utils.h"
 #include "opencl_utils.h"
 
@@ -14,7 +9,7 @@ template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
           unsigned int device, ArgContainer<SemiRingType> args)
-      : _kernel_source(kernel_source), _args(args) {
+      : _device(device), _kernel_source(kernel_source), _args(args) {
 
     // initialise OpenCL:
     // get the number of platforms
@@ -69,7 +64,8 @@ public:
     _kernel = kernel;
 
     // finally, create a command queue from the device and context);
-    _queue = clCreateCommandQueue(_context, _deviceIds[device],
+    _device_id = _deviceIds[_device];
+    _queue = clCreateCommandQueue(_context, _deviceIds[_device],
                                   CL_QUEUE_PROFILING_ENABLE, &_error);
     checkCLError(_error);
   }
@@ -83,7 +79,7 @@ public:
                   const std::string &experiment_id, std::vector<double> &times)
 
   {
-    auto &devPtr = executor::globalDeviceList.front();
+    // auto &devPtr = executor::globalDeviceList.front();
     std::cout << "INSERT INTO table_name (time, correctness, kernel, "
               << "global, local, host, device, matrix, iteration, trial,"
               << "statistic, experiment_id) VALUES ";
@@ -94,7 +90,7 @@ public:
       }
       std::cout << "(" << t << ",\"notchecked\", \"" << kname << "\", "
                 << run.global1 << ", " << run.local1 << ", \"" << hname
-                << "\", \"" << devPtr->name() << "\", \"" << mname << "\", 0,"
+                << "\", \"" << getDeviceName() << "\", \"" << mname << "\", 0,"
 
                 << trial << ", \"RAW_RESULT\", \"" << experiment_id << "\")";
       trial++;
@@ -240,6 +236,7 @@ protected:
 
   cl_mem createGlobalArg(unsigned int size) {
     start_timer(createGlobalArg, harness);
+    std::cout << "creating global arg of size " << size << "\n";
     cl_mem buffer = clCreateBuffer(_context, CL_MEM_READ_WRITE, (size_t)size,
                                    NULL, &_error);
     checkCLError(_error);
@@ -249,19 +246,30 @@ protected:
 
   void setGlobalArg(cl_int arg, cl_mem *mem) {
     start_timer(setGlobalArg, harness);
-    std::cout << "setting arg : " << arg << " from memory "
+    std::cout << "setting global arg : " << arg << " from memory "
               << static_cast<void *>(mem) << "\n";
     checkCLError(clSetKernelArg(_kernel, arg, sizeof(cl_mem), mem));
   }
 
   template <typename ValueType> void setValueArg(cl_uint arg, ValueType *val) {
     start_timer(setValueArg, harness);
+    std::cout << "setting value arg of with value : " << *val << "\n";
     checkCLError(clSetKernelArg(_kernel, arg, sizeof(ValueType), val));
   }
 
   void setLocalArg(cl_uint arg, size_t size) {
     start_timer(setLocalArg, harness);
+    std::cout << "setting local arg of size : " << size << "\n";
+
     checkCLError(clSetKernelArg(_kernel, arg, size, NULL));
+  }
+
+  std::string getDeviceName() {
+    char name[256];
+    size_t actual_size;
+    _error = clGetDeviceInfo(_device_id, CL_DEVICE_NAME, sizeof(char) * 256,
+                             name, &actual_size);
+    return std::string(name);
   }
 
   // stateful error code :(
@@ -270,8 +278,10 @@ protected:
   cl_kernel _kernel;
   cl_uint _platformIdCount;
   cl_uint _deviceIdCount;
+  cl_uint _device;
   cl_command_queue _queue;
 
+  cl_device_id _device_id;
   std::vector<cl_device_id> _deviceIds;
 
   cl_context _context;

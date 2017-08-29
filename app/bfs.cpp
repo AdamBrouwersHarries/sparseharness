@@ -16,9 +16,6 @@
 #include <typeinfo>
 #include <vector>
 
-// [external includes]
-#include "Executor.h"
-
 // [tools]
 #include "common.h"
 #include "csds_timer.h"
@@ -144,15 +141,15 @@ public:
         std::swap(input_host_ptr, output_host_ptr);
 
         // reupload the input
-        writeToGlobalArg(*input_host_ptr, *input_mem_ptr);
+        // writeToGlobalArg(*input_host_ptr, *input_mem_ptr);
         // writeToGlobalArg(blank_output_buffer, *output_mem_ptr);
 
         // set the kernel args
-        // setGlobalArg(input_idx, input_mem_ptr);
-        // setGlobalArg(output_idx, output_mem_ptr);
+        setGlobalArg(input_idx, input_mem_ptr);
+        setGlobalArg(output_idx, output_mem_ptr);
 
         itcnt++;
-      } while (!should_terminate && itcnt < 3);
+      } while (!should_terminate && itcnt < 300);
     }
 
     // // we need a cache for the input vector
@@ -327,9 +324,6 @@ int main(int argc, char *argv[]) {
   // v_MWidthC_1, v_MHeight_2, v_VLength_3
   std::vector<int> size_args{v_Width_cl, v_Height_cl, v_Length_cl};
 
-  // initialise the executor
-  initExecutor(opt_platform->get(), opt_device->get());
-
   // generate a vector
 
   ConstXVectorGenerator<float> tengen(1000.0f);
@@ -352,6 +346,4 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "]" << ENDL;
   }
-
-  shutdownExecutor();
 }
