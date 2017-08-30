@@ -1,4 +1,6 @@
 #pragma once
+
+#include "cl_memory_manager.h"
 #include "kernel_utils.h"
 #include "opencl_utils.h"
 
@@ -9,7 +11,8 @@ template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
           unsigned int device, ArgContainer<SemiRingType> args)
-      : _device(device), _kernel_source(kernel_source), _args(args) {
+      : _device(device), _kernel_source(kernel_source), _args(args),
+        _mem_manager(args) {
 
     // initialise OpenCL:
     // get the number of platforms
@@ -17,8 +20,11 @@ public:
     clGetPlatformIDs(0, nullptr, &_platformIdCount);
 
     if (_platformIdCount == 0) {
-      std::cerr << "No OpenCL devices found! \n";
+      LOG_ERROR("No OpenCL devices found!");
+      exit(1);
     }
+
+    LOG_DEBUG_INFO("Found ", _platformIdCount, " platforms");
 
     // make a vector of platform ids
     std::vector<cl_platform_id> platformIds(_platformIdCount);
@@ -29,10 +35,14 @@ public:
     clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, 0, nullptr,
                    &_deviceIdCount);
 
+    LOG_DEBUG_INFO("Found ", _deviceIdCount, " devices on the chosen platform");
+
     // get a list of devices from the platform
     _deviceIds.resize(_deviceIdCount);
     clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, _deviceIdCount,
                    _deviceIds.data(), nullptr);
+
+    LOG_INFO("Running on OpenCL device: ", getDeviceName());
 
     // create a context on that device (with some properties)
     const cl_context_properties contextProperties[] = {
@@ -115,19 +125,19 @@ protected:
                                 sizeof(cl_int), &status, NULL));
     switch (status) {
     case CL_QUEUED:
-      std::cout << "+++++++ Event CL_QUEUED\n";
+      LOG_DEBUG_INFO("Event CL_QUEUED");
       break;
     case CL_SUBMITTED:
-      std::cout << "+++++++ Event CL_SUBMITTED\n";
+      LOG_DEBUG_INFO("Event CL_SUBMITTED");
       break;
     case CL_RUNNING:
-      std::cout << "+++++++ Event CL_RUNNING\n";
+      LOG_DEBUG_INFO("Event CL_RUNNING");
       break;
     case CL_COMPLETE:
-      std::cout << "+++++++ Event CL_COMPLETE\n";
+      LOG_DEBUG_INFO("Event CL_COMPLETE");
       break;
     default:
-      std::cout << "+++++++ EVENT FAILED WITH ERROR CODE: " << status << "\n";
+      LOG_WARNING("EVENT FAILED WITH ERROR CODE: ", getErrorString(status));
     }
 
     // find how long the kernel took.
@@ -145,14 +155,81 @@ protected:
     return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_ns);
   }
 
+  void allocateBuffers() {
+    start_timer(allocateBuffers, Harness);
+    cl_uint arg_index = 0;
+    // build the matrix arguments
+    LOG_DEBUG_INFO("setting matrix arguments");
+    _mem_manager._matrix_idxs = createAndUploadGlobalArg(_args.m_idxs);
+    setGlobalArg(arg_index++, &_mem_manager._matrix_idxs);
+
+    _mem_manager._matrix_vals = createAndUploadGlobalArg(_args.m_vals);
+    setGlobalArg(arg_index++, &_mem_manager._matrix_vals);
+
+    // build the vector arguments
+    LOG_DEBUG_INFO("setting vector arguments");
+    _mem_manager._x_vect = createAndUploadGlobalArg(_args.x_vect, true);
+    setGlobalArg(arg_index++, &_mem_manager._x_vect);
+
+    _mem_manager._y_vect = createAndUploadGlobalArg(_args.y_vect, true);
+    setGlobalArg(arg_index++, &_mem_manager._y_vect);
+
+    // build the constant arguments
+    LOG_DEBUG_INFO("setting constant arguments");
+    setValueArg<float>(arg_index++, &(_args.alpha));
+    setValueArg<float>(arg_index++, &(_args.beta));
+
+    // set the output arg
+    LOG_DEBUG_INFO("setting the output argument");
+    _mem_manager._output_idx = arg_index;
+    _mem_manager._output = createGlobalArg(_args.output);
+    setGlobalArg(arg_index++, &_mem_manager._output);
+
+    // set the temp globals and write zeros into them
+    LOG_DEBUG_INFO("setting temp global arguments");
+    int temp_index = 0;
+    for (auto size : _args.temp_globals) {
+      _mem_manager._temp_global[temp_index] = createGlobalArg(size);
+      fillGlobalArg(size, _mem_manager._temp_global[temp_index]);
+      setGlobalArg(arg_index++, &(_mem_manager._temp_global[temp_index]));
+      temp_index++;
+    }
+
+    // build temp locals
+    LOG_DEBUG_INFO("setting temp local arguments");
+    for (auto size : _args.temp_locals) {
+      setLocalArg(arg_index++, size);
+    }
+
+    // set the size arguments
+    LOG_DEBUG_INFO("setting size arguments");
+    for (auto size : _args.size_args) {
+      setValueArg<unsigned int>(arg_index++, &(size));
+    }
+  }
+
+  void resetPointers() {}
+
+  void resetTempBuffers() {
+    start_timer(resetTempBuffers, Harness);
+
+    // set the temporary inputs to zero
+    int temp_index = 0;
+    for (auto arg : _mem_manager._temp_global) {
+      start_timer(fillGlobalArg, resetTempBuffers);
+      fillGlobalArg(_args.temp_globals[temp_index], arg);
+      temp_index++;
+    }
+  }
+
   cl_mem createAndUploadGlobalArg(std::vector<char> &arg, bool output = false) {
     start_timer(createAndUploadGlobalArg, harness);
     // get a pointer to the underlying arg:
     char *data = arg.data();
     size_t len = arg.size() * sizeof(char);
 
-    std::cout << "creating arg of size: " << len
-              << " from pointer: " << static_cast<void *>(data) << "\n";
+    LOG_DEBUG_INFO("Creating arg of size ", len, " from pointer ",
+                   static_cast<void *>(data));
 
     // create a mem argument
     cl_mem_flags flags = output ? CL_MEM_READ_WRITE : CL_MEM_READ_ONLY;
@@ -186,8 +263,8 @@ protected:
     char *data = arg.data();
     size_t len = arg.size() * sizeof(char);
 
-    std::cout << "uploading arg of size: " << len
-              << " from pointer: " << static_cast<void *>(data) << "\n";
+    LOG_DEBUG_INFO("uploading arg of size ", len, " from pointer ",
+                   static_cast<void *>(data));
 
     // enqueue a write into that buffer
     cl_event ev; // do something with this event eventually!
@@ -208,14 +285,42 @@ protected:
     report_timing(clEnqueueWriteBuffer, writeToGlobalArg, end - start);
   }
 
+  // NOTE - THIS DEPENDS ON OpenCL 1.2 functionality and therefore may not
+  // work on some NVIDIA platforms. See problems such as this:
+  // https://stackoverflow.com/questions/32145522/compiling-opencl-1-2-codes-on-nvidia-gpus
+  // This code therfore may need to be rewritten at some point!
+  void fillGlobalArg(size_t buffer_size, cl_mem buffer) {
+    start_timer(fillGlobalArg, harness);
+    LOG_DEBUG_INFO("filling buffer with ", buffer_size, " bytes of zeros");
+
+    char pattern = 0;
+
+    cl_event ev;
+    checkCLError(clEnqueueFillBuffer(_queue, buffer, &pattern, sizeof(char), 0,
+                                     buffer_size, 0, NULL, &ev));
+
+    clWaitForEvents(1, &ev);
+
+    // find how long the copy took.
+    cl_ulong start;
+    cl_ulong end;
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_START,
+                                         sizeof(cl_ulong), (void *)&start,
+                                         NULL));
+    checkCLError(clGetEventProfilingInfo(ev, CL_PROFILING_COMMAND_END,
+                                         sizeof(cl_ulong), (void *)&end, NULL));
+
+    report_timing(clEnqueueFillBuffer, fillGlobalArg, end - start);
+  }
+
   void readFromGlobalArg(std::vector<char> &arg, cl_mem buffer) {
     start_timer(readFromGlobalArg, harness);
     // get a pointer to the underlying arg:
     char *data = arg.data();
     size_t len = arg.size() * sizeof(char);
 
-    std::cout << "downloading arg of size: " << len
-              << " into pointer: " << static_cast<void *>(data) << "\n";
+    LOG_DEBUG_INFO("downloading arg of size: ", len, " into pointer ",
+                   static_cast<void *>(data));
 
     cl_event ev;
     checkCLError(clEnqueueReadBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
@@ -236,7 +341,8 @@ protected:
 
   cl_mem createGlobalArg(unsigned int size) {
     start_timer(createGlobalArg, harness);
-    std::cout << "creating global arg of size " << size << "\n";
+    LOG_DEBUG_INFO("creating global arg of size ", size);
+
     cl_mem buffer = clCreateBuffer(_context, CL_MEM_READ_WRITE, (size_t)size,
                                    NULL, &_error);
     checkCLError(_error);
@@ -246,29 +352,30 @@ protected:
 
   void setGlobalArg(cl_int arg, cl_mem *mem) {
     start_timer(setGlobalArg, harness);
-    std::cout << "setting global arg : " << arg << " from memory "
-              << static_cast<void *>(mem) << "\n";
+    LOG_DEBUG_INFO("setting global arg ", arg, " from memory ",
+                   static_cast<void *>(mem));
     checkCLError(clSetKernelArg(_kernel, arg, sizeof(cl_mem), mem));
   }
 
   template <typename ValueType> void setValueArg(cl_uint arg, ValueType *val) {
     start_timer(setValueArg, harness);
-    std::cout << "setting value arg of with value : " << *val << "\n";
+    LOG_DEBUG_INFO("setting value arg of with value ", *val);
     checkCLError(clSetKernelArg(_kernel, arg, sizeof(ValueType), val));
   }
 
   void setLocalArg(cl_uint arg, size_t size) {
     start_timer(setLocalArg, harness);
-    std::cout << "setting local arg of size : " << size << "\n";
+    LOG_DEBUG_INFO("setting local arg of size ", size);
 
     checkCLError(clSetKernelArg(_kernel, arg, size, NULL));
   }
 
   std::string getDeviceName() {
-    char name[256];
-    size_t actual_size;
-    _error = clGetDeviceInfo(_device_id, CL_DEVICE_NAME, sizeof(char) * 256,
-                             name, &actual_size);
+    char name[10240];
+    LOG_DEBUG_INFO("Getting device name from device ", _device_id);
+    _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_NAME, sizeof(name),
+                             name, NULL);
+    checkCLError(_error);
     return std::string(name);
   }
 
@@ -286,6 +393,8 @@ protected:
 
   cl_context _context;
   ArgContainer<SemiRingType> _args;
+
+  CLMemoryManager<SemiRingType> _mem_manager;
 };
 
 // template <typename T> class IterativeHarness : public

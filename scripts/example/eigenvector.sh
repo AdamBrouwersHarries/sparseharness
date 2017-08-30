@@ -19,6 +19,15 @@ exid=example_experiment
 # run it all!
 mkdir -p results
 for f in $(ls $projroot/example/ | grep json); do
+	echo "Running $harness with kernel $f"
 	kernel=$projroot/example/$f
-	oclgrind $harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 1 -t 0.5 &> results/output-$f.cpp
+	oclgrind --data-races --uninitialized --max-errors 5 $harness \
+		-e $exid \
+		-n $hname \
+		-m $matrix \
+		-k $kernel \
+		-d 0 \
+		-r $runfile \
+		-i 1 \
+		-t 0.5
 done 

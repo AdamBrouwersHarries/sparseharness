@@ -2,6 +2,7 @@
 
 #include <functional>
 
+#include "Logger.h"
 #include "arithexpr_evaluator.h"
 #include "common.h"
 #include "csds_timer.h"
@@ -121,16 +122,15 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   ArgContainer<T> arg_cnt;
 
   // create args for the matrix inputs
-  std::cout << "Input matrix mem arg: "
-            << (size_t)flat_indices.size() * sizeof(int) << "\n";
-  std::cout << "Input matrix mem arg: "
-            << (size_t)flat_indices.size() * sizeof(T) << "\n";
+  LOG_DEBUG("Input matrix mem arg: ",
+            (size_t)flat_indices.size() * sizeof(int));
+  LOG_DEBUG("Input matrix mem arg: ", (size_t)flat_indices.size() * sizeof(T));
 
-  std::cout << "First 10 elements of matrix: [[";
-  for (int i = 0; i < 10; i++) {
-    std::cout << "(" << flat_indices[i] << "," << flat_values[i] << "),";
-  }
-  std::cout << "...\n";
+  // std::cout << "First 10 elements of matrix: [[";
+  // for (int i = 0; i < 10; i++) {
+  //   std::cout << "(" << flat_indices[i] << "," << flat_values[i] << "),";
+  // }
+  // std::cout << "...\n";
 
   arg_cnt.m_idxs = enchar<int>(flat_indices);
   arg_cnt.m_vals = enchar<T>(flat_values);
@@ -138,10 +138,8 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // create args for the vector inputs
   // TODO: do we actually need to make the x vector bigger when we pad
   // vertically?
-  std::cout << "Input vector arg: " << (size_t)xvector.size() * sizeof(T)
-            << "\n";
-  std::cout << "Input vector arg: " << (size_t)yvector.size() * sizeof(T)
-            << "\n";
+  LOG_DEBUG("Input vector arg: ", (size_t)xvector.size() * sizeof(T));
+  LOG_DEBUG("Input vector arg: ", (size_t)yvector.size() * sizeof(T));
 
   arg_cnt.x_vect = enchar<T>(xvector);
   arg_cnt.y_vect = enchar<T>(yvector);
@@ -152,32 +150,31 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
 
   // create output buffer
   {
-    std::cout << "Global output arg: " << kernel.getOutputArg()->variable
-              << ", " << kernel.getOutputArg()->size << ENDL;
-    int outputMemsize = Evaluator::evaluate(
-        kernel.getOutputArg()->size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    std::cout << "outputMemSize: " << outputMemsize << ENDL;
-    arg_cnt.output = outputMemsize;
+    int memsize = Evaluator::evaluate(kernel.getOutputArg()->size, v_MWidth_1,
+                                      v_MHeight_2, v_VLength_3);
+    arg_cnt.output = memsize;
+    LOG_DEBUG("Global output arg - arg: ", kernel.getOutputArg()->variable,
+              ", address space: ", kernel.getOutputArg()->addressSpace,
+              ", size:", kernel.getOutputArg()->size, ", realsize: ", memsize);
   }
 
   for (auto arg : kernel.getTempGlobals()) {
-    std::cout << "Global temp arg: " << arg.variable << ", " << arg.addressSpace
-              << "," << arg.size << ENDL;
     int memsize =
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-
-    std::cout << "realsize: " << memsize << ENDL;
     arg_cnt.temp_globals.push_back(memsize);
+    LOG_DEBUG("Global temp arg - arg: ", arg.variable,
+              ", address space: ", arg.addressSpace, ", size:", arg.size,
+              ", realsize: ", memsize);
   }
 
   // create temporary local buffers
   for (auto arg : kernel.getTempLocals()) {
-    std::cout << "Local temp arg: " << arg.variable << ", " << arg.addressSpace
-              << "," << arg.size << ENDL;
     int memsize =
         Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    std::cout << "realsize: " << memsize << ENDL;
     arg_cnt.temp_locals.push_back(memsize);
+    LOG_DEBUG("Local temp arg - arg: ", arg.variable,
+              ", address space: ", arg.addressSpace, ", size:", arg.size,
+              ", realsize: ", memsize);
   }
 
   // create size buffers

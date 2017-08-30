@@ -49,66 +49,7 @@ public:
   benchmark(Run run, int iterations, double timeout, double delta) {
 
     start_timer(benchmark, HarnessEigenvector);
-
-    // set up the kernel
-    cl_uint arg_index = 0;
-    cl_uint input_idx = 2;
-    cl_uint output_idx = 0;
-
-    // build the matrix arguments
-    std::cerr << "Setting matrix arguments" << ENDL;
-    cl_mem matrix_idxs_ma = createAndUploadGlobalArg(_args.m_idxs);
-    setGlobalArg(arg_index++, &matrix_idxs_ma);
-
-    cl_mem matrix_vals_ma = createAndUploadGlobalArg(_args.m_vals);
-    setGlobalArg(arg_index++, &matrix_vals_ma);
-
-    // build the vector arguments
-    std::cerr << "Setting vector arguments" << ENDL;
-    cl_mem x_vect_ma = createAndUploadGlobalArg(_args.x_vect, true);
-    setGlobalArg(arg_index++, &x_vect_ma);
-
-    cl_mem y_vect_ma = createAndUploadGlobalArg(_args.y_vect, true);
-    setGlobalArg(arg_index++, &y_vect_ma);
-
-    // build the constant arguments
-    std::cerr << "Setting constant arguments" << ENDL;
-    setValueArg<float>(arg_index++, &(_args.alpha));
-    setValueArg<float>(arg_index++, &(_args.beta));
-
-    // set the output arg
-    std::cerr << "Setting the output argument" << ENDL;
-    output_idx = arg_index;
-    cl_mem output_mem = createGlobalArg(_args.output);
-    setGlobalArg(arg_index++, &output_mem);
-    // build temp globals
-    // do we need to save them at all???
-    // std::vector<cl_mem> temp_globals(_args.temp_globals.size());
-    // THIS MIGHT SEGFAULT AWFULLY :D
-    std::cerr << "Setting temp global arguments" << ENDL;
-    for (auto size : _args.temp_globals) {
-      cl_mem temp_arg = createGlobalArg(size);
-      setGlobalArg(arg_index++, &temp_arg);
-    }
-
-    // build temp locals
-    std::cerr << "Setting temp local arguments" << ENDL;
-    for (auto size : _args.temp_locals) {
-      setLocalArg(arg_index++, size);
-    }
-
-    // set the size arguments
-    std::cerr << "Setting size arguments" << ENDL;
-    for (auto size : _args.size_args) {
-      setValueArg<unsigned int>(arg_index++, &(size));
-    }
-
-    // finally, create buffers to copy the input and output into
-    std::vector<char> input_host_buffer(_args.x_vect.begin(),
-                                        _args.x_vect.end());
-    std::vector<char> output_host_buffer(_args.output, 0);
-
-    std::vector<char> blank_output_buffer(_args.output, 0);
+    allocateBuffers();
 
     // run the kernel!
     std::vector<std::chrono::milliseconds> runtimes;
@@ -116,31 +57,36 @@ public:
       start_timer(benchmark_iteration, HarnessEigenvector);
 
       // get pointers to the input + output mem args
-      cl_mem *input_mem_ptr = &x_vect_ma;
-      cl_mem *output_mem_ptr = &output_mem;
+      cl_mem *input_mem_ptr = &(_mem_manager._x_vect);
+      cl_mem *output_mem_ptr = &(_mem_manager._output);
 
       // and pointers to the input + output host args
-      std::vector<char> *input_host_ptr = &input_host_buffer;
-      std::vector<char> *output_host_ptr = &output_host_buffer;
+      std::vector<char> *input_host_ptr = &(_mem_manager._input_host_buffer);
+      std::vector<char> *output_host_ptr = &(_mem_manager._output_host_buffer);
 
       bool should_terminate = false;
       int itcnt = 0;
       do {
-        std::cout << "Host vectors before: \n\tInput:";
-        printCharVector<float>(*input_host_ptr);
-        std::cout << "\tOutput:";
-        printCharVector<float>(*output_host_ptr);
+        LOG_DEBUG_INFO("Host vectors before");
+        printCharVector<float>("Input ", *input_host_ptr);
+        printCharVector<float>("Output ", *output_host_ptr);
 
+        // cache the output to check that it's actually changed
+        std::copy(output_host_ptr->begin(), output_host_ptr->end(),
+                  _mem_manager._temp_out_buffer.begin());
+
+        resetTempBuffers();
         // run the kernel
         runtimes.push_back(executeKernel(run));
 
         // copy the output back down
         readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
 
-        std::cout << "Host vectors after: \n\tInput:";
-        printCharVector<float>(*input_host_ptr);
-        std::cout << "\tOutput:";
-        printCharVector<float>(*output_host_ptr);
+        LOG_DEBUG_INFO("Host vectors after");
+        printCharVector<float>("Input ", *input_host_ptr);
+        printCharVector<float>("Output ", *output_host_ptr);
+
+        assertBuffersNotEqual(*output_host_ptr, _mem_manager._temp_out_buffer);
 
         should_terminate = should_terminate_iteration(*input_host_ptr,
                                                       *output_host_ptr, delta);
@@ -149,81 +95,12 @@ public:
         std::swap(input_host_ptr, output_host_ptr);
 
         // set the kernel args
-        setGlobalArg(input_idx, input_mem_ptr);
-        setGlobalArg(output_idx, output_mem_ptr);
+        setGlobalArg(_mem_manager._input_idx, input_mem_ptr);
+        setGlobalArg(_mem_manager._output_idx, output_mem_ptr);
 
         itcnt++;
       } while (!should_terminate && itcnt < 10);
     }
-
-    // // we need a cache for the input vector
-    // // this seems _super_ hacky. I don't like casting around like this, even
-    // if
-    // // it is legal. I'm worried.
-    // std::vector<char> input_cache;
-    // // copy_from_arg(_args.args[_args.input], input_cache);
-
-    // // run the benchmark for that many iterations
-    // for (int i = 0; i < iterations; i++) {
-    //   start_timer(benchmark_iteration, HarnessEigenvector);
-    //   // std::cout << "Iteration: " << i << '\n';
-
-    //   // Run the algorithm
-    //   double runtime = 0.0f;
-    //   { // copy the cached input into the input arg:
-    //     // copy_into_arg(input_cache, _args.args[_args.input]);
-    //     // _args.args[_args.input]->clear();
-    //     // _args.args[_args.input]->upload();
-
-    //     bool should_terminate = false;
-    // run the kernel
-    // do {
-    //   std::cout << " ------------------- VALUES BEFORE RUN\n";
-    //   // print_arg<float>(_args.args[_args.input]);
-    //   // print_arg<float>(_args.args[_args.output]);
-    //   std::cout << "--------------- EXECUTING KERNEL\n";
-    //   runtime += executeKernel(run);
-    //   std::cout << " ------------------- VALUES after RUN\n";
-    //   // print_arg<float>(_args.args[_args.input]);
-    //   // print_arg<float>(_args.args[_args.output]);
-    //   std::cout << "--------------- PERFORMING CHECK\n";
-    //   should_terminate = should_terminate_iteration(
-    //       _args.args[_args.input], _args.args[_args.output], delta);
-    //   // swap the pointers in the arg list
-    //   std::cout << "---------------- SWAPPING \n";
-
-    //   executor::KernelArg *tmp = _args.args[_args.input];
-    //   _args.args[_args.input] = _args.args[_args.output];
-    //   _args.args[_args.output] = tmp;
-    //   // std::cout << "preswap: in: " << _args.input
-    //   //           << " out: " << _args.output << "\n";
-    //   // auto tmp = _args.input;
-    //   // _args.input = _args.output;
-    //   // _args.output = tmp;
-    //   // std::cout << "postswap: in: " << _args.input
-    //   //           << " out: " << _args.output << "\n";
-
-    //   // copy the output buffer into the input
-    //   // copy_args(_args.args[_args.output], _args.args[_args.input]);
-
-    //   // reset the kernel args
-    //   // _args.args[_args.output]->clear();
-
-    //   // _args.args[_args.input]->upload();
-    //   // _args.args[_args.output]->upload();
-
-    //   _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-    //   _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
-    // } while (!should_terminate);
-    // get the underlying vectors from the args that we care about
-
-    //   runtimes[i] = runtime;
-
-    //   if (timeout != 0.0 && runtime >= timeout) {
-    //     runtimes.resize(i + 1);
-    //     return runtimes;
-    //   }
-    // }
     return runtimes;
   }
 

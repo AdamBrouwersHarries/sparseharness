@@ -119,20 +119,19 @@ public:
       bool should_terminate = false;
       int itcnt = 0;
       do {
-        std::cout << "Host vectors before: \n\tInput:";
-        printCharVector<float>(*input_host_ptr);
-        std::cout << "\tOutput:";
-        printCharVector<float>(*output_host_ptr);
+        LOG_DEBUG_INFO("Host vectors before");
+        printCharVector<float>("Input ", *input_host_ptr);
+        printCharVector<float>("Output ", *output_host_ptr);
 
         // run the kernel
         runtimes.push_back(executeKernel(run));
 
         // copy the output back down
         readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
-        std::cout << "Host vectors after: \n\tInput:";
-        printCharVector<float>(*input_host_ptr);
-        std::cout << "\tOutput:";
-        printCharVector<float>(*output_host_ptr);
+
+        LOG_DEBUG_INFO("Host vectors after");
+        printCharVector<float>("Input ", *input_host_ptr);
+        printCharVector<float>("Output ", *output_host_ptr);
 
         should_terminate = should_terminate_iteration(*input_host_ptr,
                                                       *output_host_ptr, delta);
@@ -151,75 +150,6 @@ public:
         itcnt++;
       } while (!should_terminate && itcnt < 300);
     }
-
-    // // we need a cache for the input vector
-    // // this seems _super_ hacky. I don't like casting around like this, even
-    // if
-    // // it is legal. I'm worried.
-    // std::vector<char> input_cache;
-    // // copy_from_arg(_args.args[_args.input], input_cache);
-
-    // // run the benchmark for that many iterations
-    // for (int i = 0; i < iterations; i++) {
-    //   start_timer(benchmark_iteration, HarnessBFS);
-    //   // std::cout << "Iteration: " << i << '\n';
-
-    //   // Run the algorithm
-    //   double runtime = 0.0f;
-    //   { // copy the cached input into the input arg:
-    //     // copy_into_arg(input_cache, _args.args[_args.input]);
-    //     // _args.args[_args.input]->clear();
-    //     // _args.args[_args.input]->upload();
-
-    //     bool should_terminate = false;
-    // run the kernel
-    // do {
-    //   std::cout << " ------------------- VALUES BEFORE RUN\n";
-    //   // print_arg<float>(_args.args[_args.input]);
-    //   // print_arg<float>(_args.args[_args.output]);
-    //   std::cout << "--------------- EXECUTING KERNEL\n";
-    //   runtime += executeKernel(run);
-    //   std::cout << " ------------------- VALUES after RUN\n";
-    //   // print_arg<float>(_args.args[_args.input]);
-    //   // print_arg<float>(_args.args[_args.output]);
-    //   std::cout << "--------------- PERFORMING CHECK\n";
-    //   should_terminate = should_terminate_iteration(
-    //       _args.args[_args.input], _args.args[_args.output], delta);
-    //   // swap the pointers in the arg list
-    //   std::cout << "---------------- SWAPPING \n";
-
-    //   executor::KernelArg *tmp = _args.args[_args.input];
-    //   _args.args[_args.input] = _args.args[_args.output];
-    //   _args.args[_args.output] = tmp;
-    //   // std::cout << "preswap: in: " << _args.input
-    //   //           << " out: " << _args.output << "\n";
-    //   // auto tmp = _args.input;
-    //   // _args.input = _args.output;
-    //   // _args.output = tmp;
-    //   // std::cout << "postswap: in: " << _args.input
-    //   //           << " out: " << _args.output << "\n";
-
-    //   // copy the output buffer into the input
-    //   // copy_args(_args.args[_args.output], _args.args[_args.input]);
-
-    //   // reset the kernel args
-    //   // _args.args[_args.output]->clear();
-
-    //   // _args.args[_args.input]->upload();
-    //   // _args.args[_args.output]->upload();
-
-    //   _args.args[_args.input]->setAsKernelArg(_kernel, _args.input);
-    //   _args.args[_args.output]->setAsKernelArg(_kernel, _args.output);
-    // } while (!should_terminate);
-    // get the underlying vectors from the args that we care about
-
-    //   runtimes[i] = runtime;
-
-    //   if (timeout != 0.0 && runtime >= timeout) {
-    //     runtimes.resize(i + 1);
-    //     return runtimes;
-    //   }
-    // }
     return runtimes;
   }
 

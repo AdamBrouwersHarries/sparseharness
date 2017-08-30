@@ -1,8 +1,10 @@
 #pragma once
 #include "CL/cl.h"
-#include <iostream>
 #include <string>
 #include <vector>
+
+#include "Assert.h"
+#include "Logger.h"
 
 // give the function names
 std::string getErrorString(cl_int);
@@ -11,8 +13,7 @@ void checkCLError(cl_int);
 //  Check to see if an error code is correct etc
 void checkCLError(cl_int error) {
   if (error != CL_SUCCESS) {
-    std::cerr << "OpenCL call failed with error " << getErrorString(error)
-              << std::endl;
+    LOG_ERROR("OpenCL call failed with error ", getErrorString(error));
     std::exit(1);
   }
 }
@@ -165,18 +166,34 @@ std::string getErrorString(cl_int err) {
   return ostr.str();
 }
 
-template <typename T> void printCharVector(std::vector<char> &v) {
+template <typename T>
+void printCharVector(const std::string &name, std::vector<char> &v) {
   // get the underlying pointer, and the length in terms of t
   // then recast in terms of T
   T *data = reinterpret_cast<T *>(v.data());
   unsigned int length = (v.size() * sizeof(char)) / sizeof(T);
   // print it out
-  std::cout << "[";
+  std::ostringstream ostr;
+  ostr << "[";
   for (int i = 0; i < length; i++) {
     if (i != 0) {
-      std::cout << ",";
+      ostr << ",";
     }
-    std::cout << data[i];
+    ostr << data[i];
   }
-  std::cout << "]\n";
+  ostr << "]";
+  LOG_DEBUG_INFO("Buffer ", name, ostr.str());
+}
+
+void assertBuffersNotEqual(std::vector<char> &v1, std::vector<char> &v2) {
+  bool different_found = false;
+  for (int i = 0; i < v1.size(); i++) {
+    if (v1[i] != v2[i]) {
+      different_found = true;
+      break;
+    }
+  }
+  if (!different_found) {
+    LOG_ERROR("Buffers are identical - kernel has probably failed...");
+  }
 }
