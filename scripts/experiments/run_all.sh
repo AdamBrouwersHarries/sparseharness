@@ -18,6 +18,8 @@ echo "Platform: $platform"
 device=$6
 echo "Device: $device"
 
+host=$(hostname)
+
 # Get some unique data for the experiment ID
 now=$(date -Iminutes)
 hsh=$(git rev-parse HEAD)
@@ -54,7 +56,7 @@ do
 			  -f $m \
 			  -k $kernelfolder/$k \
 			  -r $runfile \
-			  -n $HOSTNAME \
+			  -n $host \
 			  -t 20 \
 			  -e $exID &>$rdir/result_$kname.txt
 			  # -p $platform \
