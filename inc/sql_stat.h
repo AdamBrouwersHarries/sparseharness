@@ -55,9 +55,10 @@ public:
                         const std::string &matrix_name,
                         const std::string &experiment_id) {
     std::ostringstream out;
-    out << "(" << _time.count() << ", \"notchecked\", \"" << kernel_name
-        << "\", " << _global << ", " << _local << ", \"" << host_name
-        << "\", \"" << device_name << "\", \"" << matrix_name << "\", 0, \""
+    out << "(" << ((double)_time.count()) / 1000000.0 << ", \"notchecked\", \""
+        << kernel_name << "\", " << _global << ", " << _local << ", \""
+        << host_name << "\", \"" << device_name << "\", \"" << matrix_name
+        << "\", 0, \""
 
         << trialType() << "\", \"" << experiment_id << "\")";
     return out.str();
