@@ -79,7 +79,7 @@ public:
     }
     // sum the runtimes, and median it and report that
     std::sort(runtimes.begin(), runtimes.end(), SqlStat::compare);
-    std::chrono::milliseconds median_time =
+    std::chrono::nanoseconds median_time =
         runtimes[runtimes.size() / 2].getTime();
 
     runtimes.push_back(SqlStat(median_time, NOT_CHECKED, 0, 0, MEDIAN_RESULT));
@@ -89,7 +89,7 @@ public:
 
   SqlStat executeRun(Run run) {
     // get the runtime from a single kernel run
-    std::chrono::milliseconds time = executeKernel(run);
+    std::chrono::nanoseconds time = executeKernel(run);
     return SqlStat(time, NOT_CHECKED, run.global1, run.local1, RAW_RESULT);
   }
 };

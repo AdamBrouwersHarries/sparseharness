@@ -44,7 +44,7 @@ enum TrialType { RAW_RESULT, MULTI_ITERATION_SUM, MEDIAN_RESULT };
 class SqlStat {
 
 public:
-  SqlStat(std::chrono::milliseconds time, Correctness correctness,
+  SqlStat(std::chrono::nanoseconds time, Correctness correctness,
           unsigned int global, unsigned int local, TrialType trial_type)
       : _time(time), _correctness(correctness), _global(global), _local(local),
         _trial_type(trial_type) {}
@@ -75,7 +75,7 @@ public:
     return a.getTime() < b.getTime();
   }
 
-  static std::chrono::milliseconds add(SqlStat a, SqlStat b) {
+  static std::chrono::nanoseconds add(SqlStat a, SqlStat b) {
     return a.getTime() + b.getTime();
   }
 
@@ -100,7 +100,7 @@ public:
     return out.str();
   }
 
-  std::chrono::milliseconds getTime() { return _time; }
+  std::chrono::nanoseconds getTime() { return _time; }
 
 private:
   std::string trialType() {
@@ -143,7 +143,7 @@ private:
       return "ERROR";
     }
   }
-  std::chrono::milliseconds _time;
+  std::chrono::nanoseconds _time;
   Correctness _correctness;
   unsigned int _global;
   unsigned int _local;

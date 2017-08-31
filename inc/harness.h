@@ -96,7 +96,7 @@ public:
 protected:
   virtual TimingType executeRun(Run run) = 0;
 
-  std::chrono::milliseconds executeKernel(Run run) {
+  std::chrono::nanoseconds executeKernel(Run run) {
     cl_event ev;
     const size_t global_range[3] = {run.global1, run.global2, run.global3};
     const size_t local_range[3] = {run.local1, run.local2, run.local3};
@@ -137,7 +137,7 @@ protected:
     report_timing(clEnqueueNDRangeKernel, harness, end - start);
 
     std::chrono::nanoseconds elapsed_ns(end - start);
-    return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_ns);
+    return elapsed_ns;
   }
 
   void allocateBuffers() {

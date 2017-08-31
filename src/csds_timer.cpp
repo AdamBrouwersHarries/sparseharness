@@ -26,10 +26,10 @@ CSDSTimer::CSDSTimer(const std::string &name, const std::string &context,
 }
 
 CSDSTimer::~CSDSTimer() {
-  auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+  auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
       clock_type::now() - _start);
   *_default_str << "PROFILING_DATUM(\"" << _name << "\", \"" << _context
-                << "\", " << elapsed_ms.count() << ", \"C++\")" << ENDL;
+                << "\", " << elapsed_ns.count() << ", \"C++\")" << ENDL;
 #ifdef TREE_PERF
   reportEnd();
 #endif
@@ -38,10 +38,10 @@ CSDSTimer::~CSDSTimer() {
 void CSDSTimer::reportTiming(const std::string &name,
                              const std::string &context,
                              std::chrono::nanoseconds elapsed_ns) {
-  auto elapsed_ms =
-      std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_ns);
+  // auto elapsed_ns =
+  //     std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed_ns);
   std::cout << "PROFILING_DATUM(\"" << name << "\", \"" << context << "\", "
-            << elapsed_ms.count() << ", \"C++\")" << ENDL;
+            << elapsed_ns.count() << ", \"C++\")" << ENDL;
 }
 
 void CSDSTimer::reportStart() {

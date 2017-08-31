@@ -40,19 +40,19 @@
 #endif
 
 class HarnessEigenvector
-    : public IterativeHarness<std::chrono::milliseconds, float> {
+    : public IterativeHarness<std::chrono::nanoseconds, float> {
 public:
   HarnessEigenvector(std::string &kernel_source, unsigned int platform,
                      unsigned int device, ArgContainer<float> args)
       : IterativeHarness(kernel_source, platform, device, args) {}
-  std::vector<std::chrono::milliseconds>
+  std::vector<std::chrono::nanoseconds>
   benchmark(Run run, int iterations, double timeout, double delta) {
 
     start_timer(benchmark, HarnessEigenvector);
     allocateBuffers();
 
     // run the kernel!
-    std::vector<std::chrono::milliseconds> runtimes;
+    std::vector<std::chrono::nanoseconds> runtimes;
     for (int i = 0; i < iterations; i++) {
       start_timer(benchmark_iteration, HarnessEigenvector);
 
@@ -105,7 +105,7 @@ public:
   }
 
 private:
-  std::chrono::milliseconds executeRun(Run run) { return executeKernel(run); }
+  std::chrono::nanoseconds executeRun(Run run) { return executeKernel(run); }
 
   virtual bool should_terminate_iteration(std::vector<char> &input,
                                           std::vector<char> &output,
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<std::chrono::milliseconds> runtimes = harness.benchmark(
+    std::vector<std::chrono::nanoseconds> runtimes = harness.benchmark(
         run, opt_iterations->get(), opt_timeout->get(), opt_float_delta->get());
     std::cout << "runtimes: [";
     for (auto time : runtimes) {
