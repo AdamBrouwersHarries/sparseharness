@@ -228,8 +228,10 @@ int main(int argc, char *argv[]) {
               << " and height = " << matrix.height() << "\n";
   }
 
+  // auto zero =
   // specialise the matrix for the kernel given
-  auto cl_matrix = kernel.specialiseMatrix(matrix, 0.0f);
+  auto cl_matrix =
+      kernel.specialiseMatrix(matrix, std::numeric_limits<float>::max());
   // extract size variables from it
   int v_Width_cl = cl_matrix.getCLVWidth();
   int v_Height_cl = cl_matrix.getCLVHeight();
@@ -252,9 +254,9 @@ int main(int argc, char *argv[]) {
 
   // auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0.0f, inital_distances_x,
-                                   inital_distances_y, v_Width_cl, v_Height_cl,
-                                   v_Length_cl, 0.0f, 0.0f);
+  auto args = executorEncodeMatrix(
+      kernel, matrix, std::numeric_limits<float>::max(), inital_distances_x,
+      inital_distances_y, v_Width_cl, v_Height_cl, v_Length_cl, 0.0f, 0.0f);
   HarnessSSSP harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args);
   for (auto run : runs) {

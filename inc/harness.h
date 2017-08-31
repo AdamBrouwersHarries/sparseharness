@@ -3,6 +3,7 @@
 #include "cl_memory_manager.h"
 #include "kernel_utils.h"
 #include "opencl_utils.h"
+#include "sql_stat.h"
 
 #include "run.h"
 #include <chrono>
@@ -83,29 +84,13 @@ public:
   virtual std::vector<TimingType> benchmark(Run run, int iterations,
                                             double timeout, double delta) = 0;
 
-  virtual void
-  print_sql_stats(const Run &run, const std::string &kname,
-                  const std::string &mname, const std::string &hname,
-                  const std::string &experiment_id, std::vector<double> &times)
-
-  {
-    // auto &devPtr = executor::globalDeviceList.front();
-    std::cout << "INSERT INTO table_name (time, correctness, kernel, "
-              << "global, local, host, device, matrix, iteration, trial,"
-              << "statistic, experiment_id) VALUES ";
-    int trial = 0;
-    for (auto t : times) {
-      if (trial != 0) {
-        std::cout << ",";
-      }
-      std::cout << "(" << t << ",\"notchecked\", \"" << kname << "\", "
-                << run.global1 << ", " << run.local1 << ", \"" << hname
-                << "\", \"" << getDeviceName() << "\", \"" << mname << "\", 0,"
-
-                << trial << ", \"RAW_RESULT\", \"" << experiment_id << "\")";
-      trial++;
-    }
-    std::cout << ";\n";
+  std::string getDeviceName() {
+    char name[10240];
+    LOG_DEBUG_INFO("Getting device name from device ", _device_id);
+    _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_NAME, sizeof(name),
+                             name, NULL);
+    checkCLError(_error);
+    return std::string(name);
   }
 
 protected:
@@ -368,15 +353,6 @@ protected:
     LOG_DEBUG_INFO("setting local arg of size ", size);
 
     checkCLError(clSetKernelArg(_kernel, arg, size, NULL));
-  }
-
-  std::string getDeviceName() {
-    char name[10240];
-    LOG_DEBUG_INFO("Getting device name from device ", _device_id);
-    _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_NAME, sizeof(name),
-                             name, NULL);
-    checkCLError(_error);
-    return std::string(name);
   }
 
   // stateful error code :(
