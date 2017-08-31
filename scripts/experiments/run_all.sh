@@ -47,14 +47,16 @@ do
 		echo "Using kernel: $kname"
 
 		runstart=$(date +%s)
-		$spmv -m $datasetf/$m/$m.mtx \
-			  -i 5 \
-			  -t 20 \
-			  -k $kernelfolder/$k \
-			  -p $platform \
+		$spmv -p $platform \
 			  -d $device \
+			  -i 5 \
+			  -m $datasetf/$m/$m.mtx \
+			  -f $m \
+			  -k $kernelfolder/$k \
+			  -r $runfile \
 			  -n $HOSTNAME \
-			  -r $runfile &>$rdir/result_$kname.txt
+			  -t 20 \
+			  -e $exID &>$rdir/result_$kname.txt
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
 		runend=$(date +%s)
