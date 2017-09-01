@@ -45,9 +45,10 @@ class SqlStat {
 
 public:
   SqlStat(std::chrono::nanoseconds time, Correctness correctness,
-          unsigned int global, unsigned int local, TrialType trial_type)
+          unsigned int global, unsigned int local, TrialType trial_type,
+          unsigned int trial = 0, unsigned int iteration = 0)
       : _time(time), _correctness(correctness), _global(global), _local(local),
-        _trial_type(trial_type) {}
+        _trial_type(trial_type), _trial(trial), _iteration(iteration) {}
 
   std::string printStat(const std::string &kernel_name,
                         const std::string &host_name,
@@ -58,7 +59,7 @@ public:
     out << "(" << ((double)_time.count()) / 1000000.0 << ", \"notchecked\", \""
         << kernel_name << "\", " << _global << ", " << _local << ", \""
         << host_name << "\", \"" << device_name << "\", \"" << matrix_name
-        << "\", 0, \""
+        << "\"," << _iteration << "," << _trial << ",\""
 
         << trialType() << "\", \"" << experiment_id << "\")";
     return out.str();
@@ -149,4 +150,6 @@ private:
   unsigned int _global;
   unsigned int _local;
   TrialType _trial_type;
+  unsigned int _trial;
+  unsigned int _iteration;
 };
