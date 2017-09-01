@@ -62,7 +62,7 @@ std::string severityToString(Logger::Severity::Type severity) {
   case Logger::Severity::DebugInfo:
     return "DINFO";
   }
-  ASSERT_MESSAGE(false, "This statement should never be reached");
+  // ASSERT_MESSAGE(false, "This statement should never be reached");
   return "";
 }
 
