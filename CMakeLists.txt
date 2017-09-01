@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(Executor)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -Wextra -Wno-implicit-fallthrough -Wno-unused-parameter -fPIC -DDEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++14 -Wall -Wextra -Wno-implicit-fallthrough -Wno-unused-parameter -fPIC -DDEBUG")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 
 # include_directories(common)
@@ -16,9 +16,9 @@ include(ExternalProject)
 include_directories("${source_dir}/inc")
 include_directories("inc")
 include_directories("inc/util")
+include_directories("/usr/local/include")
 
 set(UTIL_SOURCE
-    src/util/Assert.cpp
     src/util/Logger.cpp
     )
 
@@ -38,7 +38,9 @@ add_library (SpmvLib ${SPMV_SOURCE})
 function(add_app name)
     add_executable(${name}_harness app/${name}.cpp)
     target_link_libraries(${name}_harness UtilLib SpmvLib 
-    	${OpenCL_LIBRARIES} ${Boost_LIBRARIES})
+        ${OpenCL_LIBRARIES} ${Boost_LIBRARIES})
+        # ${OpenCL_LIBRARIES})
+    	
 endfunction()
 
 add_app(spmv)

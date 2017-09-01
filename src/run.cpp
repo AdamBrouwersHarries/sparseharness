@@ -1,4 +1,5 @@
 #include "run.h"
+#include <assert.h>
 
 Run::Run(CSV::csv_line line) {
   assert(line.size() == 6 && "Bad CSV format");
