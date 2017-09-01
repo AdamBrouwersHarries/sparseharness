@@ -82,7 +82,8 @@ public:
     std::chrono::nanoseconds median_time =
         runtimes[runtimes.size() / 2].getTime();
 
-    runtimes.push_back(SqlStat(median_time, NOT_CHECKED, 0, 0, MEDIAN_RESULT));
+    runtimes.push_back(SqlStat(median_time, NOT_CHECKED, run.global1,
+                               run.local1, MEDIAN_RESULT));
 
     return runtimes;
   }
