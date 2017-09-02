@@ -21,7 +21,7 @@ echo "Device: $device"
 host=$(hostname)
 
 # Get some unique data for the experiment ID
-now=$(date "%Y-%m-%dT%H-%M-%S%z")
+now=$(date +"%Y-%m-%dT%H-%M-%S%z")
 hsh=$(git rev-parse HEAD)
 exID="$hsh-$now"
 
