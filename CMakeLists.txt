@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(Executor)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++14 -Wall -Wextra -Wno-implicit-fallthrough -Wno-unused-parameter -fPIC -DDEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -Wextra -Wno-implicit-fallthrough -Wno-unused-parameter -fPIC -DDEBUG")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 
 # include_directories(common)
