@@ -11,9 +11,10 @@
 template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
-          unsigned int device, ArgContainer<SemiRingType> args)
-      : _device(device), _kernel_source(kernel_source), _args(args),
-        _mem_manager(args) {
+          unsigned int device, ArgContainer<SemiRingType> args,
+          unsigned int trials, double timeout, double delta)
+      : _kernel_source(kernel_source), _device(device), _args(args),
+        _mem_manager(args), _trials(trials), _timeout(timeout), _delta(delta) {
 
     // initialise OpenCL:
     // get the number of platforms
@@ -81,8 +82,7 @@ public:
     checkCLError(_error);
   }
 
-  virtual std::vector<TimingType> benchmark(Run run, int iterations,
-                                            double timeout, double delta) = 0;
+  virtual std::vector<TimingType> benchmark(Run run) = 0;
 
   std::string getDeviceName() {
     char name[10240];
@@ -94,7 +94,7 @@ public:
   }
 
 protected:
-  virtual TimingType executeRun(Run run) = 0;
+  virtual TimingType executeRun(Run run, unsigned int trial) = 0;
 
   std::chrono::nanoseconds executeKernel(Run run) {
     cl_event ev;
@@ -218,8 +218,7 @@ protected:
 
     // create a mem argument
     cl_mem_flags flags = output ? CL_MEM_READ_WRITE : CL_MEM_READ_ONLY;
-    cl_mem buffer =
-        clCreateBuffer(_context, CL_MEM_READ_WRITE, (size_t)len, NULL, &_error);
+    cl_mem buffer = clCreateBuffer(_context, flags, (size_t)len, NULL, &_error);
     checkCLError(_error);
 
     // enqueue a write into that buffer
@@ -371,6 +370,10 @@ protected:
   ArgContainer<SemiRingType> _args;
 
   CLMemoryManager<SemiRingType> _mem_manager;
+
+  unsigned int _trials;
+  double _timeout;
+  double _delta;
 };
 
 // template <typename T> class IterativeHarness : public
@@ -380,12 +383,60 @@ template <typename TimingType, typename SemiRingType>
 class IterativeHarness : public Harness<TimingType, SemiRingType> {
 public:
   IterativeHarness(std::string &kernel_source, unsigned int platform,
-                   unsigned int device, ArgContainer<SemiRingType> args)
-      : Harness<TimingType, SemiRingType>(kernel_source, platform, device,
-                                          args) {}
+                   unsigned int device, ArgContainer<SemiRingType> args,
+                   unsigned int trials, double timeout, double delta)
+      : Harness<TimingType, SemiRingType>(kernel_source, platform, device, args,
+                                          trials, timeout, delta) {}
 
 protected:
   virtual bool should_terminate_iteration(std::vector<char> &input,
-                                          std::vector<char> &output,
-                                          double delta) = 0;
+                                          std::vector<char> &output) = 0;
+
+  void resetInputs() {
+    start_timer(allocateBuffers, Harness);
+    // build the matrix arguments
+    LOG_DEBUG_INFO("setting matrix arguments");
+    // _mem_manager._matrix_idxs = createAndUploadGlobalArg(_args.m_idxs);
+    // setGlobalArg(arg_index++, &_mem_manager._matrix_idxs);
+    this->writeToGlobalArg(this->_args.m_idxs, this->_mem_manager._matrix_idxs);
+
+    // this->_mem_manager._matrix_vals =
+    // createAndUploadGlobalArg(Harness<TimingType,
+    // SemiRingType>::_args.m_vals);
+    // setGlobalArg(arg_index++, &Harness<TimingType,
+    // SemiRingType>::_mem_manager._matrix_vals);
+    this->writeToGlobalArg(this->_args.m_vals, this->_mem_manager._matrix_vals);
+
+    // build the vector arguments
+    LOG_DEBUG_INFO("setting vector arguments");
+    // this->_mem_manager._x_vect =
+    // createAndUploadGlobalArg(Harness<TimingType,
+    // SemiRingType>::_args.x_vect, true);
+    this->setGlobalArg(2, &this->_mem_manager._x_vect);
+    this->writeToGlobalArg(this->_args.x_vect, this->_mem_manager._x_vect);
+
+    // this->_mem_manager._y_vect =
+    // createAndUploadGlobalArg(Harness<TimingType,
+    // SemiRingType>::_args.y_vect, true);
+    this->setGlobalArg(3, &this->_mem_manager._y_vect);
+    this->writeToGlobalArg(this->_args.y_vect, this->_mem_manager._y_vect);
+
+    // build the constant arguments
+    // LOG_DEBUG_INFO("setting constant arguments");
+    // setValueArg<float>(arg_index++, &(Harness<TimingType,
+    // SemiRingType>::_args.alpha));
+    // setValueArg<float>(arg_index++, &(Harness<TimingType,
+    // SemiRingType>::_args.beta));
+
+    // set the output arg
+    LOG_DEBUG_INFO("setting the output argument");
+    // this->_mem_manager._output_idx = arg_index;
+    // this->_mem_manager._output =
+    // createGlobalArg(Harness<TimingType,
+    // SemiRingType>::_args.output);
+    this->setGlobalArg(6, &this->_mem_manager._output);
+    this->fillGlobalArg(this->_args.output, this->_mem_manager._output);
+
+    this->resetTempBuffers();
+  }
 };

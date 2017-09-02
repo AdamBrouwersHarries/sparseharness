@@ -6,9 +6,10 @@
 template <typename SemiringType> class CLMemoryManager {
 public:
   CLMemoryManager(ArgContainer<SemiringType> args)
-      : _args(args), _input_host_buffer(args.x_vect.begin(), args.x_vect.end()),
-        _output_host_buffer(_args.output, 0), _temp_out_buffer(_args.output, 0),
-        _temp_global(_args.temp_globals.size()) {}
+      : _args(args), _temp_global(_args.temp_globals.size()),
+        _input_host_buffer(args.x_vect.begin(), args.x_vect.end()),
+        _output_host_buffer(_args.output, 0),
+        _temp_out_buffer(_args.output, 0) {}
 
   ArgContainer<SemiringType> _args;
   cl_mem _matrix_idxs;

@@ -86,18 +86,18 @@ int mm_is_valid(MM_typecode matcode); /* too complex for a macro */
 
    MM_matrix_typecode: 4-character sequence
 
-                                    object 		sparse/   	data
+                                    object    sparse/     data
  storage
                                                                 dense
  type        scheme
 
-   string position:	 [0]        [1]			[2]         [3]
+   string position:  [0]        [1]     [2]         [3]
 
-   Matrix typecode:  M(atrix)  C(oord)		R(eal)   	G(eneral)
+   Matrix typecode:  M(atrix)  C(oord)    R(eal)    G(eneral)
                                                         A(array)
  C(omplex)   H(ermitian)
                                                                                         P(attern)   S(ymmetric)
-                                                                                I(nteger)	K(kew)
+                                                                                I(nteger) K(kew)
 
  ***********************************************************************/
 

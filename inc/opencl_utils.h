@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-#include "Assert.h"
 #include "Logger.h"
 
 // give the function names
@@ -175,7 +174,7 @@ void printCharVector(const std::string &name, std::vector<char> &v) {
   // print it out
   std::ostringstream ostr;
   ostr << "[";
-  for (int i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++) {
     if (i != 0) {
       ostr << ",";
     }
@@ -187,7 +186,7 @@ void printCharVector(const std::string &name, std::vector<char> &v) {
 
 void assertBuffersNotEqual(std::vector<char> &v1, std::vector<char> &v2) {
   bool different_found = false;
-  for (int i = 0; i < v1.size(); i++) {
+  for (unsigned int i = 0; i < v1.size(); i++) {
     if (v1[i] != v2[i]) {
       different_found = true;
       break;

@@ -39,76 +39,111 @@
 #include "CL/cl.h"
 #endif
 
-class HarnessSSSP : public IterativeHarness<std::chrono::nanoseconds, float> {
+class HarnessSSSP : public IterativeHarness<std::vector<SqlStat>, float> {
 public:
   HarnessSSSP(std::string &kernel_source, unsigned int platform,
-              unsigned int device, ArgContainer<float> args)
-      : IterativeHarness(kernel_source, platform, device, args) {}
-  std::vector<std::chrono::nanoseconds>
-  benchmark(Run run, int iterations, double timeout, double delta) {
-
+              unsigned int device, ArgContainer<float> args,
+              unsigned int trials, double timeout, double delta)
+      : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
+                         delta) {}
+  virtual std::vector<std::vector<SqlStat>> benchmark(Run run) {
     start_timer(benchmark, HarnessSSSP);
     allocateBuffers();
 
     // run the kernel!
-    std::vector<std::chrono::nanoseconds> runtimes;
-    for (int i = 0; i < iterations; i++) {
+    std::vector<std::vector<SqlStat>> runtimes;
+    for (unsigned int t = 0; t < _trials; t++) {
       start_timer(benchmark_iteration, HarnessSSSP);
+      std::vector<SqlStat> run_runtimes = executeRun(run, t);
 
-      // get pointers to the input + output mem args
-      cl_mem *input_mem_ptr = &(_mem_manager._x_vect);
-      cl_mem *output_mem_ptr = &(_mem_manager._output);
+      // sum the runtimes, and median it and report that
+      // collect the median of the runtimes
+      std::sort(run_runtimes.begin(), run_runtimes.end(), SqlStat::compare);
+      std::chrono::nanoseconds median_time =
+          run_runtimes[run_runtimes.size() / 2].getTime();
 
-      // and pointers to the input + output host args
-      std::vector<char> *input_host_ptr = &(_mem_manager._input_host_buffer);
-      std::vector<char> *output_host_ptr = &(_mem_manager._output_host_buffer);
+      run_runtimes.push_back(SqlStat(median_time, NOT_CHECKED, run.global1,
+                                     run.local1, MEDIAN_RESULT, t));
 
-      bool should_terminate = false;
-      int itcnt = 0;
-      do {
-        LOG_DEBUG_INFO("Host vectors before");
-        printCharVector<float>("Input ", *input_host_ptr);
-        printCharVector<float>("Output ", *output_host_ptr);
+      // collect the sum of the runtimes
+      std::chrono::nanoseconds total_time = std::accumulate(
+          run_runtimes.begin(), run_runtimes.end(),
+          std::chrono::nanoseconds(0), // start with first element
+          [](std::chrono::nanoseconds time, SqlStat stat) {
+            return time + stat.getTime();
+          });
+      run_runtimes.push_back(SqlStat(total_time, NOT_CHECKED, run.global1,
+                                     run.local1, MULTI_ITERATION_SUM));
 
-        // cache the output to check that it's actually changed
-        std::copy(output_host_ptr->begin(), output_host_ptr->end(),
-                  _mem_manager._temp_out_buffer.begin());
-
-        resetTempBuffers();
-        // run the kernel
-        runtimes.push_back(executeKernel(run));
-
-        // copy the output back down
-        readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
-
-        LOG_DEBUG_INFO("Host vectors after");
-        printCharVector<float>("Input ", *input_host_ptr);
-        printCharVector<float>("Output ", *output_host_ptr);
-
-        assertBuffersNotEqual(*output_host_ptr, _mem_manager._temp_out_buffer);
-
-        should_terminate = should_terminate_iteration(*input_host_ptr,
-                                                      *output_host_ptr, delta);
-        // swap the pointers over
-        std::swap(input_mem_ptr, output_mem_ptr);
-        std::swap(input_host_ptr, output_host_ptr);
-
-        // set the kernel args
-        setGlobalArg(_mem_manager._input_idx, input_mem_ptr);
-        setGlobalArg(_mem_manager._output_idx, output_mem_ptr);
-
-        itcnt++;
-      } while (!should_terminate && itcnt < 10);
+      // add all the times to the list
+      runtimes.push_back(run_runtimes);
+      resetInputs();
     }
     return runtimes;
   }
 
 private:
-  std::chrono::nanoseconds executeRun(Run run) { return executeKernel(run); }
+  std::vector<SqlStat> executeRun(Run run, unsigned int trial) {
+    start_timer(executeRun, HarnessSSSP);
+    std::vector<SqlStat> runtimes;
+
+    // get pointers to the input + output mem args
+    cl_mem *input_mem_ptr = &(_mem_manager._x_vect);
+    cl_mem *output_mem_ptr = &(_mem_manager._output);
+
+    // and pointers to the input + output host args
+    std::vector<char> *input_host_ptr = &(_mem_manager._input_host_buffer);
+    std::vector<char> *output_host_ptr = &(_mem_manager._output_host_buffer);
+
+    bool should_terminate = false;
+    int iteration = 0;
+    do {
+      LOG_DEBUG_INFO("Iteration: ", iteration);
+      LOG_DEBUG_INFO("Host vectors before");
+      printCharVector<float>("Input ", *input_host_ptr);
+      printCharVector<float>("Output ", *output_host_ptr);
+
+      // cache the output to check that it's actually changed
+      std::copy(output_host_ptr->begin(), output_host_ptr->end(),
+                _mem_manager._temp_out_buffer.begin());
+
+      resetTempBuffers();
+      // run the kernel
+      auto time = executeKernel(run);
+      runtimes.push_back(SqlStat(time, NOT_CHECKED, run.global1, run.local1,
+                                 RAW_RESULT, trial, iteration));
+
+      // copy the output back down
+      readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
+
+      LOG_DEBUG_INFO("Host vectors after");
+      printCharVector<float>("Input ", *input_host_ptr);
+      printCharVector<float>("Output ", *output_host_ptr);
+
+      assertBuffersNotEqual(*output_host_ptr, _mem_manager._temp_out_buffer);
+
+      should_terminate =
+          should_terminate_iteration(*input_host_ptr, *output_host_ptr);
+      LOG_DEBUG_INFO("Should terminate iteration: ",
+                     should_terminate ? "true" : "false");
+      // swap the pointers over
+
+      std::swap(input_mem_ptr, output_mem_ptr);
+      std::swap(input_host_ptr, output_host_ptr);
+
+      // set the kernel args
+      setGlobalArg(_mem_manager._input_idx, input_mem_ptr);
+      setGlobalArg(_mem_manager._output_idx, output_mem_ptr);
+      // also set the y vector!
+      setGlobalArg(3, input_mem_ptr);
+
+      iteration++;
+    } while (!should_terminate);
+    return runtimes;
+  }
 
   virtual bool should_terminate_iteration(std::vector<char> &input,
-                                          std::vector<char> &output,
-                                          double delta) {
+                                          std::vector<char> &output) {
     start_timer(should_terminate_iteration, HarnessSSSP);
 
     // reinterpret the args as double pointers, and get the lengths
@@ -120,7 +155,7 @@ private:
     bool equal = true;
     for (unsigned int i = 0;
          equal == true && i < input_length && i < output_length; i++) {
-      equal = fabs(input_ptr[i] - output_ptr[i]) < delta;
+      equal = fabs(input_ptr[i] - output_ptr[i]) < _delta;
       // std::cout << "Comparing: (" << input_ptr[i] << "," << output_ptr[i]
       //           << "), result: " << equal << "\n";
     }
@@ -162,71 +197,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  start_timer(main, global);
-  OptParser op(
-      "Harness for SPMV sparse matrix dense vector multiplication benchmarks");
-
-  auto opt_platform = op.addOption<unsigned>(
-      {'p', "platform", "OpenCL platform index (default 0).", 0});
-  auto opt_device = op.addOption<unsigned>(
-      {'d', "device", "OpenCL device index (default 0).", 0});
-  auto opt_iterations = op.addOption<unsigned>(
-      {'i', "iterations",
-       "Execute each kernel 'iterations' times (default 10).", 10});
-
-  //   auto opt_input_file = op.addOption<std::string>({'f', "file", "Input
-  //   file"});
-
-  auto opt_matrix_file =
-      op.addOption<std::string>({'m', "matrix", "Input matrix"});
-  auto opt_kernel_file =
-      op.addOption<std::string>({'k', "kernel", "Input kernel"});
-  auto opt_run_file =
-      op.addOption<std::string>({'r', "runfile", "Run configuration file"});
-  auto opt_host_name = op.addOption<std::string>(
-      {'n', "hostname", "Host the harness is running on"});
-  auto opt_experiment_id = op.addOption<std::string>(
-      {'e', "experiment", "An experiment ID for data reporting"});
-  auto opt_float_delta = op.addOption<double>(
-      {'t', "delta", "Delta for floating point comparisons", 0.0001});
-
-  auto opt_timeout = op.addOption<float>(
-      {'t', "timeout", "Timeout to avoid multiple executions (default 100ms).",
-       100.0f});
-
-  op.parse(argc, argv);
-
-  using namespace std;
-
-  const std::string matrix_filename = opt_matrix_file->require();
-  const std::string kernel_filename = opt_kernel_file->require();
-  const std::string runs_filename = opt_run_file->require();
-  const std::string hostname = opt_host_name->require();
-  const std::string experiment = opt_experiment_id->require();
-
-  std::cerr << "matrix_filename " << matrix_filename << ENDL;
-  std::cerr << "kernel_filename " << kernel_filename << ENDL;
-
-  // initialise a matrix, kernel, and set of run parameters from files
-  SparseMatrix<float> matrix(matrix_filename);
-  KernelConfig<float> kernel(kernel_filename);
-  auto csvlines = CSV::load_csv(runs_filename);
-  std::vector<Run> runs;
-  std::transform(csvlines.begin(), csvlines.end(), std::back_inserter(runs),
-                 [](CSV::csv_line line) -> Run { return Run(line); });
-
-  for (auto run : runs)
-    std::cerr << run << ENDL;
-
-  // check the matrix
-  if (matrix.height() != matrix.width()) {
-    std::cout << "Matrix is not square. Failing computation." << ENDL;
-    std::cerr << "Matrix is not square. Failing computation." << ENDL;
-    std::exit(2);
-  } else {
-    std::cout << " Matrix is square - width = " << matrix.width()
-              << " and height = " << matrix.height() << "\n";
-  }
+  COMMON_MAIN_PREAMBLE
 
   // auto zero =
   // specialise the matrix for the kernel given
@@ -252,22 +223,29 @@ int main(int argc, char *argv[]) {
   InitialDistancesGeneratorY<float> inital_distances_y(
       std::numeric_limits<float>::max());
 
-  // auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
   auto args = executorEncodeMatrix(
       kernel, matrix, std::numeric_limits<float>::max(), inital_distances_x,
       inital_distances_y, v_Width_cl, v_Height_cl, v_Length_cl, 0.0f, 0.0f);
+
   HarnessSSSP harness(kernel.getSource(), opt_platform->get(),
-                      opt_device->get(), args);
+                      opt_device->get(), args, opt_trials->get(),
+                      opt_timeout->get(), opt_float_delta->get());
+
+  const std::string &kernel_name = kernel.getName();
+  const std::string &host_name = hostname;
+  const std::string &device_name = harness.getDeviceName();
+  const std::string &experiment_id = experiment;
+
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<std::chrono::nanoseconds> runtimes = harness.benchmark(
-        run, opt_iterations->get(), opt_timeout->get(), opt_float_delta->get());
-    std::cout << "runtimes: [";
-    for (auto time : runtimes) {
-      std::cout << "," << time.count();
+    std::vector<std::vector<SqlStat>> runtimes = harness.benchmark(run);
+    for (auto statList : runtimes) {
+      std::string command =
+          SqlStat::makeSqlCommand(statList, kernel_name, host_name, device_name,
+                                  matrix_name, experiment_id);
+      std::cout << command << "\n";
     }
-    std::cout << "]" << ENDL;
   }
 }

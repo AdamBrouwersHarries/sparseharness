@@ -67,7 +67,7 @@ public:
 
   static std::string printHeader() {
     std::ostringstream out;
-    out << "INSERT INTO table_name (time, correctness, kernel, "
+    out << "INSERT INTO table_name (time, correct, kernel, "
         << "global, local, host, device, matrix, iteration, trial,"
         << "statistic, experiment_id) VALUES ";
     return out.str();

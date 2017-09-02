@@ -8,7 +8,7 @@
 // #define TREE_PERF
 
 #define start_timer(name, context)                                             \
-  auto _csds_timer = CSDSTimer(#name, #context, std::cerr);
+  auto _csds_timer_name_context = CSDSTimer(#name, #context, std::cerr);
 
 #define report_timing(name, context, time)                                     \
   CSDSTimer::reportTiming(#name, #context, std::chrono::nanoseconds(time));
@@ -40,8 +40,9 @@ private:
   void reportEnd();
   std::string _name;
   std::string _context;
-  std::chrono::time_point<clock_type> _start;
+
   std::ostream *_default_str;
+  std::chrono::time_point<clock_type> _start;
 
   // static std::ostream *_default_str;
 };

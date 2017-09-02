@@ -62,6 +62,9 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
       I--;
       J--;
       nz_entries.push_back(std::make_tuple(I, J, static_cast<T>(val)));
+      if (mm_is_symmetric(matcode)) {
+        nz_entries.push_back(std::make_tuple(J, I, static_cast<T>(val)));
+      }
       // printf("Entry: %lg at (%d, %d)\n", val, I, J);
     }
   } else {
