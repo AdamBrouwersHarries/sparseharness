@@ -212,10 +212,6 @@ int main(int argc, char *argv[]) {
   std::cout << "v_Height_cl = " << v_Height_cl << "\n";
   std::cout << "v_Length_cl = " << v_Length_cl << "\n";
 
-  // size args of name/order:
-  // v_MWidthC_1, v_MHeight_2, v_VLength_3
-  // std::vector<int> size_args{v_Width_cl, v_Width_cl, v_Length_cl};
-
   // generate a vector
 
   InitialDistancesGeneratorX<float> inital_distances_x(

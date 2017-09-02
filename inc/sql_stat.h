@@ -4,32 +4,6 @@
 #include <sstream>
 #include <string>
 
-// virtual void print_sql_stats(const Run &run, const std::string &kname,
-//                              const std::string &mname, const std::string
-//                              &hname,
-//                              const std::string &experiment_id,
-//                              std::vector<double> &times)
-
-// {
-//   // auto &devPtr = executor::globalDeviceList.front();
-//   std::cout << "INSERT INTO table_name (time, correctness, kernel, "
-//             << "global, local, host, device, matrix, iteration, trial,"
-//             << "statistic, experiment_id) VALUES ";
-//   int trial = 0;
-//   for (auto t : times) {
-//     if (trial != 0) {
-//       std::cout << ",";
-//     }
-//     std::cout << "(" << t << ",\"notchecked\", \"" << kname << "\", "
-//               << run.global1 << ", " << run.local1 << ", \"" << hname
-//               << "\", \"" << getDeviceName() << "\", \"" << mname << "\", 0,"
-
-//               << trial << ", \"RAW_RESULT\", \"" << experiment_id << "\")";
-//     trial++;
-//   }
-//   std::cout << ";\n";
-// }
-
 enum Correctness {
   CORRECT,
   NOT_CHECKED,
