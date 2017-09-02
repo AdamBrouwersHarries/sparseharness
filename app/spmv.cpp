@@ -128,10 +128,12 @@ int main(int argc, char *argv[]) {
   HarnessSPMV harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args, opt_trials->get(),
                       opt_timeout->get(), opt_float_delta->get());
+
   const std::string &kernel_name = kernel.getName();
   const std::string &host_name = hostname;
   const std::string &device_name = harness.getDeviceName();
   const std::string &experiment_id = experiment;
+
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;

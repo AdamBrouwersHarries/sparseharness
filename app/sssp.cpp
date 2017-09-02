@@ -77,6 +77,8 @@ public:
 
       // add all the times to the list
       runtimes.push_back(run_runtimes);
+
+      // reset the inputs, ready for the next trial!
       resetInputs();
     }
     return runtimes;
