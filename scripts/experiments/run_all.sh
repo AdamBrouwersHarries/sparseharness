@@ -81,7 +81,7 @@ do
 		# Compress the result
 		# remove the original file
 		# move to the actual directory
-		(tar czvf $rdirscratch/result_$kname.tar.gz $rdirscratch/result_$kname.txt; rm -rf $rdirscratch/result_$kname.txt; mv $rdirscratch/result_$kname.tar.gz $rdir/result_$kname.tar.gz) &
+		(tar czvf $rdirscratch/result_$kname.tar.gz $rdirscratch/result_$kname.txt; rm -rf $rdirscratch/result_$kname.txt; mv $rdirscratch/result_$kname.tar.gz $rdir/result_$kname.tar.gz; ) &
 
 		runend=$(date +%s)
 		runtime=$((runend-runstart))
