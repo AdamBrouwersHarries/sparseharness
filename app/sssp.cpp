@@ -45,10 +45,12 @@ public:
               unsigned int device, ArgContainer<float> args,
               unsigned int trials, double timeout, double delta)
       : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
-                         delta) {}
+                         delta) {
+    allocateBuffers();
+  }
+
   virtual std::vector<std::vector<SqlStat>> benchmark(Run run) {
     start_timer(benchmark, HarnessSSSP);
-    allocateBuffers();
 
     // run the kernel!
     std::vector<std::vector<SqlStat>> runtimes;

@@ -25,6 +25,10 @@ device=$6
 echo "Device: $device"
 echo "Device: $device" >> runstatus.txt
 
+scratchfolder=$7
+echo "Scratch folder: $scratchfolder"
+echo "Scratch folder: $scratchfolder" >> runstatus.txt
+
 host=$(hostname)
 
 # Get some unique data for the experiment ID
@@ -37,6 +41,7 @@ start=$(date +%s)
 mkdir -p .gold_results
 mkdir -p .gold
 mkdir -p "results/results-$exID"
+mkdir -p "$scratchfolder/results/results-$exID"
 
 kernelcount=$(ls $kernelfolder | wc -l)
 matrixcount=$(ls $datasetf | wc -l)
@@ -48,7 +53,9 @@ i=0
 for m in $(cat $datasetf/datasets.txt);
 do
 	rdir="results/results-$exID/$m/"
+	rdirscratch="$scratchfolder/$rdir"
 	mkdir -p $rdir
+	mkdir -p $rdirscratch
 
 	for k in $(ls $kernelfolder);
 	do
@@ -68,13 +75,14 @@ do
 			  -r $runfile \
 			  -n $host \
 			  -t 20 \
-			  -e $exID &>$rdir/result_$kname.txt
+			  -e $exID &>$rdirscratch/result_$kname.txt
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
 		# Compress the result
-		tar czvf $rdir/result_$kname.tar.gz $rdir/result_$kname.txt
+		tar czvf $rdirscratch/result_$kname.tar.gz $rdirscratch/result_$kname.txt
 		# remove the original file
-		rm -rf $rdir/result_$kname.txt
+		rm -rf $rdirscratch/result_$kname.txt
+		mv $rdirscratch/result_$kname.tar.gz $rdir/result_$kname.tar.gz
 		runend=$(date +%s)
 		runtime=$((runend-runstart))
 

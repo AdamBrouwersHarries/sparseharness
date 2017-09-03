@@ -45,11 +45,11 @@ public:
               unsigned int device, ArgContainer<float> args,
               unsigned int trials, double timeout, double delta)
       : Harness(kernel_source, platform, device, args, trials, timeout, delta) {
+    allocateBuffers();
   }
   std::vector<SqlStat> benchmark(Run run) {
 
     start_timer(benchmark, HarnessSPMV);
-    allocateBuffers();
 
     // run the kernel!
     std::vector<SqlStat> runtimes;
