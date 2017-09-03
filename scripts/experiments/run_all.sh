@@ -52,10 +52,10 @@ echo "taskcount: $taskcount" >> runstatus.txt
 i=0
 for m in $(cat $datasetf/datasets.txt);
 do
-	rdir="results/results-$exID/$m/"
-	rdirscratch="$scratchfolder/$rdir"
+	rdir="results/results-$exID/$m"
+	scratchrdir="$scratchfolder/$rdir"
 	mkdir -p $rdir
-	mkdir -p $rdirscratch
+	mkdir -p $scratchrdir
 
 	for k in $(ls $kernelfolder);
 	do
@@ -75,13 +75,12 @@ do
 			  -r $runfile \
 			  -n $host \
 			  -t 20 \
-			  -e $exID &>$rdirscratch/result_$kname.txt
-			  # -p $platform \
-			 # 2>results-$exID/result_$m_$kname.txt
+			  -e $exID &>$scratchrdir/result_$kname.txt
+
 		# Compress the result
 		# remove the original file
 		# move to the actual directory
-		(tar czvf $rdirscratch/result_$kname.tar.gz $rdirscratch/result_$kname.txt; rm -rf $rdirscratch/result_$kname.txt; mv $rdirscratch/result_$kname.tar.gz $rdir/result_$kname.tar.gz; ) &
+		(tar czvf $scratchrdir/result_$kname.tar.gz $scratchrdir/result_$kname.txt; rm -rf $scratchrdir/result_$kname.txt; mv $scratchrdir/result_$kname.tar.gz $rdir/result_$kname.tar.gz; ) &
 
 		runend=$(date +%s)
 		runtime=$((runend-runstart))
