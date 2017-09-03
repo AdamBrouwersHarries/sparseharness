@@ -3,27 +3,27 @@ echo "" > runstatus.txt
 
 datasetf=$1
 echo "Dataset folder: $datasetf"
-echo "Dataset folder: $datasetf" > runstatus.txt
+echo "Dataset folder: $datasetf" >> runstatus.txt
 
 spmv=$2
 echo "SparseMatrixDenseVector excutable: $spmv"
-echo "SparseMatrixDenseVector excutable: $spmv" >runstatus.txt
+echo "SparseMatrixDenseVector excutable: $spmv" >> runstatus.txt
 
 kernelfolder=$3
 echo "KernelFolder: $kernelfolder"
-echo "KernelFolder: $kernelfolder" > runstatus.txt
+echo "KernelFolder: $kernelfolder" >> runstatus.txt
 
 runfile=$4
 echo "runfile: $runfile"
-echo "runfile: $runfile" > runstatus.txt
+echo "runfile: $runfile" >> runstatus.txt
 
 platform=$5
 echo "Platform: $platform"
-echo "Platform: $platform" > runstatus.txt
+echo "Platform: $platform" >> runstatus.txt
 
 device=$6
 echo "Device: $device"
-echo "Device: $device" > runstatus.txt
+echo "Device: $device" >> runstatus.txt
 
 host=$(hostname)
 
@@ -42,7 +42,7 @@ kernelcount=$(ls $kernelfolder | wc -l)
 matrixcount=$(ls $datasetf | wc -l)
 taskcount=$((kernelcount*matrixcount)) 
 echo "taskcount: $taskcount"
-echo "taskcount: $taskcount"  > runstatus.txt
+echo "taskcount: $taskcount" >> runstatus.txt
 
 i=0
 for m in $(cat $datasetf/datasets.txt);
@@ -53,10 +53,10 @@ do
 	for k in $(ls $kernelfolder);
 	do
 		echo "Processing matrix: $m - $i/$taskcount" 
-		echo "Processing matrix: $m - $i/$taskcount"   > runstatus.txt
+		echo "Processing matrix: $m - $i/$taskcount"  >> runstatus.txt
 		kname=$(basename $k .json)
 		echo "Using kernel: $kname"
-		echo "Using kernel: $kname"  > runstatus.txt
+		echo "Using kernel: $kname" >> runstatus.txt
 
 		runstart=$(date +%s)
 		$spmv -p $platform \
@@ -81,10 +81,10 @@ do
 		scripttime=$((runend-start))
 
 		echo "Run took $runtime seconds, total time of $scripttime seconds"
-		echo "Run took $runtime seconds, total time of $scripttime seconds"  > runstatus.txt
+		echo "Run took $runtime seconds, total time of $scripttime seconds" >> runstatus.txt
 		i=$(($i + 1))
 	done
 done
 
 echo "finished experiments"
-echo "finished experiments"  > runstatus.txt
+echo "finished experiments" >> runstatus.txt
