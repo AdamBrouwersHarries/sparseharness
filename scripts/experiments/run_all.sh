@@ -79,10 +79,10 @@ do
 			  # -p $platform \
 			 # 2>results-$exID/result_$m_$kname.txt
 		# Compress the result
-		tar czvf $rdirscratch/result_$kname.tar.gz $rdirscratch/result_$kname.txt
 		# remove the original file
-		rm -rf $rdirscratch/result_$kname.txt
-		mv $rdirscratch/result_$kname.tar.gz $rdir/result_$kname.tar.gz
+		# move to the actual directory
+		(tar czvf $rdirscratch/result_$kname.tar.gz $rdirscratch/result_$kname.txt; rm -rf $rdirscratch/result_$kname.txt; mv $rdirscratch/result_$kname.tar.gz $rdir/result_$kname.tar.gz) &
+
 		runend=$(date +%s)
 		runtime=$((runend-runstart))
 
