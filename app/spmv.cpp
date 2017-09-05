@@ -43,7 +43,7 @@ class HarnessSPMV : public Harness<SqlStat, float> {
 public:
   HarnessSPMV(std::string &kernel_source, unsigned int platform,
               unsigned int device, ArgContainer<float> args,
-              unsigned int trials, double timeout, double delta)
+              unsigned int trials, unsigned int timeout, double delta)
       : Harness(kernel_source, platform, device, args, trials, timeout, delta) {
     allocateBuffers();
   }

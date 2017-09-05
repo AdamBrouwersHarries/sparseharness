@@ -12,7 +12,7 @@ template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
           unsigned int device, ArgContainer<SemiRingType> args,
-          unsigned int trials, double timeout, double delta)
+          unsigned int trials, unsigned int timeout, double delta)
       : _kernel_source(kernel_source), _device(device), _args(args),
         _mem_manager(args), _trials(trials), _timeout(timeout), _delta(delta) {
 
@@ -372,7 +372,7 @@ protected:
   CLMemoryManager<SemiRingType> _mem_manager;
 
   unsigned int _trials;
-  double _timeout;
+  unsigned int _timeout;
   double _delta;
 };
 
@@ -384,7 +384,7 @@ class IterativeHarness : public Harness<TimingType, SemiRingType> {
 public:
   IterativeHarness(std::string &kernel_source, unsigned int platform,
                    unsigned int device, ArgContainer<SemiRingType> args,
-                   unsigned int trials, double timeout, double delta)
+                   unsigned int trials, unsigned int timeout, double delta)
       : Harness<TimingType, SemiRingType>(kernel_source, platform, device, args,
                                           trials, timeout, delta) {}
 

@@ -43,7 +43,7 @@ class HarnessBFS : public IterativeHarness<std::vector<SqlStat>, float> {
 public:
   HarnessBFS(std::string &kernel_source, unsigned int platform,
              unsigned int device, ArgContainer<float> args, unsigned int trials,
-             double timeout, double delta)
+             unsigned int timeout, double delta)
       : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
                          delta) {
     allocateBuffers();

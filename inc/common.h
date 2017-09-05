@@ -27,9 +27,9 @@
       {'e', "experiment", "An experiment ID for data reporting"});             \
   auto opt_float_delta = op.addOption<double>(                                 \
       {'t', "delta", "Delta for floating point comparisons", 0.0001});         \
-  auto opt_timeout = op.addOption<float>(                                      \
+  auto opt_timeout = op.addOption<unsigned int>(                               \
       {'t', "timeout",                                                         \
-       "Timeout to avoid multiple executions (default 100ms).", 100.0f});      \
+       "Timeout to avoid multiple executions (default 100ms).", 100});         \
   op.parse(argc, argv);                                                        \
   using namespace std;                                                         \
   const std::string matrix_filename = opt_matrix_file->require();              \
