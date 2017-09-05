@@ -89,7 +89,6 @@ do
 		echo "Run took $runtime seconds, total time of $scripttime seconds"
 		echo "Run took $runtime seconds, total time of $scripttime seconds" >> runstatus.txt
 
-
 		estimated_total=$(bc <<< "scale=4; (($scripttime/$i)*$taskcount)/(60*60*24)")
 
 		echo "Estimated total days: $estimated_total" 

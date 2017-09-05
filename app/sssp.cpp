@@ -43,7 +43,7 @@ class HarnessSSSP : public IterativeHarness<std::vector<SqlStat>, float> {
 public:
   HarnessSSSP(std::string &kernel_source, unsigned int platform,
               unsigned int device, ArgContainer<float> args,
-              unsigned int trials, double timeout, double delta)
+              unsigned int trials, unsigned int timeout, double delta)
       : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
                          delta) {
     allocateBuffers();
@@ -58,27 +58,29 @@ public:
       start_timer(benchmark_iteration, HarnessSSSP);
       std::vector<SqlStat> run_runtimes = executeRun(run, t);
 
-      // sum the runtimes, and median it and report that
-      // collect the median of the runtimes
-      std::sort(run_runtimes.begin(), run_runtimes.end(), SqlStat::compare);
-      std::chrono::nanoseconds median_time =
-          run_runtimes[run_runtimes.size() / 2].getTime();
+      if (run_runtimes.size() > 0) {
+        // sum the runtimes, and median it and report that
+        // collect the median of the runtimes
+        std::sort(run_runtimes.begin(), run_runtimes.end(), SqlStat::compare);
+        std::chrono::nanoseconds median_time =
+            run_runtimes[run_runtimes.size() / 2].getTime();
 
-      run_runtimes.push_back(SqlStat(median_time, NOT_CHECKED, run.global1,
-                                     run.local1, MEDIAN_RESULT, t));
+        run_runtimes.push_back(SqlStat(median_time, NOT_CHECKED, run.global1,
+                                       run.local1, MEDIAN_RESULT, t));
 
-      // collect the sum of the runtimes
-      std::chrono::nanoseconds total_time = std::accumulate(
-          run_runtimes.begin(), run_runtimes.end(),
-          std::chrono::nanoseconds(0), // start with first element
-          [](std::chrono::nanoseconds time, SqlStat stat) {
-            return time + stat.getTime();
-          });
-      run_runtimes.push_back(SqlStat(total_time, NOT_CHECKED, run.global1,
-                                     run.local1, MULTI_ITERATION_SUM));
+        // collect the sum of the runtimes
+        std::chrono::nanoseconds total_time = std::accumulate(
+            run_runtimes.begin(), run_runtimes.end(),
+            std::chrono::nanoseconds(0), // start with first element
+            [](std::chrono::nanoseconds time, SqlStat stat) {
+              return time + stat.getTime();
+            });
+        run_runtimes.push_back(SqlStat(total_time, NOT_CHECKED, run.global1,
+                                       run.local1, MULTI_ITERATION_SUM));
 
-      // add all the times to the list
-      runtimes.push_back(run_runtimes);
+        // add all the times to the list
+        runtimes.push_back(run_runtimes);
+      }
 
       // reset the inputs, ready for the next trial!
       resetInputs();
@@ -114,6 +116,10 @@ private:
       resetTempBuffers();
       // run the kernel
       auto time = executeKernel(run);
+      // if our time is too long, we should just fail and return nothing.
+      if (time > std::chrono::nanoseconds(_timeout)) {
+        return std::vector<SqlStat>();
+      }
       runtimes.push_back(SqlStat(time, NOT_CHECKED, run.global1, run.local1,
                                  RAW_RESULT, trial, iteration));
 
