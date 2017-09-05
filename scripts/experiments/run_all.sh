@@ -89,8 +89,9 @@ do
 		echo "Run took $runtime seconds, total time of $scripttime seconds"
 		echo "Run took $runtime seconds, total time of $scripttime seconds" >> runstatus.txt
 
-		estimated_total=$(bc <<< "scale=3;(($scripttime/$i)*$taskcount)/(60*60*24)")
-		current_days=$(bc <<< "scale=3;$scripttime/(60*60*24)")
+		estimated_total=$(bc <<< "scale=4;(($scripttime/$i)*$taskcount)/(60*60*24)")
+		current_days=$(bc <<< "scale=4;$scripttime/(60*60*24)")
+		estimated_percentage=$(bc <<< "scale=4;($current_days*100)/($estimated_total* 100)")
 
 		echo "Estimated total days: $estimated_total - spent $current_days" 
 		echo "Estimated total days: $estimated_total - spent $current_days" >> runstatus.txt
