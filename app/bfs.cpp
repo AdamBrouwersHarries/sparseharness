@@ -39,10 +39,10 @@
 #include "CL/cl.h"
 #endif
 
-class HarnessBFS : public IterativeHarness<std::vector<SqlStat>, float> {
+class HarnessBFS : public IterativeHarness<std::vector<SqlStat>, int> {
 public:
   HarnessBFS(std::string &kernel_source, unsigned int platform,
-             unsigned int device, ArgContainer<float> args, unsigned int trials,
+             unsigned int device, ArgContainer<int> args, unsigned int trials,
              unsigned int timeout, double delta)
       : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
                          delta) {
@@ -104,8 +104,8 @@ private:
     do {
       LOG_DEBUG_INFO("Iteration: ", iteration);
       LOG_DEBUG_INFO("Host vectors before");
-      printCharVector<float>("Input ", *input_host_ptr);
-      printCharVector<float>("Output ", *output_host_ptr);
+      printCharVector<int>("Input ", *input_host_ptr);
+      printCharVector<int>("Output ", *output_host_ptr);
 
       // cache the output to check that it's actually changed
       std::copy(output_host_ptr->begin(), output_host_ptr->end(),
@@ -121,8 +121,8 @@ private:
       readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
 
       LOG_DEBUG_INFO("Host vectors after");
-      printCharVector<float>("Input ", *input_host_ptr);
-      printCharVector<float>("Output ", *output_host_ptr);
+      printCharVector<int>("Input ", *input_host_ptr);
+      printCharVector<int>("Output ", *output_host_ptr);
 
       assertBuffersNotEqual(*output_host_ptr, _mem_manager._temp_out_buffer);
 
@@ -151,15 +151,16 @@ private:
     start_timer(should_terminate_iteration, HarnessBFS);
 
     // reinterpret the args as double pointers, and get the lengths
-    auto input_ptr = reinterpret_cast<float *>(input.data());
-    auto output_ptr = reinterpret_cast<float *>(output.data());
-    auto input_length = input.size() / sizeof(float);
-    auto output_length = output.size() / sizeof(float);
+    auto input_ptr = reinterpret_cast<int *>(input.data());
+    auto output_ptr = reinterpret_cast<int *>(output.data());
+    auto input_length = input.size() / sizeof(int);
+    auto output_length = output.size() / sizeof(int);
     // perform a comparison across the two of them, based on pointers
     bool equal = true;
     for (unsigned int i = 0;
          equal == true && i < input_length && i < output_length; i++) {
-      equal = fabs(input_ptr[i] - output_ptr[i]) < _delta;
+      equal = input_ptr[i] == output_ptr[i];
+      // equal = fabs(input_ptr[i] - output_ptr[i]) < _delta;
       // std::cout << "Comparing: (" << input_ptr[i] << "," << output_ptr[i]
       //           << "), result: " << equal << "\n";
     }
@@ -177,7 +178,7 @@ public:
 
   virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) {
     if (ix == 0) {
-      return 0.0f;
+      return static_cast<T>(1);
     } else {
       return value;
     }
@@ -193,7 +194,7 @@ public:
 
   virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) {
     if (ix == 0) {
-      return 0.0f;
+      return static_cast<T>(1);
     } else {
       return value;
     }
@@ -201,12 +202,11 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  COMMON_MAIN_PREAMBLE
+  COMMON_MAIN_PREAMBLE(int)
 
   // auto zero =
   // specialise the matrix for the kernel given
-  auto cl_matrix =
-      kernel.specialiseMatrix(matrix, std::numeric_limits<float>::max());
+  auto cl_matrix = kernel.specialiseMatrix(matrix, 0);
   // extract size variables from it
   int v_Width_cl = cl_matrix.getCLVWidth();
   int v_Height_cl = cl_matrix.getCLVHeight();
@@ -218,15 +218,13 @@ int main(int argc, char *argv[]) {
 
   // generate a vector
 
-  InitialDistancesGeneratorX<float> inital_distances_x(
-      std::numeric_limits<float>::max());
-  InitialDistancesGeneratorY<float> inital_distances_y(
-      std::numeric_limits<float>::max());
+  InitialDistancesGeneratorX<int> inital_distances_x(0);
+  InitialDistancesGeneratorY<int> inital_distances_y(0);
 
   // get some arguments
-  auto args = executorEncodeMatrix(
-      kernel, matrix, std::numeric_limits<float>::max(), inital_distances_x,
-      inital_distances_y, v_Width_cl, v_Height_cl, v_Length_cl, 0.0f, 0.0f);
+  auto args = executorEncodeMatrix(kernel, matrix, 0, inital_distances_x,
+                                   inital_distances_y, v_Width_cl, v_Height_cl,
+                                   v_Length_cl, 1, 0);
 
   HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
                      args, opt_trials->get(), opt_timeout->get(),

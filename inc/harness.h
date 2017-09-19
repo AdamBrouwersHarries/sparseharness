@@ -161,8 +161,8 @@ protected:
 
     // build the constant arguments
     LOG_DEBUG_INFO("setting constant arguments");
-    setValueArg<float>(arg_index++, &(_args.alpha));
-    setValueArg<float>(arg_index++, &(_args.beta));
+    setValueArg<SemiRingType>(arg_index++, &(_args.alpha));
+    setValueArg<SemiRingType>(arg_index++, &(_args.beta));
 
     // set the output arg
     LOG_DEBUG_INFO("setting the output argument");

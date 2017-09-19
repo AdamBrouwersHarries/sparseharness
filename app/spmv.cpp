@@ -98,7 +98,7 @@ private:
 };
 
 int main(int argc, char *argv[]) {
-  COMMON_MAIN_PREAMBLE
+  COMMON_MAIN_PREAMBLE(float)
 
   // specialise the matrix for the kernel given
   auto cl_matrix = kernel.specialiseMatrix(matrix, 0.0f);

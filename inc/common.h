@@ -2,7 +2,7 @@
 
 #define ENDL "\n"
 
-#define COMMON_MAIN_PREAMBLE                                                   \
+#define COMMON_MAIN_PREAMBLE(mtype)                                            \
   start_timer(main, global);                                                   \
   OptParser op("Harness for SPMV sparse matrix dense vector multiplication "   \
                "benchmarks");                                                  \
@@ -40,8 +40,8 @@
   const std::string experiment = opt_experiment_id->require();                 \
   std::cerr << "matrix_filename " << matrix_filename << ENDL;                  \
   std::cerr << "kernel_filename " << kernel_filename << ENDL;                  \
-  SparseMatrix<float> matrix(matrix_filename);                                 \
-  KernelConfig<float> kernel(kernel_filename);                                 \
+  SparseMatrix<mtype> matrix(matrix_filename);                                 \
+  KernelConfig<mtype> kernel(kernel_filename);                                 \
   auto csvlines = CSV::load_csv(runs_filename);                                \
   std::vector<Run> runs;                                                       \
   std::transform(csvlines.begin(), csvlines.end(), std::back_inserter(runs),   \

@@ -207,7 +207,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  COMMON_MAIN_PREAMBLE
+  COMMON_MAIN_PREAMBLE(float)
 
   // auto zero =
   // specialise the matrix for the kernel given

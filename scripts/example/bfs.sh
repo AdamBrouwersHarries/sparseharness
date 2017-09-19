@@ -1,14 +1,13 @@
 #!/bin/sh
 
 projroot=$1
-harness=$2
 # This script runs an example kernel using the harness 
 # The harness executable
-# harness=$projroot/build/bfs_harness
+harness=$projroot/build/bfs_harness
 # A kernel to run with the harness
-kernel=$projroot/example/kernel2.json
+kernel=$projroot/example/bfs/glb-sdp.json
 # The matrix to process
-matrix=$projroot/example/matrix.mtx
+matrix=$projroot/example/matrix3.mtx
 # The run parameters - i.e. local and global sizes
 runfile=$projroot/example/shortrunfile.csv
 # our hostname
@@ -17,4 +16,14 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-$harness -e $exid -n $hname -m $matrix -k $kernel -d 0 -r $runfile -i 1 -t 10 
+# oclgrind --check-api --data-races $harness \
+$harness \
+    -e $exid \
+    -n $hname \
+    -m $matrix \
+    -f matrix \
+    -k $kernel \
+    -d 0 \
+    -r $runfile \
+    -i 10 \
+    -t 200 
