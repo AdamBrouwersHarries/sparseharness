@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include "csds_timer.h"
-#include "sparse_matrix.h"
 
 class ArgDescr {
 public:
@@ -51,11 +50,6 @@ public:
   std::vector<ArgDescr> getTempLocals();
   ArgDescr *getOutputArg();
   KernelProperties getProperties();
-
-  // Specialiser for a matrix - makes more sense here than in the matrix,
-  // as it's kernel, not matrix dependent
-
-  OpenCLSparseMatrix<T> specialiseMatrix(SparseMatrix<T> matrix, T zero);
 
 private:
   std::string source;

@@ -124,47 +124,6 @@ std::vector<T> flatten(const std::vector<std::vector<T>> &orig) {
   return ret;
 }
 
-template <typename T>
-OpenCLSparseMatrix<T> KernelConfig<T>::specialiseMatrix(SparseMatrix<T> matrix,
-                                                        T zero) {
-  auto timer = CSDSTimer("specialiseMatrix", "KernelConfig");
-
-  // find out what kind of arrays we have:
-  if (kprops.arrayType == "ragged") {
-    // get the matrix as a ragged ELLPACK
-    auto rawmat = matrix.asSOAELLPACK();
-
-    // do some funky stuff.
-    return OpenCLSparseMatrix<T>((int)rawmat.first.size(), -1, 1, 1,
-                                 flatten(rawmat.first), flatten(rawmat.second));
-
-  } else {
-    // build the arguments using a padded SOA structure
-    // get the matrix as a padded ELLPACK
-    auto rawmat = matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
-
-    // add on as many rows are needed
-    // first check that we _need_ to
-    if (rawmat.first.size() % kprops.chunkSize != 0) {
-      // calculate the new height required to get to a multiple of the
-      int new_height =
-          kprops.chunkSize * ((rawmat.first.size() / kprops.chunkSize) + 1);
-      // get the row length
-      int row_length = rawmat.first[0].size();
-      // construct a vector of "-1" values, and one of "0" values
-      std::vector<int> indices(row_length, -1);
-      std::vector<T> values(row_length, zero);
-      // resize the raw vector with the new values
-      rawmat.first.resize(new_height, indices);
-      rawmat.second.resize(new_height, values);
-    }
-
-    return OpenCLSparseMatrix<T>(
-        (int)rawmat.first.size(), (int)rawmat.first[0].size(), kprops.chunkSize,
-        kprops.splitSize, flatten(rawmat.first), flatten(rawmat.second));
-  }
-}
-
 // KernelProperties
 
 KernelProperties::KernelProperties() {
