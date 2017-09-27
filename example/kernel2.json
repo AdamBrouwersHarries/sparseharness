@@ -34,30 +34,6 @@
     "size" : "4"
   } ],
   "tempGlobals" : [ {
-    "variable" : "v__26004",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__26006",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__26008",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__26010",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__26014",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__3017",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
     "variable" : "v__26002",
     "addressSpace" : "global",
     "size" : "4"

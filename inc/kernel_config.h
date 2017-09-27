@@ -48,6 +48,7 @@ public:
   std::vector<ArgDescr> getArgs();
   std::vector<ArgDescr> getTempGlobals();
   std::vector<ArgDescr> getTempLocals();
+  std::vector<std::string> getParamVars();
   ArgDescr *getOutputArg();
   KernelProperties getProperties();
 
@@ -57,6 +58,7 @@ private:
   std::vector<ArgDescr> inputArgs;
   std::vector<ArgDescr> tempGlobals;
   std::vector<ArgDescr> tempLocals;
+  std::vector<std::string> paramVars;
   ArgDescr *outputArg;
   KernelProperties kprops;
 };

@@ -73,6 +73,7 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     std::string variable = arg.second.get<std::string>("variable");
     std::string addressSpace = arg.second.get<std::string>("addressSpace");
     std::string size = arg.second.get<std::string>("size");
+
     tempGlobals.push_back(ArgDescr(variable, addressSpace, size));
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << ENDL;
@@ -85,6 +86,12 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
     tempLocals.push_back(ArgDescr(variable, addressSpace, size));
     std::cout << "variable: " << variable << " address space: " << addressSpace
               << " size: " << size << ENDL;
+  }
+  std::cerr << "Param variables: " << ENDL;
+  for (auto &arg : tree.get_child("paramVars")) {
+    std::string paramvar = arg.second.get_value<std::string>();
+    paramVars.push_back(paramvar);
+    std::cout << "param var: " << paramvar << "\n";
   }
 }
 
@@ -104,6 +111,10 @@ template <typename T> std::vector<ArgDescr> KernelConfig<T>::getTempGlobals() {
 
 template <typename T> std::vector<ArgDescr> KernelConfig<T>::getTempLocals() {
   return tempLocals;
+}
+
+template <typename T> std::vector<std::string> KernelConfig<T>::getParamVars() {
+  return paramVars;
 }
 
 template <typename T> ArgDescr *KernelConfig<T>::getOutputArg() {

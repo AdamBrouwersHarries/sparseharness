@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 
 #include "Logger.h"
 #include "arithexpr_evaluator.h"
@@ -68,8 +69,11 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   start_timer(executorEncodeMatrix, kernel_utils);
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
+
   // get the matrix as standard ELLPACK
-  auto rawmat = matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
+  auto rawmat = kprops.arrayType == "ragged"
+                    ? matrix.asSOAELLPACK()
+                    : matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
 
   // add on as many rows are needed
   // first check that we _need_ to
@@ -97,6 +101,18 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
             << "\n\tv_MHeight_2 = " << v_MHeight_2
             << "\n\tv_VLength_3 = " << v_VLength_3 << "\n";
 
+  // if we're ragged, we need to prepend row lengths to the arrays:
+  for (auto &arr : rawmat.first) {
+    // get the length
+    int len = arr.size();
+    arr.insert(arr.begin(), len);
+  }
+  for (auto &arr : rawmat.second) {
+    // get the length
+    int len = arr.size();
+    arr.insert(arr.begin(), len);
+  }
+
   // reminder - rawmat has the following type:
   //   template <typename T>
   // using soa_ellpack_matrix =
@@ -105,6 +121,30 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // extract some kernel arguments from it, and from the intermediate arrays in
   // the kernel
   // auto flat_indices = flatten(rawmat.first()[0]);
+  std::cout << "Raw matrix indices: "
+            << "\n";
+  for (auto row : rawmat.first) {
+    std::ostringstream ss;
+    ss << "[";
+    std::copy(row.begin(), row.end() - 1, std::ostream_iterator<int>(ss, ", "));
+    ss << row.back();
+    ss << "]";
+
+    std::cout << ss.str() << "\n";
+  }
+
+  std::cout << "Raw matrix values: "
+            << "\n";
+  for (auto row : rawmat.second) {
+    std::ostringstream ss;
+    ss << "[";
+    std::copy(row.begin(), row.end() - 1, std::ostream_iterator<int>(ss, ", "));
+    ss << row.back();
+    ss << "]";
+
+    std::cout << ss.str() << "\n";
+  }
+
   auto flat_indices = flatten(rawmat.first);
   // auto flat_values = flatten(rawmat.second()[0]);
   auto flat_values = flatten(rawmat.second);
@@ -183,9 +223,25 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   }
 
   // create size buffers
-  arg_cnt.size_args.push_back(v_MHeight_2);
-  arg_cnt.size_args.push_back(v_MWidth_1);
-  arg_cnt.size_args.push_back(v_VLength_3);
+  // match the paramvars to the buffers
+  auto sizeMap = std::map<std::string, int>{
+      {"MWidthC", v_MWidth_1},
+      {"MHeight", v_MHeight_2},
+      {"VLength", v_VLength_3},
+  };
+
+  // iterate over the size args, and do a lookup for each of them.
+  // this should keep the order correct, and also correctly provide the total
+  // amount that we need, rather than overspecifying when we don't need some
+  for (auto sizeArg : kernel.getParamVars()) {
+    int size = sizeMap[sizeArg];
+    LOG_DEBUG("Size argument - name: ", sizeArg, " value: ", size);
+    arg_cnt.size_args.push_back(size);
+  }
+
+  // arg_cnt.size_args.push_back(v_MHeight_2);
+  // arg_cnt.size_args.push_back(v_MWidth_1);
+  // arg_cnt.size_args.push_back(v_VLength_3);
 
   return arg_cnt;
 }

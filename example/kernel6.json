@@ -31,22 +31,6 @@
     "size" : "4"
   } ],
   "tempGlobals" : [ {
-    "variable" : "v__2703",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__2706",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__2708",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
-    "variable" : "v__2710",
-    "addressSpace" : "private",
-    "size" : "4"
-  }, {
     "variable" : "v__2714",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"

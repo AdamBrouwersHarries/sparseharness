@@ -171,7 +171,8 @@ protected:
     setGlobalArg(arg_index++, &_mem_manager._output);
 
     // set the temp globals and write zeros into them
-    LOG_DEBUG_INFO("setting temp global arguments");
+    LOG_DEBUG_INFO("setting ", _args.temp_globals.size(),
+                   " temp global arguments");
     int temp_index = 0;
     for (auto size : _args.temp_globals) {
       _mem_manager._temp_global[temp_index] = createGlobalArg(size);
@@ -181,7 +182,8 @@ protected:
     }
 
     // build temp locals
-    LOG_DEBUG_INFO("setting temp local arguments");
+    LOG_DEBUG_INFO("setting ", _args.temp_locals.size(),
+                   " temp local arguments");
     for (auto size : _args.temp_locals) {
       setLocalArg(arg_index++, size);
     }
@@ -337,7 +339,7 @@ protected:
   void setGlobalArg(cl_int arg, cl_mem *mem) {
     start_timer(setGlobalArg, harness);
     LOG_DEBUG_INFO("setting global arg ", arg, " from memory ",
-                   static_cast<void *>(mem));
+                   static_cast<void *>(mem), "with size: ", sizeof(cl_mem));
     checkCLError(clSetKernelArg(_kernel, arg, sizeof(cl_mem), mem));
   }
 
