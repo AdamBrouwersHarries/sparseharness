@@ -7,7 +7,7 @@ harness=$projroot/build/bfs_harness
 # A kernel to run with the harness
 kernel=$projroot/example/bfs/glb-sdp.json
 # The matrix to process
-matrix=$projroot/example/matrix3.mtx
+matrix=$projroot/example/matrix.mtx
 # The run parameters - i.e. local and global sizes
 runfile=$projroot/example/shortrunfile.csv
 # our hostname
@@ -16,8 +16,7 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-# oclgrind --check-api --data-races $harness \
-$harness \
+oclgrind --check-api --data-races $harness \
     -e $exid \
     -n $hname \
     -m $matrix \
