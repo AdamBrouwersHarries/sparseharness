@@ -204,27 +204,13 @@ public:
 int main(int argc, char *argv[]) {
   COMMON_MAIN_PREAMBLE(int)
 
-  // auto zero =
-  // specialise the matrix for the kernel given
-  auto cl_matrix = kernel.specialiseMatrix(matrix, 0);
-  // extract size variables from it
-  int v_Width_cl = cl_matrix.getCLVWidth();
-  int v_Height_cl = cl_matrix.getCLVHeight();
-  int v_Length_cl = matrix.width();
-
-  std::cout << "v_Width_cl = " << v_Width_cl << "\n";
-  std::cout << "v_Height_cl = " << v_Height_cl << "\n";
-  std::cout << "v_Length_cl = " << v_Length_cl << "\n";
-
-  // generate a vector
-
+  // build vector generators
   InitialDistancesGeneratorX<int> inital_distances_x(0);
   InitialDistancesGeneratorY<int> inital_distances_y(0);
 
   // get some arguments
   auto args = executorEncodeMatrix(kernel, matrix, 0, inital_distances_x,
-                                   inital_distances_y, v_Width_cl, v_Height_cl,
-                                   v_Length_cl, 1, 0);
+                                   inital_distances_y, 1, 0);
 
   HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
                      args, opt_trials->get(), opt_timeout->get(),

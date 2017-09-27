@@ -285,3 +285,5 @@
 //     std::cout << "]" << ENDL;
 //   }
 // }
+
+int main() { return 0; }

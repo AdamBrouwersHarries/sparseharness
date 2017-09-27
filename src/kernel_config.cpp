@@ -23,6 +23,7 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
   auto innerMap2 = properties.get_optional<std::string>("innerMap2");
   auto splitSize = properties.get_optional<std::string>("splitSize");
   auto chunkSize = properties.get_optional<std::string>("chunkSize");
+  auto arrayType = properties.get_optional<std::string>("arrayType");
 
   auto unwrap_map = [](boost::optional<std::string> value) {
     return value ? value.get() : std::string("nothing");
@@ -33,8 +34,8 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
   };
 
   kprops = KernelProperties(unwrap_map(outerMap), unwrap_map(innerMap),
-                            unwrap_map(innerMap2), unwrap_param(splitSize),
-                            unwrap_param(chunkSize));
+                            unwrap_map(innerMap2), unwrap_map(arrayType),
+                            unwrap_param(splitSize), unwrap_param(chunkSize));
 
   std::cout << "Kernel: " << name << ", source: \n" << source << ENDL;
 
@@ -128,28 +129,40 @@ OpenCLSparseMatrix<T> KernelConfig<T>::specialiseMatrix(SparseMatrix<T> matrix,
                                                         T zero) {
   auto timer = CSDSTimer("specialiseMatrix", "KernelConfig");
 
-  // get the matrix as standard ELLPACK
-  auto rawmat = matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
+  // find out what kind of arrays we have:
+  if (kprops.arrayType == "ragged") {
+    // get the matrix as a ragged ELLPACK
+    auto rawmat = matrix.asSOAELLPACK();
 
-  // add on as many rows are needed
-  // first check that we _need_ to
-  if (rawmat.first.size() % kprops.chunkSize != 0) {
-    // calculate the new height required to get to a multiple of the
-    int new_height =
-        kprops.chunkSize * ((rawmat.first.size() / kprops.chunkSize) + 1);
-    // get the row length
-    int row_length = rawmat.first[0].size();
-    // construct a vector of "-1" values, and one of "0" values
-    std::vector<int> indices(row_length, -1);
-    std::vector<T> values(row_length, zero);
-    // resize the raw vector with the new values
-    rawmat.first.resize(new_height, indices);
-    rawmat.second.resize(new_height, values);
+    // do some funky stuff.
+    return OpenCLSparseMatrix<T>((int)rawmat.first.size(), -1, 1, 1,
+                                 flatten(rawmat.first), flatten(rawmat.second));
+
+  } else {
+    // build the arguments using a padded SOA structure
+    // get the matrix as a padded ELLPACK
+    auto rawmat = matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
+
+    // add on as many rows are needed
+    // first check that we _need_ to
+    if (rawmat.first.size() % kprops.chunkSize != 0) {
+      // calculate the new height required to get to a multiple of the
+      int new_height =
+          kprops.chunkSize * ((rawmat.first.size() / kprops.chunkSize) + 1);
+      // get the row length
+      int row_length = rawmat.first[0].size();
+      // construct a vector of "-1" values, and one of "0" values
+      std::vector<int> indices(row_length, -1);
+      std::vector<T> values(row_length, zero);
+      // resize the raw vector with the new values
+      rawmat.first.resize(new_height, indices);
+      rawmat.second.resize(new_height, values);
+    }
+
+    return OpenCLSparseMatrix<T>(
+        (int)rawmat.first.size(), (int)rawmat.first[0].size(), kprops.chunkSize,
+        kprops.splitSize, flatten(rawmat.first), flatten(rawmat.second));
   }
-
-  return OpenCLSparseMatrix<T>(
-      (int)rawmat.first.size(), (int)rawmat.first[0].size(), kprops.chunkSize,
-      kprops.splitSize, flatten(rawmat.first), flatten(rawmat.second));
 }
 
 // KernelProperties
@@ -163,8 +176,10 @@ KernelProperties::KernelProperties(std::string kname) : argcache(kname) {
 }
 
 KernelProperties::KernelProperties(std::string om, std::string im,
-                                   std::string im2, int ss, int cs)
-    : outerMap(om), innerMap(im), innerMap2(im2), splitSize(ss), chunkSize(cs) {
+                                   std::string im2, std::string at, int ss,
+                                   int cs)
+    : outerMap(om), innerMap(im), innerMap2(im2), arrayType(at), splitSize(ss),
+      chunkSize(cs) {
   // do nothing else for now
 }
 

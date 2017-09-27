@@ -100,31 +100,13 @@ private:
 int main(int argc, char *argv[]) {
   COMMON_MAIN_PREAMBLE(float)
 
-  // specialise the matrix for the kernel given
-  auto cl_matrix = kernel.specialiseMatrix(matrix, 0.0f);
-  // extract size variables from it
-  int v_Width_cl = cl_matrix.getCLVWidth();
-  int v_Height_cl = cl_matrix.getCLVHeight();
-  int v_Length_cl = matrix.width();
-
-  std::cout << "v_Width_cl = " << v_Width_cl << "\n";
-  std::cout << "v_Height_cl = " << v_Height_cl << "\n";
-  std::cout << "v_Length_cl = " << v_Length_cl << "\n";
-
-  // size args of name/order:
-  // v_MWidthC_1, v_MHeight_2, v_VLength_3
-  // std::vector<int> size_args{v_Width_cl, v_Width_cl, v_Length_cl};
-
-  // generate a vector
-
+  // build vector generators
   ConstXVectorGenerator<float> onegen(1.0f);
   ConstYVectorGenerator<float> zerogen(0);
 
-  // auto clkernel = executor::Kernel(kernel.getSource(), "KERNEL", "").build();
   // get some arguments
   auto args =
-      executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, v_Width_cl,
-                           v_Height_cl, v_Length_cl, 1.0f, 0.0f);
+      executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, 1.0f, 0.0f);
   HarnessSPMV harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args, opt_trials->get(),
                       opt_timeout->get(), opt_float_delta->get());

@@ -63,13 +63,9 @@ ArgContainer<T>
 executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
                      // std::vector<T> xvector, std::vector<T> yvector) {
                      XVectorGenerator<T> &xgen, YVectorGenerator<T> &ygen,
-                     int v_MWidth_1, int v_MHeight_2, int v_VLength_3,
+                     // int v_MWidth_1, int v_MHeight_2, int v_VLength_3,
                      T alpha = static_cast<T>(1), T beta = static_cast<T>(1)) {
   start_timer(executorEncodeMatrix, kernel_utils);
-  std::cerr << "Encoding matrix with sizes:"
-            << "\n\tv_MWidth_1 = " << v_MWidth_1
-            << "\n\tv_MHeight_2 = " << v_MHeight_2
-            << "\n\tv_VLength_3 = " << v_VLength_3 << "\n";
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
   // get the matrix as standard ELLPACK
@@ -91,6 +87,15 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
     rawmat.first.resize(mem_height, indices);
     rawmat.second.resize(mem_height, values);
   }
+
+  auto v_MWidth_1 = (int)rawmat.first[0].size() / kprops.splitSize;
+  auto v_MHeight_2 = (int)(rawmat.first.size()) / kprops.chunkSize;
+  auto v_VLength_3 = matrix.width();
+
+  std::cerr << "Encoding matrix with sizes:"
+            << "\n\tv_MWidth_1 = " << v_MWidth_1
+            << "\n\tv_MHeight_2 = " << v_MHeight_2
+            << "\n\tv_VLength_3 = " << v_VLength_3 << "\n";
 
   // reminder - rawmat has the following type:
   //   template <typename T>

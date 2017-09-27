@@ -22,10 +22,12 @@ public:
   KernelProperties();
   KernelProperties(std::string kname);
   KernelProperties(std::string outerMap, std::string innerMap,
-                   std::string innerMap2, int splitSize, int chunkSize);
+                   std::string innerMap2, std::string arrayType, int splitSize,
+                   int chunkSize);
   std::string outerMap;
   std::string innerMap;
   std::string innerMap2;
+  std::string arrayType;
   int splitSize;
   int chunkSize;
 
