@@ -93,7 +93,10 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
     rawmat.second.resize(mem_height, values);
   }
 
-  auto v_MWidth_1 = (int)rawmat.first[0].size() / kprops.splitSize;
+  auto v_MWidth_1 = kprops.arrayType == "ragged"
+                        ? matrix.width()
+                        : (int)rawmat.first[0].size() / kprops.splitSize;
+  // change it if we're ragged
   auto v_MHeight_2 = (int)(rawmat.first.size()) / kprops.chunkSize;
   auto v_VLength_3 = matrix.width();
 
@@ -146,29 +149,27 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // extract some kernel arguments from it, and from the intermediate arrays in
   // the kernel
   // auto flat_indices = flatten(rawmat.first()[0]);
-  std::cout << "Raw matrix indices: "
-            << "\n";
-  for (auto row : rawmat.first) {
-    std::ostringstream ss;
-    ss << "[";
-    std::copy(row.begin(), row.end() - 1, std::ostream_iterator<int>(ss, ", "));
-    ss << row.back();
-    ss << "]";
+  // std::cout << "Raw matrix indices: "
+  //           << "\n";
+  // for (auto row : rawmat.first) {
+  //   std::ostringstream ss;
+  //   ss << "[";
+  //   std::copy(row.begin(), row.end() - 1, std::ostream_iterator<int>(ss, ",
+  //   ")); ss << row.back(); ss << "]";
 
-    std::cout << ss.str() << "\n";
-  }
+  //   std::cout << ss.str() << "\n";
+  // }
 
-  std::cout << "Raw matrix values: "
-            << "\n";
-  for (auto row : rawmat.second) {
-    std::ostringstream ss;
-    ss << "[";
-    std::copy(row.begin(), row.end() - 1, std::ostream_iterator<T>(ss, ", "));
-    ss << row.back();
-    ss << "]";
+  // std::cout << "Raw matrix values: "
+  //           << "\n";
+  // for (auto row : rawmat.second) {
+  //   std::ostringstream ss;
+  //   ss << "[";
+  //   std::copy(row.begin(), row.end() - 1, std::ostream_iterator<T>(ss, ",
+  //   ")); ss << row.back(); ss << "]";
 
-    std::cout << ss.str() << "\n";
-  }
+  //   std::cout << ss.str() << "\n";
+  // }
 
   auto flat_indices = flatten(rawmat.first);
   // auto flat_values = flatten(rawmat.second()[0]);
