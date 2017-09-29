@@ -10,6 +10,7 @@
 #include "kernel_config.h"
 #include "sparse_matrix.h"
 #include "vector_generator.h"
+#include <cassert>
 
 // from:
 // https://stackoverflow.com/questions/17294629/merging-sub-vectors-int-a-single-vector-c
@@ -101,16 +102,40 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
             << "\n\tv_MHeight_2 = " << v_MHeight_2
             << "\n\tv_VLength_3 = " << v_VLength_3 << "\n";
 
-  // if we're ragged, we need to prepend row lengths to the arrays:
-  for (auto &arr : rawmat.first) {
-    // get the length
-    int len = arr.size();
-    arr.insert(arr.begin(), len);
-  }
-  for (auto &arr : rawmat.second) {
-    // get the length
-    int len = arr.size();
-    arr.insert(arr.begin(), len);
+  if (kprops.arrayType == "ragged") {
+    // if we're ragged, we need to prepend row sizes + capacities to the arrays:
+    for (auto &arr : rawmat.first) {
+      // get the length
+      int len = arr.size();
+      arr.insert(arr.begin(), len);
+      arr.insert(arr.begin(), len);
+    }
+    for (auto &arr : rawmat.second) {
+      // get the length
+      int len = arr.size();
+      arr.insert(arr.begin(), len);
+      arr.insert(arr.begin(), len);
+    }
+
+    // we now need to build "offset" data, and prepend it
+    // as we do some casts here, we need to make sure that int and T have the
+    // same size
+    assert(sizeof(T) == sizeof(int));
+    std::vector<int> offsets;
+    std::vector<T> offsets_T;
+    int sum = sizeof(T) * rawmat.first.size();
+    T *tsptr = reinterpret_cast<T *>(&sum);
+    // manually do a prefix sum of the sizes
+    for (unsigned int i = 0; i < rawmat.first.size(); i++) {
+      // assign the current sum to offsets[i] (by appending)
+      offsets.push_back(sum);
+      offsets_T.push_back(*tsptr);
+      sum += rawmat.first[i].size() * sizeof(T);
+    }
+
+    // append the offsets array to the indices and values arrays
+    rawmat.first.insert(rawmat.first.begin(), offsets);
+    rawmat.second.insert(rawmat.second.begin(), offsets_T);
   }
 
   // reminder - rawmat has the following type:
@@ -138,7 +163,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   for (auto row : rawmat.second) {
     std::ostringstream ss;
     ss << "[";
-    std::copy(row.begin(), row.end() - 1, std::ostream_iterator<int>(ss, ", "));
+    std::copy(row.begin(), row.end() - 1, std::ostream_iterator<T>(ss, ", "));
     ss << row.back();
     ss << "]";
 
