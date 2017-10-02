@@ -41,6 +41,6 @@
     "size" : "(4*v_MHeight_2)"
   },
   "tempLocals" : [ ],
-  "paramVars" : [ "MWidthC", "MHeight" ],
+  "paramVars" : [ "MHeight", "MWidthC" ],
   "outputSize" : "(4*v_MHeight_2)"
 }

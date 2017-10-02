@@ -48,6 +48,6 @@
     "addressSpace" : "local",
     "size" : "(4*v_MWidthC_1)"
   } ],
-  "paramVars" : [ "MWidthC", "MHeight", "VLength" ],
+  "paramVars" : [ "MHeight", "MWidthC", "VLength" ],
   "outputSize" : "(4*v_MHeight_2)"
 }
