@@ -1,43 +1,43 @@
 {
   "name" : "swrg-slcl-pmdp",
-  "source" : "#ifndef Tuple2_int_float_DEFINED\n#define Tuple2_int_float_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  float _1;\n} Tuple2_int_float;\n#endif\n\nfloat mult(float l, float r){\n  \n//printf(\"l (vect): %f, r (matrix): %f\\n\", l, r);\nreturn l*r;\n    \n}\nfloat add(float x, float y){\n  \n//printf(\"x: %f, y: %f\\n\", x, y);\nreturn x+y;\n    \n}\nfloat doubleMultiplyAdd(float dpRes, float alpha, float rowIdxPair2, float beta){\n  \n{\n //printf(\"dpRes: %f, alpha: %f, rowIdxPair2: %f, beta: %f\\n\", dpRes,alpha,rowIdxPair2, beta);\n return (dpRes*alpha)+(rowIdxPair2*beta);\n}\n    \n}\nkernel void KERNEL(const global int* restrict v__2430, const global float* restrict v__2431, const global float* restrict v__2432, const global float* restrict v__2433, float v__2434, float v__2435, global float* v__2448, global float* v__2442, int v_MHeight_2, int v_MWidthC_1, int v_VLength_3){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  float v__2438; \n  float v__2443; \n  /* Private Memory */\n  float v__2440_0;\n  \n  for (int v_wg_id_2426 = get_group_id(0); v_wg_id_2426 < v_MHeight_2; v_wg_id_2426 = (v_wg_id_2426 + get_num_groups(0))) {\n    for (int v_l_id_2427 = get_local_id(0); v_l_id_2427 < v_MWidthC_1; v_l_id_2427 = (v_l_id_2427 + get_local_size(0))) {\n      float v_tmp_2488 = 0.0f; \n      v__2438 = v_tmp_2488; \n      int v_index_2489 = v__2430[(v_l_id_2427 + (v_MWidthC_1 * v_wg_id_2426))]; \n      if (v_index_2489 < 0) {\n        v__2440_0 = v__2438; \n      } else {\n        if (v_index_2489 >= v_VLength_3) {\n          v__2440_0 = v__2438; \n        } else {\n          v__2440_0 = v__2432[v_index_2489]; \n        }\n      }\n      v__2442[(-1 + v_MWidthC_1 + (-1 * v_l_id_2427) + (v_MWidthC_1 * v_wg_id_2426))] = mult(v__2440_0, v__2431[(v_l_id_2427 + (v_MWidthC_1 * v_wg_id_2426))]); \n    }\n    barrier(CLK_GLOBAL_MEM_FENCE);\n    \n    float v_tmp_2490 = 0.0f; \n    v__2443 = v_tmp_2490; \n    /* reduce_seq */\n    for (int v_i_2428 = 0; v_i_2428 < v_MWidthC_1; v_i_2428 = (1 + v_i_2428)) {\n      v__2443 = add(v__2443, v__2442[(v_i_2428 + (v_MWidthC_1 * v_wg_id_2426))]); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_2429 = 0; \n      v__2448[v_wg_id_2426] = doubleMultiplyAdd(v__2443, v__2434, v__2433[v_wg_id_2426], v__2435); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
+  "source" : "#ifndef Tuple2_int_float_DEFINED\n#define Tuple2_int_float_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  float _1;\n} Tuple2_int_float;\n#endif\n\nfloat mult(float l, float r){\n  \n//printf(\"l (vect): %f, r (matrix): %f\\n\", l, r);\nreturn l*r;\n    \n}\nfloat add(float x, float y){\n  \n//printf(\"x: %f, y: %f\\n\", x, y);\nreturn x+y;\n    \n}\nfloat doubleMultiplyAdd(float dpRes, float alpha, float rowIdxPair2, float beta){\n  \n{\n //printf(\"dpRes: %f, alpha: %f, rowIdxPair2: %f, beta: %f\\n\", dpRes,alpha,rowIdxPair2, beta);\n return (dpRes*alpha)+(rowIdxPair2*beta);\n}\n    \n}\nkernel void KERNEL(const global int* restrict v__9111, const global float* restrict v__9112, const global float* restrict v__9113, const global float* restrict v__9114, float v__9115, float v__9116, global float* v__9129, global float* v__9123, int v_MHeight_2, int v_MWidthC_1, int v_VLength_3){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  float v__9119; \n  float v__9124; \n  /* Private Memory */\n  float v__9121_0;\n  \n  for (int v_wg_id_9107 = get_group_id(0); v_wg_id_9107 < v_MHeight_2; v_wg_id_9107 = (v_wg_id_9107 + get_num_groups(0))) {\n    for (int v_l_id_9108 = get_local_id(0); v_l_id_9108 < v_MWidthC_1; v_l_id_9108 = (v_l_id_9108 + get_local_size(0))) {\n      float v_tmp_9169 = 0.0f; \n      v__9119 = v_tmp_9169; \n      int v_index_9170 = v__9111[(v_l_id_9108 + (v_MWidthC_1 * v_wg_id_9107))]; \n      if (v_index_9170 < 0) {\n        v__9121_0 = v__9119; \n      } else {\n        if (v_index_9170 >= v_VLength_3) {\n          v__9121_0 = v__9119; \n        } else {\n          v__9121_0 = v__9113[v_index_9170]; \n        }\n      }\n      v__9123[(-1 + v_MWidthC_1 + (-1 * v_l_id_9108) + (v_MWidthC_1 * v_wg_id_9107))] = mult(v__9121_0, v__9112[(v_l_id_9108 + (v_MWidthC_1 * v_wg_id_9107))]); \n    }\n    barrier(CLK_GLOBAL_MEM_FENCE);\n    \n    float v_tmp_9171 = 0.0f; \n    v__9124 = v_tmp_9171; \n    /* reduce_seq */\n    for (int v_i_9109 = 0; v_i_9109 < v_MWidthC_1; v_i_9109 = (1 + v_i_9109)) {\n      v__9124 = add(v__9124, v__9123[(v_i_9109 + (v_MWidthC_1 * v_wg_id_9107))]); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_9110 = 0; \n      v__9129[v_wg_id_9107] = doubleMultiplyAdd(v__9124, v__9115, v__9114[v_wg_id_9107], v__9116); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
   "properties" : {
     "outerMap" : "swrg",
     "innerMap" : "slcl",
     "dotProduct" : "parallel"
   },
   "inputArgs" : [ {
-    "variable" : "v__2430",
+    "variable" : "v__9111",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2*v_MWidthC_1)"
   }, {
-    "variable" : "v__2431",
+    "variable" : "v__9112",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2*v_MWidthC_1)"
   }, {
-    "variable" : "v__2432",
+    "variable" : "v__9113",
     "addressSpace" : "global",
     "size" : "(4*v_VLength_3)"
   }, {
-    "variable" : "v__2433",
+    "variable" : "v__9114",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"
   }, {
-    "variable" : "v__2434",
+    "variable" : "v__9115",
     "addressSpace" : "private",
     "size" : "4"
   }, {
-    "variable" : "v__2435",
+    "variable" : "v__9116",
     "addressSpace" : "private",
     "size" : "4"
   } ],
   "tempGlobals" : [ {
-    "variable" : "v__2442",
+    "variable" : "v__9123",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2*v_MWidthC_1)"
   } ],
   "outputArg" : {
-    "variable" : "v__2448",
+    "variable" : "v__9129",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"
   },

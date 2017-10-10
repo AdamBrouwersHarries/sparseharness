@@ -5,7 +5,7 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/bfs_harness
 # A kernel to run with the harness
-kernel=$projroot/example/bfs/glb-sdp.json
+kernel=$projroot/example/bfs/kernel5.json
 # The matrix to process
 matrix=$projroot/example/matrix.mtx
 # The run parameters - i.e. local and global sizes
