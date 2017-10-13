@@ -1,5 +1,5 @@
 #!/bin/sh
-cd ~/sparseharness/
+cd ~/projects/sparseharness/
 # mkdir -p build
 # pushd build 
 # cmake .. 
