@@ -93,6 +93,17 @@ public:
     return std::string(name);
   }
 
+  // lower the timeout based on new information about the best time
+  // we check (first) to see whether it's within 2x of the new value
+  // if it is, we update the timeout to reflect this.
+  // the idea is that a 2x difference could be noise (probably), so if it's
+  // still within that we should be okay with it
+  void lowerTimeout(unsigned int measured_time) {
+    if (measured_time * 2 < _timeout) {
+      _timeout = measured_time * 2;
+    }
+  }
+
 protected:
   virtual TimingType executeRun(Run run, unsigned int trial) = 0;
 

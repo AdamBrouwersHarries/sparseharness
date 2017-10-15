@@ -65,7 +65,13 @@ public:
 
       resetTempBuffers();
       // run the kernel
+      // get the runtime and add it to the list of times
+      auto stat = executeRun(run, t);
       runtimes.push_back(executeRun(run, t));
+      // check to see if we've breached the timeout
+      if (stat.getTime() > timeout) {
+        break;
+      }
 
       // copy the output back down
       readFromGlobalArg(_mem_manager._output_host_buffer, _mem_manager._output);
@@ -116,11 +122,14 @@ int main(int argc, char *argv[]) {
   const std::string &device_name = harness.getDeviceName();
   const std::string &experiment_id = experiment;
 
+  auto best_time = MAX_INT;
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
     std::vector<SqlStat> runtimes = harness.benchmark(run);
     std::cout << "runtimes: [";
+
+    // todo: Get the best runtime, and use that to update the "timeout" value
     for (auto time : runtimes) {
       std::cout << "\n\t"
                 << time.printStat(kernel_name, host_name, device_name,
