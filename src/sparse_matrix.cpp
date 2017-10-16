@@ -45,6 +45,9 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
     int I, J;
     double val;
     int pat = mm_is_pattern(matcode);
+    // reserve nonz entries for nz_entries to size nonz so that it's faster to
+    // call push_back on
+    nz_entries.reserve(nonz);
     for (int i = 0; i < nonz; i++) {
       if (pat) {
         fscanf(f, "%d %d\n", &I, &J);

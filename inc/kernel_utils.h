@@ -72,6 +72,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   auto kprops = kernel.getProperties();
 
   // get the matrix as standard ELLPACK
+
   auto rawmat = kprops.arrayType == "ragged"
                     ? matrix.asSOAELLPACK()
                     : matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
@@ -80,6 +81,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // first check that we _need_ to
   int mem_height = matrix.height();
   if (rawmat.first.size() % kprops.chunkSize != 0) {
+    start_timer(pad_vertically, executorEncodeMatrix);
     // calculate the new height required to get to a multiple of the
     mem_height =
         kprops.chunkSize * ((rawmat.first.size() / kprops.chunkSize) + 1);
@@ -88,7 +90,7 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
     // construct a vector of "-1" values, and one of "0" values
     std::vector<int> indices(row_length, -1);
     std::vector<T> values(row_length, zero);
-    // resize the raw vector with the new values
+    // resize the raw vector with copies of the new values
     rawmat.first.resize(mem_height, indices);
     rawmat.second.resize(mem_height, values);
   }

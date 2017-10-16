@@ -66,26 +66,28 @@ int main(int argc, char **argv) {
   const std::string experiment = opt_experiment_id->get();
   std::cerr << "matrix_filename " << matrix_filename << ENDL;
   std::cerr << "kernel_filename " << kernel_filename << ENDL;
-  SparseMatrix<float> matrix(matrix_filename);
-  KernelConfig<float> kernel(kernel_filename);
 
-  if (matrix.height() != matrix.width()) {
-    std::cout << "Matrix is not square. Failing computation." << ENDL;
-    std::cerr << "Matrix is not square. Failing computation." << ENDL;
-    std::exit(2);
-  } else {
-    std::cout << " Matrix is square - width = " << matrix.width()
-              << " and height = " << matrix.height() << "\n";
+  for (int i = 0; i < opt_trials->require(); i++) {
+    SparseMatrix<float> matrix(matrix_filename);
+    KernelConfig<float> kernel(kernel_filename);
+
+    if (matrix.height() != matrix.width()) {
+      std::cout << "Matrix is not square. Failing computation." << ENDL;
+      std::cerr << "Matrix is not square. Failing computation." << ENDL;
+      std::exit(2);
+    } else {
+      std::cout << " Matrix is square - width = " << matrix.width()
+                << " and height = " << matrix.height() << "\n";
+    }
+
+    // build vector generators
+    ConstXVectorGenerator<float> onegen(1.0f);
+    ConstYVectorGenerator<float> zerogen(0);
+
+    // finally, build some args
+    auto args =
+        executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, 1.0f, 0.0f);
   }
-
-  // build vector generators
-  ConstXVectorGenerator<float> onegen(1.0f);
-  ConstYVectorGenerator<float> zerogen(0);
-
-  // finally, build some args
-  auto args =
-      executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, 1.0f, 0.0f);
-
   // finish and return
   return 0;
 }
