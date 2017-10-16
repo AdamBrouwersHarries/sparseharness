@@ -69,9 +69,9 @@ public:
       auto stat = executeRun(run, t);
       runtimes.push_back(executeRun(run, t));
       // check to see if we've breached the timeout
-      if (stat.getTime() > timeout) {
-        break;
-      }
+      // if (stat.getTime() > _timeout) {
+      //   break;
+      // }
 
       // copy the output back down
       readFromGlobalArg(_mem_manager._output_host_buffer, _mem_manager._output);
@@ -122,7 +122,6 @@ int main(int argc, char *argv[]) {
   const std::string &device_name = harness.getDeviceName();
   const std::string &experiment_id = experiment;
 
-  auto best_time = MAX_INT;
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
