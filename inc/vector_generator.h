@@ -12,6 +12,7 @@ public:
 
   std::vector<T> generate(int length, SparseMatrix<T> &sm,
                           KernelConfig<T> &kc) {
+    start_timer(generate, VectorGenerator);
     std::vector<T> v(length);
     int n = {0};
     std::generate(v.begin(), v.end(),

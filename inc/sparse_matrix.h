@@ -37,6 +37,10 @@ public:
 
   soa_ellpack_matrix<EType> asPaddedSOAELLPACK(EType zero, int modulo = 1);
 
+  soa_ellpack_matrix<EType> specialise(EType zero, bool pad_height,
+                                       bool pad_width, bool rsa,
+                                       int height_pad_val, int width_pad_val);
+
   // template ellpack_matrix<float> asFloatELLPACK();
   // ellpack_matrix<double> asDoubleELLPACK();
   // ellpack_matrix<int> asIntELLPACK();

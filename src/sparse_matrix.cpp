@@ -47,7 +47,7 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
     int pat = mm_is_pattern(matcode);
     // reserve nonz entries for nz_entries to size nonz so that it's faster to
     // call push_back on
-    nz_entries.reserve(nonz);
+    nz_entries.reserve(mm_is_symmetric(matcode) ? nonz : nonz * 2);
     for (int i = 0; i < nonz; i++) {
       if (pat) {
         fscanf(f, "%d %d\n", &I, &J);
@@ -63,6 +63,7 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
         nz_entries.push_back(std::make_tuple(J, I, static_cast<T>(val)));
       }
     }
+    nz_entries.shrink_to_fit();
   } else {
     std::cerr << "Cannot process this matrix type. Typecode: " << matcode
               << ENDL;
@@ -73,11 +74,88 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
 // READERS
 
 template <typename T>
+SparseMatrix<T>::soa_ellpack_matrix<T>
+SparseMatrix<T>::specialise(T zero, bool pad_height, bool pad_width, bool rsa,
+                            int height_pad_val, int width_pad_val) {
+  start_timer(specialise, SparseMatrix);
+  // start off by doing a histogram sum of the values in the sparse matrix,
+  // and (simultaneously) calculate the maximum row length (we might use this
+  // when we're padding the width later)
+  std::vector<int> row_lengths(height(), 0);
+  int max_width = 0;
+  for (int i = 0; i < nz_entries.size(); i++) {
+    int y = std::get<1>(nz_entries[i]);
+    row_lengths[y]++;
+    if (row_lengths[y] > max_width) {
+      max_width = row_lengths[y];
+    }
+  }
+
+  // pad out the max width to widthpad
+  max_width = max_width + (width_pad_val - (max_width % width_pad_val));
+
+  // build a set of vectors which we can write our values into
+  // begin by allocating a sparse matrix of the right height
+  SparseMatrix::soa_ellpack_matrix<T> soaellmatrix(
+      std::vector<std::vector<int>>(height(), std::vector<int>(0)),
+      std::vector<std::vector<T>>(height(), std::vector<T>(0)));
+
+  // now iterate over every row, and resize it correctly
+  for (int i = 0; i < height(); i++) {
+    int sz = pad_width ? max_width : row_lengths[i];
+    soaellmatrix.first[i].resize(sz, -1);
+    soaellmatrix.second[i].resize(sz, zero);
+  }
+
+  // finally, iterate over the values again, and insert them into the matrix
+  std::vector<int> ixs(height(), 0);
+  for (int i = 0; i < nz_entries.size(); i++) {
+    int y = std::get<1>(nz_entries[i]);
+    int x = std::get<0>(nz_entries[i]);
+    int v = std::get<2>(nz_entries[i]);
+    int ix = ixs[y];
+    soaellmatrix.first[y][ix] = x;
+    soaellmatrix.second[y][ix] = v;
+    ixs[y]++;
+  }
+
+  // finally, sort each row. This will include a lot of copies :(
+  for (int i = 0; i < height(); i++) {
+    std::vector<std::pair<int, T>> tmp;
+    tmp.reserve(row_lengths[i]);
+    for (int j = 0; j < ixs[i]; j++) {
+      tmp[j].first = soaellmatrix.first[i][j];
+      tmp[j].second = soaellmatrix.second[i][j];
+    }
+    std::sort(tmp.begin(), tmp.end(),
+              [](std::pair<int, T> a, std::pair<int, T> b) {
+                return a.first < b.first;
+              });
+    for (int j = 0; j < ixs[i]; j++) {
+      soaellmatrix.first[i][j] = tmp[j].first;
+      soaellmatrix.second[i][j] = tmp[j].second;
+    }
+  }
+
+  return soaellmatrix;
+}
+
+template <typename T>
 SparseMatrix<T>::ellpack_matrix<T> SparseMatrix<T>::asELLPACK(void) {
   start_timer(asELLPACK, SparseMatrix);
   // allocate a sparse matrix of the right height
   ellpack_matrix<T> ellmatrix(height(), ellpack_row<T>(0));
   // iterate over the raw entries, and push them into the correct rows
+  // first, do a histogram sum over the elements to work out how
+  // long each row will be
+  std::vector<int> row_lengths(height(), 0);
+  for (int i = 0; i < nz_entries.size(); i++) {
+    row_lengths[std::get<1>(nz_entries[i])]++;
+  }
+  for (int i = 0; i < height(); i++) {
+    ellmatrix[i].reserve(row_lengths[i]);
+  }
+
   for (auto entry : nz_entries) {
     // y is entry._1 (right?)
     int x = std::get<0>(entry);
