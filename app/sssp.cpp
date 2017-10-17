@@ -216,9 +216,10 @@ int main(int argc, char *argv[]) {
       std::numeric_limits<float>::max());
 
   // get some arguments
-  auto args =
-      executorEncodeMatrix(kernel, matrix, std::numeric_limits<float>::max(),
-                           inital_distances_x, inital_distances_y, 0.0f, 0.0f);
+  unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
+  auto args = executorEncodeMatrix(
+      max_alloc, kernel, matrix, std::numeric_limits<float>::max(),
+      inital_distances_x, inital_distances_y, 0.0f, 0.0f);
 
   HarnessSSSP harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args, opt_trials->get(),

@@ -209,8 +209,11 @@ int main(int argc, char *argv[]) {
   InitialDistancesGeneratorY<int> inital_distances_y(0);
 
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0, inital_distances_x,
-                                   inital_distances_y, 1, 0);
+  unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
+
+  auto args =
+      executorEncodeMatrix(max_alloc, kernel, matrix, 0, inital_distances_x,
+                           inital_distances_y, 1, 0);
 
   HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
                      args, opt_trials->get(), opt_timeout->get(),

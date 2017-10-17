@@ -48,41 +48,19 @@ public:
 
   using cl_arg = std::vector<char>;
 
-  soa_ellpack_matrix<EType> asSOAELLPACK();
-
-  soa_ellpack_matrix<EType> asPaddedSOAELLPACK(EType zero, int modulo = 1);
-
-  CL_matrix cl_encode(EType zero, bool pad_height, bool pad_width, bool rsa,
+  CL_matrix cl_encode(unsigned int device_max_alloc_bytes, EType zero,
+                      bool pad_height, bool pad_width, bool rsa,
                       int height_pad_modulo, int width_pad_modulo);
-
-  soa_ellpack_matrix<EType> specialise(EType zero, bool pad_height,
-                                       bool pad_width, bool rsa,
-                                       int height_pad_val, int width_pad_val);
 
   // template ellpack_matrix<float> asFloatELLPACK();
   // ellpack_matrix<double> asDoubleELLPACK();
   // ellpack_matrix<int> asIntELLPACK();
 
   // getters
-  int width();
   inline int height();
+  int width();
   int nonZeros();
-
-  std::vector<std::tuple<int, int, EType>> getEntries();
-  std::vector<int> getRowLengths(void);
-  int getMaxRowEntries();
-  int getMinRowEntries();
-  int getMeanRowEntries();
-
   void printMatrix();
-
-  // std::vector<Apart_Tuple> asSparseMatrix();
-  // std::vector<Apart_Tuple> asPaddedSparseMatrix(int modulo_pad = 1);
-  // std::vector<Apart_Tuple> as1DVector();
-
-  // std::vector<int> rowLengths(void);
-  // int maxRowLength();
-  // skelcl::Vector<Apart_Tuple> asELLPACK(void);
 
 private:
   // private initialisers

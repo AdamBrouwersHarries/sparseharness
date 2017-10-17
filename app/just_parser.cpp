@@ -64,7 +64,9 @@ int main(int argc, char **argv) {
   std::cerr << "matrix_filename " << matrix_filename << ENDL;
   std::cerr << "kernel_filename " << kernel_filename << ENDL;
 
-  for (int i = 0; i < opt_trials->require(); i++) {
+  unsigned int one_gb = 1 * 1024 * 1024 * 1024;
+
+  for (unsigned int i = 0; i < opt_trials->require(); i++) {
     SparseMatrix<float> matrix(matrix_filename);
     KernelConfig<float> kernel(kernel_filename);
 
@@ -82,8 +84,13 @@ int main(int argc, char **argv) {
     ConstYVectorGenerator<float> zerogen(0);
 
     // finally, build some args
-    auto args =
-        executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, 1.0f, 0.0f);
+    try {
+      auto args = executorEncodeMatrix(one_gb, kernel, matrix, 0.0f, onegen,
+                                       zerogen, 1.0f, 0.0f);
+    } catch (unsigned int alloc) {
+      LOG_ERROR("Tried to alloc ", alloc,
+                " bytes of memory on the gpu, when maximum is ", one_gb);
+    }
   }
   // finish and return
   return 0;

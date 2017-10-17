@@ -64,7 +64,8 @@ public:
 // executor - i.e. as a set of kernel arguments
 template <typename T>
 ArgContainer<T>
-executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
+executorEncodeMatrix(unsigned int device_max_alloc_bytes,
+                     KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
                      // std::vector<T> xvector, std::vector<T> yvector) {
                      XVectorGenerator<T> &xgen, YVectorGenerator<T> &ygen,
                      // int v_MWidth_1, int v_MHeight_2, int v_VLength_3,
@@ -73,9 +74,10 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
 
-  auto cl_matrix = matrix.cl_encode(
-      zero, kprops.chunkSize != 1, kprops.splitSize != 1,
-      kprops.arrayType == "ragged", kprops.chunkSize, kprops.splitSize);
+  auto cl_matrix =
+      matrix.cl_encode(device_max_alloc_bytes, zero, kprops.chunkSize != 1,
+                       kprops.splitSize != 1, kprops.arrayType == "ragged",
+                       kprops.chunkSize, kprops.splitSize);
 
   auto v_MWidth_1 = kprops.arrayType == "ragged"
                         ? matrix.width()

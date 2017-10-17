@@ -111,8 +111,9 @@ int main(int argc, char *argv[]) {
   ConstYVectorGenerator<float> zerogen(0);
 
   // get some arguments
-  auto args =
-      executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, 1.0f, 0.0f);
+  unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
+  auto args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, onegen,
+                                   zerogen, 1.0f, 0.0f);
   HarnessSPMV harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args, opt_trials->get(),
                       opt_timeout->get(), opt_float_delta->get());
