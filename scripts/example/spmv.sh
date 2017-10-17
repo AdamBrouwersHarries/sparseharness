@@ -5,7 +5,7 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/spmv_harness
 # A kernel to run with the harness
-kernel=$projroot/example/kernel6.json
+kernel=$projroot/example/kernel3.json
 # The matrix to process
 matrix=$projroot/example/matrix2.mtx
 # The run parameters - i.e. local and global sizes
@@ -16,7 +16,7 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-oclgrind $harness -e $exid -n $hname -m $matrix -f matrix3 -k $kernel -d 0 -r $runfile -i 1 -t 200 
+oclgrind --data-races --check-api $harness -e $exid -n $hname -m $matrix -f matrix3 -k $kernel -d 0 -r $runfile -i 1 -t 200 
 
 
 # $spmv -p $platform \
