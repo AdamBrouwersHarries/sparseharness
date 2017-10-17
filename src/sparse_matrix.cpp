@@ -82,8 +82,8 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // start off by doing a histogram sum of the values in the sparse matrix,
   // and (simultaneously) calculate the maximum row length (we might use this
   // when we're padding the width later)
-  std::vector<int> row_lengths(height(), 0);
-  int max_width = 0;
+  std::vector<unsigned int> row_lengths(height(), 0);
+  unsigned int max_width = 0;
   for (unsigned int i = 0; i < nz_entries.size(); i++) {
     int y = std::get<1>(nz_entries[i]);
     row_lengths[y]++;
@@ -210,7 +210,80 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // =========================================================================
   // STEP THREE: CREATE THE TWO ARRAYS, AND FILL WITH MATRIX INFORMATION
   // =========================================================================
+  // Create the matrix structure that we're going to fill with data
   CL_matrix matrix(ixs_arr_size, vals_arr_size, cl_width, cl_height);
+
+  // -------------------------------------------------------------------------
+  // Step 3.1 build offset information and a lambda to quickly access it
+  //          for each array
+  // -------------------------------------------------------------------------
+  // Perform a scan/inclusive scan over each of the data arrays
+  // to figure out the offsets
+  std::vector<unsigned int> indices_offsets(concrete_height);
+  std::vector<unsigned int> values_offsets(concrete_height);
+  std::partial_sum(byte_lengths_indices.begin(), byte_lengths_indices.end(),
+                   indices_offsets.begin() + 1);
+  std::partial_sum(byte_lengths_values.begin(), byte_lengths_values.end(),
+                   values_offsets.begin() + 1);
+
+  if (vals_arr_size % sizeof(T) != 0) {
+    LOG_DEBUG("Potential alignment issue writing to vals buffer!");
+
+  } else {
+    LOG_DEBUG("Vals arr size ", vals_arr_size, " aligns with sizeof(T), ",
+              sizeof(T));
+  }
+
+  // build a lambda to work out indexing for each array
+  // capture the environment by reference, for efficiency?
+  auto write_ix = [&](int i, int y, int ix) {
+    // start off with our offset at zero
+    unsigned int row_offset = indices_offsets[rsa ? y + 1 : y];
+    unsigned int column_offset = sizeof(int) * i + (rsa ? sizeof(int) * 2 : 0);
+    unsigned int offset = row_offset + column_offset;
+    // NEVER EVER EVER EVER DO THIS IN REAL LIFE
+    char *cixptr = matrix.indices.data() + offset;
+    *reinterpret_cast<int *>(cixptr) = ix;
+  };
+
+  auto write_val = [&](int i, int y, T val) {
+    // start off with our offset at zero
+    unsigned int row_offset = values_offsets[rsa ? y + 1 : y];
+    unsigned int column_offset = sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
+    unsigned int offset = row_offset + column_offset;
+    // NEVER EVER EVER EVER DO THIS IN REAL LIFE
+    char *cvalptr = matrix.values.data() + offset;
+    *(reinterpret_cast<T *>(cvalptr)) = val;
+  };
+
+  // -------------------------------------------------------------------------
+  // Step 3.1 use the above information to actually input data into the array!
+  // -------------------------------------------------------------------------
+  for (unsigned int y = 0; y < ellpackMatrix.size(); y++) {
+    std::vector<std::pair<int, T>> &row = (ellpackMatrix[y]);
+    for (unsigned int i = 0; i < row.size(); i++) {
+      std::pair<int, T> t = row[i];
+      write_ix(i, y, t.first);
+      write_val(i, y, t.second);
+    }
+  }
+  // if we're RSA, write the offset information, and the row sizes + capacities
+  if (rsa) {
+    // take a pointer to each array,as an integer
+    int *ixptr = (int *)(matrix.indices.data());
+    int *valptr = (int *)(matrix.values.data());
+    for (int i = 0; i < concrete_height - 1; i++) {
+      // write an offset to ixptr and valptr
+      ixptr[i] = static_cast<int>(indices_offsets[i + 1]);
+      valptr[i] = static_cast<int>(values_offsets[i + 1]);
+      // write size and capacity information to the headers
+      write_ix(0, i + 1, byte_lengths_indices[i + 1]);
+      write_ix(1, i + 1, byte_lengths_indices[i + 1]);
+      // todo - replace with proper solution!
+      write_val(0, i + 1, byte_lengths_values[i + 1]);
+      write_val(1, i + 1, byte_lengths_values[i + 1]);
+    }
+  }
 
   return matrix;
 }
