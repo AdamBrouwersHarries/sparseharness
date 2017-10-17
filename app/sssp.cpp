@@ -41,10 +41,9 @@
 
 class HarnessSSSP : public IterativeHarness<std::vector<SqlStat>, float> {
 public:
-  HarnessSSSP(std::string &kernel_source, unsigned int platform,
-              unsigned int device, ArgContainer<float> args,
+  HarnessSSSP(std::string &kernel_source, CLDeviceManager cldm, ArgContainer<float> args,
               unsigned int trials, unsigned int timeout, double delta)
-      : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
+      : IterativeHarness(kernel_source, cldm, args, trials, timeout,
                          delta) {
     allocateBuffers();
   }
@@ -220,9 +219,9 @@ int main(int argc, char *argv[]) {
   auto args = executorEncodeMatrix(
       max_alloc, kernel, matrix, std::numeric_limits<float>::max(),
       inital_distances_x, inital_distances_y, 0.0f, 0.0f);
+  CLDeviceManager cldm(opt_platform->get(), opt_device->get());
 
-  HarnessSSSP harness(kernel.getSource(), opt_platform->get(),
-                      opt_device->get(), args, opt_trials->get(),
+  HarnessSSSP harness(kernel.getSource(), cldm, args, opt_trials->get(),
                       opt_timeout->get(), opt_float_delta->get());
 
   const std::string &kernel_name = kernel.getName();

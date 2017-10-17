@@ -41,10 +41,9 @@
 
 class HarnessSPMV : public Harness<SqlStat, float> {
 public:
-  HarnessSPMV(std::string &kernel_source, unsigned int platform,
-              unsigned int device, ArgContainer<float> args,
+  HarnessSPMV(std::string &kernel_source, CLDeviceManager cldm, ArgContainer<float> args,
               unsigned int trials, unsigned int timeout, double delta)
-      : Harness(kernel_source, platform, device, args, trials, timeout, delta) {
+      : Harness(kernel_source, cldm, args, trials, timeout, delta) {
     allocateBuffers();
   }
   std::vector<SqlStat> benchmark(Run run) {
@@ -112,10 +111,13 @@ int main(int argc, char *argv[]) {
 
   // get some arguments
   unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
+  CLDeviceManager cldm(opt_platform->get(), opt_device->get());
+  max_alloc = cldm.getMaxMemAllocSize();
   auto args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, onegen,
                                    zerogen, 1.0f, 0.0f);
-  HarnessSPMV harness(kernel.getSource(), opt_platform->get(),
-                      opt_device->get(), args, opt_trials->get(),
+
+
+  HarnessSPMV harness(kernel.getSource(), cldm, args, opt_trials->get(),
                       opt_timeout->get(), opt_float_delta->get());
 
   const std::string &kernel_name = kernel.getName();

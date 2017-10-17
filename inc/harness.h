@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cl_memory_manager.h"
+#include "cl_device_manager.h"
 #include "kernel_utils.h"
 #include "opencl_utils.h"
 #include "sql_stat.h"
@@ -10,50 +11,11 @@
 
 template <typename TimingType, typename SemiRingType> class Harness {
 public:
-  Harness(std::string &kernel_source, unsigned int platform,
-          unsigned int device, ArgContainer<SemiRingType> args,
-          unsigned int trials, unsigned int timeout, double delta)
-      : _kernel_source(kernel_source), _device(device), _args(args),
+  Harness(std::string &kernel_source, CLDeviceManager &cldm,
+          ArgContainer<SemiRingType> args, unsigned int trials,
+          unsigned int timeout, double delta)
+      : _kernel_source(kernel_source), _cldm(cldm), _args(args),
         _mem_manager(args), _trials(trials), _timeout(timeout), _delta(delta) {
-
-    // initialise OpenCL:
-    // get the number of platforms
-    _platformIdCount = 0;
-    clGetPlatformIDs(0, nullptr, &_platformIdCount);
-
-    if (_platformIdCount == 0) {
-      LOG_ERROR("No OpenCL devices found!");
-      exit(1);
-    }
-
-    LOG_DEBUG_INFO("Found ", _platformIdCount, " platforms");
-
-    // make a vector of platform ids
-    std::vector<cl_platform_id> platformIds(_platformIdCount);
-    clGetPlatformIDs(_platformIdCount, platformIds.data(), nullptr);
-
-    // get the number of devices from the platform
-    _deviceIdCount = 0;
-    clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, 0, nullptr,
-                   &_deviceIdCount);
-
-    LOG_DEBUG_INFO("Found ", _deviceIdCount, " devices on the chosen platform");
-
-    // get a list of devices from the platform
-    _deviceIds.resize(_deviceIdCount);
-    clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, _deviceIdCount,
-                   _deviceIds.data(), nullptr);
-
-    LOG_INFO("Running on OpenCL device: ", getDeviceName());
-
-    // create a context on that device (with some properties)
-    const cl_context_properties contextProperties[] = {
-        CL_CONTEXT_PLATFORM,
-        reinterpret_cast<cl_context_properties>(platformIds[platform]), 0, 0};
-
-    _context = clCreateContext(contextProperties, _deviceIdCount,
-                               _deviceIds.data(), nullptr, nullptr, &_error);
-    checkCLError(_error);
 
     // create a kernel from the source
 
@@ -61,37 +23,23 @@ public:
     size_t lengths[1] = {_kernel_source.size()};
     const char *sources[1] = {_kernel_source.data()};
     // create the program
-    cl_program program =
-        clCreateProgramWithSource(_context, 1, sources, lengths, &_error);
-    checkCLError(_error);
+    cl_program program = clCreateProgramWithSource(_cldm._context, 1, sources,
+                                                   lengths, &_cldm._error);
+    checkCLError(_cldm._error);
 
     // build the program
-    _error = clBuildProgram(program, _deviceIdCount, _deviceIds.data(), "",
-                            nullptr, nullptr);
-    checkCLError(_error);
+    _cldm._error =
+        clBuildProgram(program, _cldm._deviceIdCount, _cldm._deviceIds.data(),
+                       "", nullptr, nullptr);
+    checkCLError(_cldm._error);
 
     // create a kernel from the program
-    cl_kernel kernel = clCreateKernel(program, "KERNEL", &_error);
-    checkCLError(_error);
+    cl_kernel kernel = clCreateKernel(program, "KERNEL", &_cldm._error);
+    checkCLError(_cldm._error);
     _kernel = kernel;
-
-    // finally, create a command queue from the device and context);
-    _device_id = _deviceIds[_device];
-    _queue = clCreateCommandQueue(_context, _deviceIds[_device],
-                                  CL_QUEUE_PROFILING_ENABLE, &_error);
-    checkCLError(_error);
   }
 
   virtual std::vector<TimingType> benchmark(Run run) = 0;
-
-  std::string getDeviceName() {
-    char name[10240];
-    LOG_DEBUG_INFO("Getting device name from device ", _device_id);
-    _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_NAME, sizeof(name),
-                             name, NULL);
-    checkCLError(_error);
-    return std::string(name);
-  }
 
   // lower the timeout based on new information about the best time
   // we check (first) to see whether it's within 2x of the new value
@@ -104,6 +52,8 @@ public:
     }
   }
 
+  std::string getDeviceName() { return _cldm.getDeviceName(); }
+
 protected:
   virtual TimingType executeRun(Run run, unsigned int trial) = 0;
 
@@ -111,8 +61,9 @@ protected:
     cl_event ev;
     const size_t global_range[3] = {run.global1, run.global2, run.global3};
     const size_t local_range[3] = {run.local1, run.local2, run.local3};
-    checkCLError(clEnqueueNDRangeKernel(_queue, _kernel, 3, NULL, global_range,
-                                        local_range, 0, NULL, &ev));
+    checkCLError(clEnqueueNDRangeKernel(_cldm._queue, _kernel, 3, NULL,
+                                        global_range, local_range, 0, NULL,
+                                        &ev));
     clWaitForEvents(1, &ev);
 
     // check the event:
@@ -231,13 +182,14 @@ protected:
 
     // create a mem argument
     cl_mem_flags flags = output ? CL_MEM_READ_WRITE : CL_MEM_READ_ONLY;
-    cl_mem buffer = clCreateBuffer(_context, flags, (size_t)len, NULL, &_error);
-    checkCLError(_error);
+    cl_mem buffer =
+        clCreateBuffer(_cldm._context, flags, (size_t)len, NULL, &_cldm._error);
+    checkCLError(_cldm._error);
 
     // enqueue a write into that buffer
     cl_event ev; // do something with this event eventually!
-    checkCLError(clEnqueueWriteBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
-                                      NULL, &ev));
+    checkCLError(clEnqueueWriteBuffer(_cldm._queue, buffer, CL_TRUE, 0, len,
+                                      data, 0, NULL, &ev));
 
     clWaitForEvents(1, &ev);
 
@@ -265,8 +217,8 @@ protected:
 
     // enqueue a write into that buffer
     cl_event ev; // do something with this event eventually!
-    checkCLError(clEnqueueWriteBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
-                                      NULL, &ev));
+    checkCLError(clEnqueueWriteBuffer(_cldm._queue, buffer, CL_TRUE, 0, len,
+                                      data, 0, NULL, &ev));
 
     clWaitForEvents(1, &ev);
 
@@ -293,8 +245,9 @@ protected:
     char pattern = 0;
 
     cl_event ev;
-    checkCLError(clEnqueueFillBuffer(_queue, buffer, &pattern, sizeof(char), 0,
-                                     buffer_size, 0, NULL, &ev));
+    checkCLError(clEnqueueFillBuffer(_cldm._queue, buffer, &pattern,
+                                     sizeof(char), 0, buffer_size, 0, NULL,
+                                     &ev));
 
     clWaitForEvents(1, &ev);
 
@@ -320,8 +273,8 @@ protected:
                    static_cast<void *>(data));
 
     cl_event ev;
-    checkCLError(clEnqueueReadBuffer(_queue, buffer, CL_TRUE, 0, len, data, 0,
-                                     NULL, &ev));
+    checkCLError(clEnqueueReadBuffer(_cldm._queue, buffer, CL_TRUE, 0, len,
+                                     data, 0, NULL, &ev));
     clWaitForEvents(1, &ev);
 
     // find how long the copy took.
@@ -340,9 +293,9 @@ protected:
     start_timer(createGlobalArg, harness);
     LOG_DEBUG_INFO("creating global arg of size ", size);
 
-    cl_mem buffer = clCreateBuffer(_context, CL_MEM_READ_WRITE, (size_t)size,
-                                   NULL, &_error);
-    checkCLError(_error);
+    cl_mem buffer = clCreateBuffer(_cldm._context, CL_MEM_READ_WRITE,
+                                   (size_t)size, NULL, &_cldm._error);
+    checkCLError(_cldm._error);
 
     return buffer;
   }
@@ -368,21 +321,14 @@ protected:
   }
 
   // stateful error code :(
-  cl_int _error;
   std::string _kernel_source;
   cl_kernel _kernel;
-  cl_uint _platformIdCount;
-  cl_uint _deviceIdCount;
-  cl_uint _device;
-  cl_command_queue _queue;
 
-  cl_device_id _device_id;
-  std::vector<cl_device_id> _deviceIds;
-
-  cl_context _context;
   ArgContainer<SemiRingType> _args;
 
   CLMemoryManager<SemiRingType> _mem_manager;
+
+  CLDeviceManager &_cldm;
 
   unsigned int _trials;
   unsigned int _timeout;
@@ -395,11 +341,11 @@ protected:
 template <typename TimingType, typename SemiRingType>
 class IterativeHarness : public Harness<TimingType, SemiRingType> {
 public:
-  IterativeHarness(std::string &kernel_source, unsigned int platform,
-                   unsigned int device, ArgContainer<SemiRingType> args,
-                   unsigned int trials, unsigned int timeout, double delta)
-      : Harness<TimingType, SemiRingType>(kernel_source, platform, device, args,
-                                          trials, timeout, delta) {}
+  IterativeHarness(std::string &kernel_source, CLDeviceManager cldm,
+                   ArgContainer<SemiRingType> args, unsigned int trials,
+                   unsigned int timeout, double delta)
+      : Harness<TimingType, SemiRingType>(kernel_source, cldm, args, trials,
+                                          timeout, delta) {}
 
 protected:
   virtual bool should_terminate_iteration(std::vector<char> &input,
