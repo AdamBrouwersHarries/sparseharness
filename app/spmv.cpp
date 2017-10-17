@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
   unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
   CLDeviceManager cldm(opt_platform->get(), opt_device->get());
   max_alloc = cldm.getMaxMemAllocSize();
+  const std::string &device_name = cldm.getDeviceName();
   auto args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, onegen,
                                    zerogen, 1.0f, 0.0f);
 
@@ -122,7 +123,7 @@ int main(int argc, char *argv[]) {
 
   const std::string &kernel_name = kernel.getName();
   const std::string &host_name = hostname;
-  const std::string &device_name = harness.getDeviceName();
+
   const std::string &experiment_id = experiment;
 
   for (auto run : runs) {

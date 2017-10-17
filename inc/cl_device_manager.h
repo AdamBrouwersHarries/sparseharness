@@ -66,7 +66,8 @@ public:
   unsigned long getMaxMemAllocSize() {
     cl_ulong size;
     LOG_DEBUG_INFO("Getting device max alloc size from device", _device_id);
-    _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(size), &size, NULL);
+    _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_MAX_MEM_ALLOC_SIZE,
+                             sizeof(size), &size, NULL);
     checkCLError(_error);
     return size;
   }
