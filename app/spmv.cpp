@@ -41,8 +41,9 @@
 
 class HarnessSPMV : public Harness<SqlStat, float> {
 public:
-  HarnessSPMV(std::string &kernel_source, CLDeviceManager cldm, ArgContainer<float> args,
-              unsigned int trials, unsigned int timeout, double delta)
+  HarnessSPMV(std::string &kernel_source, CLDeviceManager cldm,
+              ArgContainer<float> args, unsigned int trials,
+              unsigned int timeout, double delta)
       : Harness(kernel_source, cldm, args, trials, timeout, delta) {
     allocateBuffers();
   }
@@ -115,7 +116,6 @@ int main(int argc, char *argv[]) {
   max_alloc = cldm.getMaxMemAllocSize();
   auto args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, onegen,
                                    zerogen, 1.0f, 0.0f);
-
 
   HarnessSPMV harness(kernel.getSource(), cldm, args, opt_trials->get(),
                       opt_timeout->get(), opt_float_delta->get());
