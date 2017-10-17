@@ -73,38 +73,15 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
 
-  // get the matrix as standard ELLPACK
-
-  // auto rawmat = kprops.arrayType == "ragged"
-  //                   ? matrix.asSOAELLPACK()
-  //                   : matrix.asPaddedSOAELLPACK(zero, kprops.splitSize);
-
-  auto rawmat = matrix.specialise(zero, false, kprops.arrayType == "ragged",
-                                  false, 1, kprops.splitSize);
-
-  // add on as many rows are needed
-  // first check that we _need_ to
-  int mem_height = matrix.height();
-  if (rawmat.first.size() % kprops.chunkSize != 0) {
-    start_timer(pad_vertically, executorEncodeMatrix);
-    // calculate the new height required to get to a multiple of the
-    mem_height =
-        kprops.chunkSize * ((rawmat.first.size() / kprops.chunkSize) + 1);
-    // get the row length
-    int row_length = rawmat.first[0].size();
-    // construct a vector of "-1" values, and one of "0" values
-    std::vector<int> indices(row_length, -1);
-    std::vector<T> values(row_length, zero);
-    // resize the raw vector with copies of the new values
-    rawmat.first.resize(mem_height, indices);
-    rawmat.second.resize(mem_height, values);
-  }
+  auto cl_matrix = matrix.cl_encode(
+      zero, kprops.chunkSize != 1, kprops.splitSize != 1,
+      kprops.arrayType == "ragged", kprops.chunkSize, kprops.splitSize);
 
   auto v_MWidth_1 = kprops.arrayType == "ragged"
                         ? matrix.width()
-                        : (int)rawmat.first[0].size() / kprops.splitSize;
+                        : cl_matrix.cl_width / kprops.splitSize;
   // change it if we're ragged
-  auto v_MHeight_2 = (int)(rawmat.first.size()) / kprops.chunkSize;
+  auto v_MHeight_2 = (int)(cl_matrix.cl_height / kprops.chunkSize);
   auto v_VLength_3 = matrix.width();
 
   std::cerr << "Encoding matrix with sizes:"
@@ -112,82 +89,11 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
             << "\n\tv_MHeight_2 = " << v_MHeight_2
             << "\n\tv_VLength_3 = " << v_VLength_3 << "\n";
 
-  if (kprops.arrayType == "ragged") {
-    start_timer(raggedSpecialisation, executorEncodeMatrix);
-    // if we're ragged, we need to prepend row sizes + capacities to the arrays:
-    for (auto &arr : rawmat.first) {
-      // get the length
-      int len = arr.size();
-      arr.insert(arr.begin(), len);
-      arr.insert(arr.begin(), len);
-    }
-    for (auto &arr : rawmat.second) {
-      // get the length
-      int len = arr.size();
-      arr.insert(arr.begin(), len);
-      arr.insert(arr.begin(), len);
-    }
-
-    // we now need to build "offset" data, and prepend it
-    // as we do some casts here, we need to make sure that int and T have the
-    // same size
-    assert(sizeof(T) == sizeof(int));
-    std::vector<int> offsets;
-    std::vector<T> offsets_T;
-    int sum = sizeof(T) * rawmat.first.size();
-    T *tsptr = reinterpret_cast<T *>(&sum);
-    // manually do a prefix sum of the sizes
-    for (unsigned int i = 0; i < rawmat.first.size(); i++) {
-      // assign the current sum to offsets[i] (by appending)
-      offsets.push_back(sum);
-      offsets_T.push_back(*tsptr);
-      sum += rawmat.first[i].size() * sizeof(T);
-    }
-
-    // append the offsets array to the indices and values arrays
-    rawmat.first.insert(rawmat.first.begin(), offsets);
-    rawmat.second.insert(rawmat.second.begin(), offsets_T);
-  }
-
-  // reminder - rawmat has the following type:
-  //   template <typename T>
-  // using soa_ellpack_matrix =
-  //     std::pair<std::vector<std::vector<int>>, std::vector<std::vector<T>>>;
-
-  // extract some kernel arguments from it, and from the intermediate arrays in
-  // the kernel
-  // auto flat_indices = flatten(rawmat.first()[0]);
-  // std::cout << "Raw matrix indices: "
-  //           << "\n";
-  // for (auto row : rawmat.first) {
-  //   std::ostringstream ss;
-  //   ss << "[";
-  //   std::copy(row.begin(), row.end() - 1, std::ostream_iterator<int>(ss, ",
-  //   ")); ss << row.back(); ss << "]";
-
-  //   std::cout << ss.str() << "\n";
-  // }
-
-  // std::cout << "Raw matrix values: "
-  //           << "\n";
-  // for (auto row : rawmat.second) {
-  //   std::ostringstream ss;
-  //   ss << "[";
-  //   std::copy(row.begin(), row.end() - 1, std::ostream_iterator<T>(ss, ",
-  //   ")); ss << row.back(); ss << "]";
-
-  //   std::cout << ss.str() << "\n";
-  // }
-
-  auto flat_indices = flatten(rawmat.first);
-  // auto flat_values = flatten(rawmat.second()[0]);
-  auto flat_values = flatten(rawmat.second);
-
   // generate the vector inputs
   std::cerr << "Filling with these sizes: \n\tx = " << matrix.height()
-            << " \n\ty = " << mem_height << ENDL;
-  std::vector<T> xvector = xgen.generate(mem_height, matrix, kernel);
-  std::vector<T> yvector = ygen.generate(mem_height, matrix, kernel);
+            << " \n\ty = " << cl_matrix.cl_height << ENDL;
+  std::vector<T> xvector = xgen.generate(cl_matrix.cl_height, matrix, kernel);
+  std::vector<T> yvector = ygen.generate(cl_matrix.cl_height, matrix, kernel);
 
   // ---- CREATE THE ACTUAL ARGS ----
   // Args must be in this order:
@@ -200,19 +106,8 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // create an arg container!
   ArgContainer<T> arg_cnt;
 
-  // create args for the matrix inputs
-  LOG_DEBUG("Input matrix mem arg: ",
-            (size_t)flat_indices.size() * sizeof(int));
-  LOG_DEBUG("Input matrix mem arg: ", (size_t)flat_indices.size() * sizeof(T));
-
-  // std::cout << "First 10 elements of matrix: [[";
-  // for (int i = 0; i < 10; i++) {
-  //   std::cout << "(" << flat_indices[i] << "," << flat_values[i] << "),";
-  // }
-  // std::cout << "...\n";
-
-  arg_cnt.m_idxs = enchar<int>(flat_indices);
-  arg_cnt.m_vals = enchar<T>(flat_values);
+  arg_cnt.m_idxs = std::move(cl_matrix.indices);
+  arg_cnt.m_vals = std::move(cl_matrix.values);
 
   // create args for the vector inputs
   // TODO: do we actually need to make the x vector bigger when we pad
@@ -230,33 +125,37 @@ executorEncodeMatrix(KernelConfig<T> kernel, SparseMatrix<T> matrix, T zero,
   // create output buffer
   {
     start_timer(outputBuffer, executorEncodeMatrix);
-    int memsize = Evaluator::evaluate(kernel.getOutputArg()->size, v_MWidth_1,
-                                      v_MHeight_2, v_VLength_3);
-    arg_cnt.output = memsize;
-    LOG_DEBUG("Global output arg - arg: ", kernel.getOutputArg()->variable,
-              ", address space: ", kernel.getOutputArg()->addressSpace,
-              ", size:", kernel.getOutputArg()->size, ", realsize: ", memsize);
+    {
+      int memsize = Evaluator::evaluate(kernel.getOutputArg()->size, v_MWidth_1,
+                                        v_MHeight_2, v_VLength_3);
+      arg_cnt.output = memsize;
+      LOG_DEBUG("Global output arg - arg: ", kernel.getOutputArg()->variable,
+                ", address space: ", kernel.getOutputArg()->addressSpace,
+                ", size:", kernel.getOutputArg()->size, ", realsize: ",
+                memsize);
+    }
   }
-
-  for (auto arg : kernel.getTempGlobals()) {
+  {
     start_timer(tempGlobal, executorEncodeMatrix);
-    int memsize =
-        Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    arg_cnt.temp_globals.push_back(memsize);
-    LOG_DEBUG("Global temp arg - arg: ", arg.variable,
-              ", address space: ", arg.addressSpace, ", size:", arg.size,
-              ", realsize: ", memsize);
+    for (auto arg : kernel.getTempGlobals()) {
+      int memsize =
+          Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
+      arg_cnt.temp_globals.push_back(memsize);
+      LOG_DEBUG("Global temp arg - arg: ", arg.variable, ", address space: ",
+                arg.addressSpace, ", size:", arg.size, ", realsize: ", memsize);
+    }
   }
 
   // create temporary local buffers
-  for (auto arg : kernel.getTempLocals()) {
+  {
     start_timer(tempLocal, executorEncodeMatrix);
-    int memsize =
-        Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
-    arg_cnt.temp_locals.push_back(memsize);
-    LOG_DEBUG("Local temp arg - arg: ", arg.variable,
-              ", address space: ", arg.addressSpace, ", size:", arg.size,
-              ", realsize: ", memsize);
+    for (auto arg : kernel.getTempLocals()) {
+      int memsize =
+          Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
+      arg_cnt.temp_locals.push_back(memsize);
+      LOG_DEBUG("Local temp arg - arg: ", arg.variable, ", address space: ",
+                arg.addressSpace, ", size:", arg.size, ", realsize: ", memsize);
+    }
   }
 
   // create size buffers

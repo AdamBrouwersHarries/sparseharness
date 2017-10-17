@@ -49,8 +49,6 @@ int main(int argc, char **argv) {
       {'i', "trials", "Execute each kernel 'trials' times (default 10).", 10});
   auto opt_matrix_file =
       op.addOption<std::string>({'m', "matrix", "Input matrix"});
-  auto opt_matrix_name =
-      op.addOption<std::string>({'f', "matrix_name", "Input matrix name"});
   auto opt_kernel_file =
       op.addOption<std::string>({'k', "kernel", "Input kernel"});
 
@@ -61,7 +59,6 @@ int main(int argc, char **argv) {
 
   using namespace std;
   const std::string matrix_filename = opt_matrix_file->require();
-  const std::string matrix_name = opt_matrix_name->require();
   const std::string kernel_filename = opt_kernel_file->require();
   const std::string experiment = opt_experiment_id->get();
   std::cerr << "matrix_filename " << matrix_filename << ENDL;
