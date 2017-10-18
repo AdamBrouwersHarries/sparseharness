@@ -259,6 +259,9 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
               sizeof(T));
   }
 
+  bool ixs_out_of_bounds = false;
+  bool vals_out_of_bounds = false;
+
   // build a lambda to work out indexing for each array
   // capture the environment by reference, for efficiency?
   auto write_ix = [&](int i, int y, int ix) {
@@ -268,9 +271,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     unsigned int offset = row_offset + column_offset;
     // NEVER EVER EVER EVER DO THIS IN REAL LIFE
     if (offset > ixs_arr_size) {
-      std::cout << "IXS Indexing outside array bounds: " << offset << " > "
-                << ixs_arr_size << "\n";
-      std::cout << "used: i = " << i << ", y = " << y << "\n";
+      // std::cout << "IXS Indexing outside array bounds: " << offset << " > "
+      //           << ixs_arr_size << "\n";
+      // std::cout << "used: i = " << i << ", y = " << y << "\n";
+      ixs_out_of_bounds = true;
     }
     char *cixptr = matrix.indices.data() + offset;
     *reinterpret_cast<int *>(cixptr) = ix;
@@ -282,9 +286,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     unsigned int column_offset = sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
     unsigned int offset = row_offset + column_offset;
     if (offset > ixs_arr_size) {
-      std::cout << "VALS Indexing outside array bounds: " << offset << " > "
-                << vals_arr_size << "\n";
-      std::cout << "used: i = " << i << ", y = " << y << "\n";
+      // std::cout << "VALS Indexing outside array bounds: " << offset << " > "
+      //           << vals_arr_size << "\n";
+      // std::cout << "used: i = " << i << ", y = " << y << "\n";
+      vals_out_of_bounds = true;
     }
     // NEVER EVER EVER EVER DO THIS IN REAL LIFE
     char *cvalptr = matrix.values.data() + offset;
@@ -351,6 +356,13 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       write_ix(i, y, t.first);
       write_val(i, y, t.second);
     }
+  }
+
+  if (ixs_out_of_bounds) {
+    LOG_WARNING("At least one index was written out of bounds!");
+  }
+  if (vals_out_of_bounds) {
+    LOG_WARNING("At least one value was written out of bounds!");
   }
 
   // printc_vec<int>(matrix.indices, matrix.indices.size());
