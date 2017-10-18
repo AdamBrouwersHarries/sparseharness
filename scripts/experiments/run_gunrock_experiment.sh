@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 cd ~/projects/sparseharness/
 mkdir -p build
 pushd build 

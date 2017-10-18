@@ -77,6 +77,12 @@ do
 			  -t 20 \
 			  -e $exID &>$scratchrdir/result_$kname.txt
 
+		rc=$?
+		if [[ $rc != 0 ]]; then
+			echo "run failed!" 
+			echo "run failed!" >> runstatus.txt 
+		fi
+
 		# Compress the result
 		# remove the original file
 		# move to the actual directory
