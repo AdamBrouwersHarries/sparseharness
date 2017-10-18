@@ -226,17 +226,17 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   std::partial_sum(byte_lengths_values.begin(), byte_lengths_values.end() - 1,
                    values_offsets.begin() + 1);
 
-  std::cout << "indices offsets: [";
-  for (auto i : indices_offsets) {
-    std::cout << i << ",";
-  }
-  std::cout << "]\n";
+  // std::cout << "indices offsets: [";
+  // for (auto i : indices_offsets) {
+  //   std::cout << i << ",";
+  // }
+  // std::cout << "]\n";
 
-  std::cout << "value offsets: [";
-  for (auto i : values_offsets) {
-    std::cout << i << ",";
-  }
-  std::cout << "]\n";
+  // std::cout << "value offsets: [";
+  // for (auto i : values_offsets) {
+  //   std::cout << i << ",";
+  // }
+  // std::cout << "]\n";
 
   if (vals_arr_size % sizeof(T) != 0) {
     LOG_DEBUG("Potential alignment issue writing to vals buffer!");
