@@ -165,6 +165,8 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     if (pad_width) {
       regular_width =
           max_width + (width_pad_modulo - (max_width % width_pad_modulo));
+      LOG_DEBUG("Padding to regular width: ", pad_width, " mod modulo: ",
+                pad_width & width_pad_modulo);
     }
     std::fill(concrete_lengths.begin(), concrete_lengths.end(), regular_width);
   }
@@ -259,43 +261,6 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
               sizeof(T));
   }
 
-  bool ixs_out_of_bounds = false;
-  bool vals_out_of_bounds = false;
-
-  // build a lambda to work out indexing for each array
-  // capture the environment by reference, for efficiency?
-  auto write_ix = [&](int i, int y, int ix) {
-    // start off with our offset at zero
-    unsigned int row_offset = indices_offsets[rsa ? y + 1 : y];
-    unsigned int column_offset = sizeof(int) * i + (rsa ? sizeof(int) * 2 : 0);
-    unsigned int offset = row_offset + column_offset;
-    // NEVER EVER EVER EVER DO THIS IN REAL LIFE
-    if (offset > ixs_arr_size) {
-      // std::cout << "IXS Indexing outside array bounds: " << offset << " > "
-      //           << ixs_arr_size << "\n";
-      // std::cout << "used: i = " << i << ", y = " << y << "\n";
-      ixs_out_of_bounds = true;
-    }
-    char *cixptr = matrix.indices.data() + offset;
-    *reinterpret_cast<int *>(cixptr) = ix;
-  };
-
-  auto write_val = [&](int i, int y, T val) {
-    // start off with our offset at zero
-    unsigned int row_offset = values_offsets[rsa ? y + 1 : y];
-    unsigned int column_offset = sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
-    unsigned int offset = row_offset + column_offset;
-    if (offset > ixs_arr_size) {
-      // std::cout << "VALS Indexing outside array bounds: " << offset << " > "
-      //           << vals_arr_size << "\n";
-      // std::cout << "used: i = " << i << ", y = " << y << "\n";
-      vals_out_of_bounds = true;
-    }
-    // NEVER EVER EVER EVER DO THIS IN REAL LIFE
-    char *cvalptr = matrix.values.data() + offset;
-    *(reinterpret_cast<T *>(cvalptr)) = val;
-  };
-
   // -------------------------------------------------------------------------
   // Step 3.1 use the above information to actually input data into the array!
   // -------------------------------------------------------------------------
@@ -348,13 +313,40 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       *(valptr + i) = zero;
     }
   }
+  // actually write the matrix data (finally!)
   LOG_DEBUG("Writing array values");
+  bool ixs_out_of_bounds = false;
+  bool vals_out_of_bounds = false;
+
   for (unsigned int y = 0; y < ellpackMatrix.size(); y++) {
     std::vector<std::pair<int, T>> &row = (ellpackMatrix[y]);
     for (unsigned int i = 0; i < row.size(); i++) {
       std::pair<int, T> t = row[i];
-      write_ix(i, y, t.first);
-      write_val(i, y, t.second);
+      {
+        // write the index
+        unsigned int row_offset = indices_offsets[rsa ? y + 1 : y];
+        unsigned int column_offset =
+            (sizeof(int) * i) + (rsa ? sizeof(int) * 2 : 0);
+        unsigned int offset = row_offset + column_offset;
+        if (offset > ixs_arr_size) {
+          ixs_out_of_bounds = true;
+        }
+        char *cixptr = matrix.indices.data() + offset;
+        *reinterpret_cast<int *>(cixptr) = t.first;
+      }
+      {
+        // start off with our offset at zero
+        unsigned int row_offset = values_offsets[rsa ? y + 1 : y];
+        unsigned int column_offset =
+            sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
+        unsigned int offset = row_offset + column_offset;
+        if (offset > ixs_arr_size) {
+          vals_out_of_bounds = true;
+        }
+        // NEVER EVER EVER EVER DO THIS IN REAL LIFE
+        char *cvalptr = matrix.values.data() + offset;
+        *(reinterpret_cast<T *>(cvalptr)) = t.second;
+      }
     }
   }
 
