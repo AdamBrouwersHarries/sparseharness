@@ -1,8 +1,8 @@
 #ifndef SPARSE_MATRIX_H
 #define SPARSE_MATRIX_H
 
-#include "mmio.h"
 #include "Logger.h"
+#include "mmio.h"
 #include <cstdio>
 #include <cstdlib>
 
@@ -15,6 +15,7 @@
 #include <tuple>
 #include <vector>
 
+#include "buffer_utils.h"
 #include "common.h"
 #include "csds_timer.h"
 

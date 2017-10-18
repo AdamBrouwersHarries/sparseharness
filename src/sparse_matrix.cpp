@@ -213,6 +213,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // Create the matrix structure that we're going to fill with data
   CL_matrix matrix(ixs_arr_size, vals_arr_size, cl_width, cl_height);
 
+  // fill the matrix with garbage
+  std::fill(matrix.indices.begin(), matrix.indices.end(), 0);
+  std::fill(matrix.values.begin(), matrix.values.end(), 0);
+
   // -------------------------------------------------------------------------
   // Step 3.1 build offset information and a lambda to quickly access it
   //          for each array
@@ -280,6 +284,55 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // -------------------------------------------------------------------------
   // Step 3.1 use the above information to actually input data into the array!
   // -------------------------------------------------------------------------
+  // if we're RSA, write the offset information, and the row sizes + capacities
+  if (rsa) {
+    LOG_DEBUG("Writing RSA offsets and lengths");
+    // take a pointer to each array,as an integer
+    int *ixptr = reinterpret_cast<int *>(matrix.indices.data());
+    int *valptr = reinterpret_cast<int *>(matrix.values.data());
+    for (int i = 0; i < concrete_height - 1; i++) {
+      // write an offset to ixptr and valptr
+      ixptr[i] = static_cast<int>(indices_offsets[i + 1]);
+      valptr[i] = static_cast<int>(values_offsets[i + 1]);
+      // write size and capacity information to the headers
+      std::cout << "Writing index length: "
+                << byte_lengths_indices[i + 1] - (2 * sizeof(int)) << "\n";
+      {
+        // write the index
+        unsigned int row_offset = indices_offsets[i + 1];
+        std::cout << "@ " << row_offset << "\n";
+        int *cixptr =
+            reinterpret_cast<int *>(matrix.indices.data() + row_offset);
+        cixptr[0] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
+        cixptr[1] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
+      }
+      {
+        // write the value
+        unsigned int row_offset = values_offsets[i + 1];
+        std::cout << "@ " << row_offset << "\n";
+        int *cvalptr =
+            reinterpret_cast<int *>(matrix.values.data() + row_offset);
+        cvalptr[0] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
+        cvalptr[1] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
+      }
+      // write_ix(0, i + 1, byte_lengths_indices[i + 1]);
+      // write_ix(1, i + 1, byte_lengths_indices[i + 1]);
+      // // todo - replace with proper solution!
+      // write_val(0, i + 1, byte_lengths_values[i + 1]);
+      // write_val(1, i + 1, byte_lengths_values[i + 1]);
+    }
+  } else {
+    LOG_DEBUG("Filling with -1 and zero");
+    // if not, fill the ixs array with -1, and the vals array with 0
+    int *ixptr = reinterpret_cast<int *>(matrix.indices.data());
+    T *valptr = reinterpret_cast<T *>(matrix.values.data());
+    for (unsigned int i = 0; i < ixs_arr_size / sizeof(int); ++i) {
+      *(ixptr + i) = -1;
+    }
+    for (unsigned int i = 0; i < vals_arr_size / sizeof(T); ++i) {
+      *(valptr + i) = zero;
+    }
+  }
   LOG_DEBUG("Writing array values");
   for (unsigned int y = 0; y < ellpackMatrix.size(); y++) {
     std::vector<std::pair<int, T>> &row = (ellpackMatrix[y]);
@@ -289,24 +342,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       write_val(i, y, t.second);
     }
   }
-  // if we're RSA, write the offset information, and the row sizes + capacities
-  if (rsa) {
-    LOG_DEBUG("Writing RSA offsets and lengths");
-    // take a pointer to each array,as an integer
-    int *ixptr = (int *)(matrix.indices.data());
-    int *valptr = (int *)(matrix.values.data());
-    for (int i = 0; i < concrete_height - 1; i++) {
-      // write an offset to ixptr and valptr
-      ixptr[i] = static_cast<int>(indices_offsets[i + 1]);
-      valptr[i] = static_cast<int>(values_offsets[i + 1]);
-      // write size and capacity information to the headers
-      write_ix(0, i + 1, byte_lengths_indices[i + 1]);
-      write_ix(1, i + 1, byte_lengths_indices[i + 1]);
-      // todo - replace with proper solution!
-      write_val(0, i + 1, byte_lengths_values[i + 1]);
-      write_val(1, i + 1, byte_lengths_values[i + 1]);
-    }
-  }
+
+  printc_vec<int>(matrix.indices, matrix.indices.size());
+  printc_vec<T>(matrix.values, matrix.values.size());
+
   LOG_DEBUG("Done encoding");
   return matrix;
 }

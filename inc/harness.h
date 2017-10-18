@@ -1,7 +1,7 @@
 #pragma once
 
-#include "cl_memory_manager.h"
 #include "cl_device_manager.h"
+#include "cl_memory_manager.h"
 #include "kernel_utils.h"
 #include "opencl_utils.h"
 #include "sql_stat.h"
@@ -63,6 +63,8 @@ protected:
     cl_event ev;
     const size_t global_range[3] = {run.global1, run.global2, run.global3};
     const size_t local_range[3] = {run.local1, run.local2, run.local3};
+    std::cout << "Running kernel with queue: " << _cldm._queue
+              << " kernel : " << _kernel << "\n";
     checkCLError(clEnqueueNDRangeKernel(_cldm._queue, _kernel, 3, NULL,
                                         global_range, local_range, 0, NULL,
                                         &ev));

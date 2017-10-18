@@ -5,43 +5,13 @@
 
 #include "Logger.h"
 #include "arithexpr_evaluator.h"
+#include "buffer_utils.h"
 #include "common.h"
 #include "csds_timer.h"
 #include "kernel_config.h"
 #include "sparse_matrix.h"
 #include "vector_generator.h"
 #include <cassert>
-
-// from:
-// https://stackoverflow.com/questions/17294629/merging-sub-vectors-int-a-single-vector-c
-// flatten a nested vector-of-vectors
-template <template <typename...> class R = std::vector, typename Top,
-          typename Sub = typename Top::value_type>
-R<typename Sub::value_type> flatten(Top const &all) {
-  start_timer(flatten, kernel_utils);
-  using std::begin;
-  using std::end;
-
-  R<typename Sub::value_type> accum;
-
-  for (auto &sub : all)
-    accum.insert(end(accum), begin(sub), end(sub));
-
-  return accum;
-}
-
-template <typename T> std::vector<char> enchar(std::vector<T> in) {
-  start_timer(enchar, kernel_utils);
-  // get a pointer to the underlying data
-  T *uptr = in.data();
-  // cast it into a char type
-  char *cptr = reinterpret_cast<char *>(uptr);
-  // get the length
-  unsigned int cptrlen = in.size() * (sizeof(T) / sizeof(char));
-  // build a vector from that
-  std::vector<char> result(cptr, cptr + cptrlen);
-  return result;
-}
 
 typedef std::vector<char> raw_arg;
 
@@ -134,8 +104,8 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
       arg_cnt.output = memsize;
       LOG_DEBUG("Global output arg - arg: ", kernel.getOutputArg()->variable,
                 ", address space: ", kernel.getOutputArg()->addressSpace,
-                ", size:", kernel.getOutputArg()->size, ", realsize: ",
-                memsize);
+                ", size:", kernel.getOutputArg()->size,
+                ", realsize: ", memsize);
     }
   }
   {
@@ -144,8 +114,9 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
       int memsize =
           Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
       arg_cnt.temp_globals.push_back(memsize);
-      LOG_DEBUG("Global temp arg - arg: ", arg.variable, ", address space: ",
-                arg.addressSpace, ", size:", arg.size, ", realsize: ", memsize);
+      LOG_DEBUG("Global temp arg - arg: ", arg.variable,
+                ", address space: ", arg.addressSpace, ", size:", arg.size,
+                ", realsize: ", memsize);
     }
   }
 
@@ -156,8 +127,9 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
       int memsize =
           Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
       arg_cnt.temp_locals.push_back(memsize);
-      LOG_DEBUG("Local temp arg - arg: ", arg.variable, ", address space: ",
-                arg.addressSpace, ", size:", arg.size, ", realsize: ", memsize);
+      LOG_DEBUG("Local temp arg - arg: ", arg.variable,
+                ", address space: ", arg.addressSpace, ", size:", arg.size,
+                ", realsize: ", memsize);
     }
   }
 
