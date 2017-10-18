@@ -69,21 +69,18 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
   }
 }
 
-template <typename T>
-CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
-                                     T zero, bool pad_height, bool pad_width,
-                                     bool rsa, int height_pad_modulo,
-                                     int width_pad_modulo) {
-  start_timer(cl_encode, sparse_matrix);
-  // =========================================================================
-  // STEP ONE: CREATE AN ELLPACK MATRIX (AS SIMPLE AS POSSIBLE), WHICH
-  //           WE CAN ANALYSE TO ACTUALLY BUILD THE ENCODED ARGUMENTS
-  // =========================================================================
+template <typename T> void SparseMatrix<T>::calculate_ellpack() {
+  if (ellpack_calculated) {
+    return;
+  } else {
+    ellpack_calculated = true;
+  }
   // start off by doing a histogram sum of the values in the sparse matrix,
   // and (simultaneously) calculate the maximum row length (we might use this
   // when we're padding the width later)
-  std::vector<unsigned int> row_lengths(height(), 0);
-  unsigned int max_width = 0;
+  // std::vector<unsigned int> row_lengths(height(), 0);
+  row_lengths.resize(height(), 0);
+  // unsigned int max_width = 0;
   for (unsigned int i = 0; i < nz_entries.size(); i++) {
     int y = std::get<1>(nz_entries[i]);
     row_lengths[y]++;
@@ -96,7 +93,8 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // based on that, create a "standard" AOS ragged std::vector based structure
   // to fill with values from the sparse matrix. Reserve the rows to the lengths
   // we've just calculated with the histogram
-  SparseMatrix::ellpack_matrix<T> ellpackMatrix(height(), ellpack_row<T>(0));
+  // SparseMatrix::ellpack_matrix<T> ellpackMatrix(height(), ellpack_row<T>(0));
+  ellpackMatrix.resize(height(), ellpack_row<T>(0));
   for (int i = 0; i < height(); i++) {
     ellpackMatrix[i].reserve(row_lengths[i]);
   }
@@ -117,7 +115,19 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
                 return a.first < b.first;
               });
   }
+}
 
+template <typename T>
+CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
+                                     T zero, bool pad_height, bool pad_width,
+                                     bool rsa, int height_pad_modulo,
+                                     int width_pad_modulo) {
+  start_timer(cl_encode, sparse_matrix);
+  // =========================================================================
+  // STEP ONE: CREATE AN ELLPACK MATRIX (AS SIMPLE AS POSSIBLE), WHICH
+  //           WE CAN ANALYSE TO ACTUALLY BUILD THE ENCODED ARGUMENTS
+  // =========================================================================
+  calculate_ellpack();
   // =========================================================================
   // STEP TWO: CALCULATE THE SIZE OF OUR FINAL ENCODED MATRIX - THIS IS OUR
   //           CHANCE TO BAIL OUT OF WE'RE GOING TO ALLOCATE TOO MUCH MEMORY
@@ -348,6 +358,14 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
 
   LOG_DEBUG("Done encoding");
   return matrix;
+}
+
+template <typename T>
+SparseMatrix<T>::ellpack_matrix<T> &SparseMatrix<T>::ellpack_encode() {
+  if (!ellpack_calculated) {
+    calculate_ellpack();
+  }
+  return ellpackMatrix;
 }
 
 template <typename T> int SparseMatrix<T>::width() { return cols; }

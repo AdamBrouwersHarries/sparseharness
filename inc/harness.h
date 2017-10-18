@@ -12,7 +12,7 @@ template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
           unsigned int device, ArgContainer<SemiRingType> args,
-          unsigned int trials, unsigned int timeout, double delta)
+          unsigned int trials, std::chrono::milliseconds timeout, double delta)
       : _kernel_source(kernel_source), _device(device), _args(args),
         _mem_manager(args), _trials(trials), _timeout(timeout), _delta(delta) {
 
@@ -81,16 +81,19 @@ public:
     checkCLError(_error);
   }
 
-  virtual std::vector<TimingType> benchmark(Run run) = 0;
+  virtual std::vector<TimingType>
+  benchmark(Run run, std::vector<SemiRingType> &gold) = 0;
 
   // lower the timeout based on new information about the best time
   // we check (first) to see whether it's within 2x of the new value
   // if it is, we update the timeout to reflect this.
   // the idea is that a 2x difference could be noise (probably), so if it's
   // still within that we should be okay with it
-  void lowerTimeout(unsigned int measured_time) {
-    if (measured_time * 2 < _timeout) {
-      _timeout = measured_time * 2;
+  void lowerTimeout(std::chrono::nanoseconds measured_time) {
+    auto ms_measured =
+        std::chrono::duration_cast<std::chrono::milliseconds>(measured_time);
+    if (ms_measured * 2 < _timeout) {
+      _timeout = ms_measured * 2;
     }
   }
 
@@ -104,7 +107,35 @@ public:
   }
 
 protected:
-  virtual TimingType executeRun(Run run, unsigned int trial) = 0;
+  virtual TimingType executeRun(Run run, unsigned int trial,
+                                std::vector<SemiRingType> &gold) = 0;
+
+  Correctness check_result(std::vector<SemiRingType> &gold) {
+    if (gold.size() == 0) {
+      std::cout << "Got gold of size " << gold.size() << " \n";
+      return NOT_CHECKED;
+    }
+
+    unsigned int output_length =
+        (_mem_manager._output_host_buffer.size() * sizeof(char)) /
+        sizeof(SemiRingType);
+    // recast the output host buffer as a float pointer
+    SemiRingType *res_ptr = reinterpret_cast<SemiRingType *>(
+        _mem_manager._output_host_buffer.data());
+
+    if (output_length < gold.size()) {
+      return BAD_LENGTH;
+    }
+
+    // iterate over and check
+    for (unsigned int i = 0; i < gold.size(); i++) {
+      if (gold[i] != res_ptr[i]) {
+        return BAD_VALUES;
+      }
+    }
+
+    return CORRECT;
+  }
 
   std::chrono::nanoseconds executeKernel(Run run) {
     start_timer(executeKernel, harness);
@@ -391,7 +422,7 @@ protected:
   CLMemoryManager<SemiRingType> _mem_manager;
 
   unsigned int _trials;
-  unsigned int _timeout;
+  std::chrono::milliseconds _timeout;
   double _delta;
 };
 
@@ -403,7 +434,8 @@ class IterativeHarness : public Harness<TimingType, SemiRingType> {
 public:
   IterativeHarness(std::string &kernel_source, unsigned int platform,
                    unsigned int device, ArgContainer<SemiRingType> args,
-                   unsigned int trials, unsigned int timeout, double delta)
+                   unsigned int trials, std::chrono::milliseconds timeout,
+                   double delta)
       : Harness<TimingType, SemiRingType>(kernel_source, platform, device, args,
                                           trials, timeout, delta) {}
 

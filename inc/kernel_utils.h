@@ -65,8 +65,8 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
   // generate the vector inputs
   std::cerr << "Filling with these sizes: \n\tx = " << matrix.height()
             << " \n\ty = " << cl_matrix.cl_height << ENDL;
-  std::vector<T> xvector = xgen.generate(cl_matrix.cl_height, matrix, kernel);
-  std::vector<T> yvector = ygen.generate(cl_matrix.cl_height, matrix, kernel);
+  std::vector<T> xvector = xgen.generate(cl_matrix.cl_height);
+  std::vector<T> yvector = ygen.generate(cl_matrix.cl_height);
 
   // ---- CREATE THE ACTUAL ARGS ----
   // Args must be in this order:
@@ -104,8 +104,8 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
       arg_cnt.output = memsize;
       LOG_DEBUG("Global output arg - arg: ", kernel.getOutputArg()->variable,
                 ", address space: ", kernel.getOutputArg()->addressSpace,
-                ", size:", kernel.getOutputArg()->size,
-                ", realsize: ", memsize);
+                ", size:", kernel.getOutputArg()->size, ", realsize: ",
+                memsize);
     }
   }
   {
@@ -114,9 +114,8 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
       int memsize =
           Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
       arg_cnt.temp_globals.push_back(memsize);
-      LOG_DEBUG("Global temp arg - arg: ", arg.variable,
-                ", address space: ", arg.addressSpace, ", size:", arg.size,
-                ", realsize: ", memsize);
+      LOG_DEBUG("Global temp arg - arg: ", arg.variable, ", address space: ",
+                arg.addressSpace, ", size:", arg.size, ", realsize: ", memsize);
     }
   }
 
@@ -127,9 +126,8 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
       int memsize =
           Evaluator::evaluate(arg.size, v_MWidth_1, v_MHeight_2, v_VLength_3);
       arg_cnt.temp_locals.push_back(memsize);
-      LOG_DEBUG("Local temp arg - arg: ", arg.variable,
-                ", address space: ", arg.addressSpace, ", size:", arg.size,
-                ", realsize: ", memsize);
+      LOG_DEBUG("Local temp arg - arg: ", arg.variable, ", address space: ",
+                arg.addressSpace, ", size:", arg.size, ", realsize: ", memsize);
     }
   }
 

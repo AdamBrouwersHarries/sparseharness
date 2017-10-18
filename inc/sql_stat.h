@@ -10,7 +10,8 @@ enum Correctness {
   GENERIC_FAILURE,
   BAD_LENGTH,
   BAD_VALUES,
-  GENERIC_BAD_VALUES
+  GENERIC_BAD_VALUES,
+  STATISTIC_VALUE
 };
 
 enum TrialType { RAW_RESULT, MULTI_ITERATION_SUM, MEDIAN_RESULT };
@@ -30,10 +31,11 @@ public:
                         const std::string &matrix_name,
                         const std::string &experiment_id) {
     std::ostringstream out;
-    out << "(" << ((double)_time.count()) / 1000000.0 << ", \"notchecked\", \""
-        << kernel_name << "\", " << _global << ", " << _local << ", \""
-        << host_name << "\", \"" << device_name << "\", \"" << matrix_name
-        << "\"," << _iteration << "," << _trial << ",\""
+    out << "(" << ((double)_time.count()) / 1000000.0 << ", \""
+        << trialCorrectness() << "\", \"" << kernel_name << "\", " << _global
+        << ", " << _local << ", \"" << host_name << "\", \"" << device_name
+        << "\", \"" << matrix_name << "\"," << _iteration << "," << _trial
+        << ",\""
 
         << trialType() << "\", \"" << experiment_id << "\")";
     return out.str();

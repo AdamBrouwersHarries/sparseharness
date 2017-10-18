@@ -41,8 +41,6 @@ public:
   template <typename T> using ellpack_row = std::vector<std::pair<int, T>>;
   template <typename T> using ellpack_matrix = std::vector<ellpack_row<T>>;
 
-  ellpack_matrix<EType> asELLPACK(void);
-
   template <typename T>
   using soa_ellpack_matrix =
       std::pair<std::vector<std::vector<int>>, std::vector<std::vector<T>>>;
@@ -52,6 +50,8 @@ public:
   CL_matrix cl_encode(unsigned int device_max_alloc_bytes, EType zero,
                       bool pad_height, bool pad_width, bool rsa,
                       int height_pad_modulo, int width_pad_modulo);
+
+  SparseMatrix::ellpack_matrix<EType> &ellpack_encode(void);
 
   // template ellpack_matrix<float> asFloatELLPACK();
   // ellpack_matrix<double> asDoubleELLPACK();
@@ -66,16 +66,22 @@ public:
 private:
   // private initialisers
   void load_from_file(std::string filename);
-  // void from_random_vector(float lo, float hi, int length, int elements);
+  void calculate_ellpack();
 
   // tuples are: x, y, value
+  // various members used to load from a file
   std::vector<std::tuple<int, int, EType>> nz_entries;
   int rows;
   int cols;
   int nonz;
 
   // ellpack data
+  bool ellpack_calculated = false;
+  std::vector<unsigned int> row_lengths;
+  unsigned int max_width = 0;
+  SparseMatrix::ellpack_matrix<EType> ellpackMatrix;
 
+  // file data
   std::string filename;
 };
 
