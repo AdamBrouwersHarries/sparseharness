@@ -165,6 +165,56 @@ std::string getErrorString(cl_int err) {
   return ostr.str();
 }
 
+unsigned int deviceGetMaxAllocSize(unsigned int platform, unsigned int device) {
+  cl_int _error;
+
+  cl_uint _platformIdCount;
+  cl_uint _deviceIdCount;
+  cl_uint _device;
+
+  std::vector<cl_device_id> _deviceIds;
+
+  // initialise OpenCL:
+  // get the number of platforms
+  _platformIdCount = 0;
+  _error = clGetPlatformIDs(0, nullptr, &_platformIdCount);
+  checkCLError(_error);
+
+  if (_platformIdCount == 0) {
+    LOG_ERROR("No OpenCL devices found!");
+    exit(1);
+  }
+
+  LOG_DEBUG_INFO("Found ", _platformIdCount, " platforms");
+
+  // make a vector of platform ids
+  std::vector<cl_platform_id> platformIds(_platformIdCount);
+  _error = clGetPlatformIDs(_platformIdCount, platformIds.data(), nullptr);
+  checkCLError(_error);
+
+  // get the number of devices from the platform
+  _deviceIdCount = 0;
+  _error = clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, 0, nullptr,
+                          &_deviceIdCount);
+  checkCLError(_error);
+
+  LOG_DEBUG_INFO("Found ", _deviceIdCount, " devices on the chosen platform");
+
+  // get a list of devices from the platform
+  _deviceIds.resize(_deviceIdCount);
+  _error = clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL,
+                          _deviceIdCount, _deviceIds.data(), nullptr);
+  checkCLError(_error);
+
+  cl_ulong size;
+  LOG_DEBUG_INFO("Getting device max alloc size from device", _device_id);
+  _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_MAX_MEM_ALLOC_SIZE,
+                           sizeof(size), &size, NULL);
+  checkCLError(_error);
+
+  return size;
+}
+
 template <typename T>
 void printCharVector(const std::string &name, std::vector<char> &v) {
   // get the underlying pointer, and the length in terms of t
