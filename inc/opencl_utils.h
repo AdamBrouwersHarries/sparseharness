@@ -10,9 +10,14 @@ std::string getErrorString(cl_int);
 void checkCLError(cl_int);
 
 //  Check to see if an error code is correct etc
-void checkCLError(cl_int error) {
+// define a macro for checkCLError that includes the
+// file and line number of an error
+#define checkCLError(error) checkCLError_impl(error, __FILE__, __LINE__);
+// impl to check the error and report the result
+void checkCLError_impl(cl_int error, std::string file, int line) {
   if (error != CL_SUCCESS) {
-    LOG_ERROR("OpenCL call failed with error ", getErrorString(error));
+    LOG_ERROR("OpenCL call failed with error ", getErrorString(error), " in ",
+              file, " at line ", line);
     std::exit(1);
   }
 }
@@ -165,7 +170,7 @@ std::string getErrorString(cl_int err) {
   return ostr.str();
 }
 
-unsigned int deviceGetMaxAllocSize(unsigned int platform, unsigned int device) {
+cl_device_id getDeviceId(unsigned int platform, unsigned int device) {
   cl_int _error;
 
   cl_uint _platformIdCount;
@@ -206,12 +211,17 @@ unsigned int deviceGetMaxAllocSize(unsigned int platform, unsigned int device) {
                           _deviceIdCount, _deviceIds.data(), nullptr);
   checkCLError(_error);
 
-  cl_ulong size;
-  LOG_DEBUG_INFO("Getting device max alloc size from device", _device_id);
-  _error = clGetDeviceInfo(_deviceIds[_device], CL_DEVICE_MAX_MEM_ALLOC_SIZE,
-                           sizeof(size), &size, NULL);
-  checkCLError(_error);
+  return _deviceIds[device];
+}
 
+unsigned int deviceGetMaxAllocSize(unsigned int platform, unsigned int device) {
+
+  cl_device_id device_id = getDeviceId(platform, device);
+  // perform the actual query
+  cl_ulong size;
+  LOG_DEBUG_INFO("Getting device max alloc size from device", device_id);
+  checkCLError(clGetDeviceInfo(device_id, CL_DEVICE_MAX_MEM_ALLOC_SIZE,
+                               sizeof(size), &size, NULL));
   return size;
 }
 

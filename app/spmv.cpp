@@ -111,9 +111,10 @@ int main(int argc, char *argv[]) {
   ConstYVectorGenerator<float> zerogen(0);
 
   // get some arguments
-  unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
-  CLDeviceManager cldm(opt_platform->get(), opt_device->get());
-  max_alloc = cldm.getMaxMemAllocSize();
+  unsigned int max_alloc =
+      512 * 1024 * 1024; // 0.5 GB - a conservative estimate
+  max_alloc = deviceGetMaxAllocSize(opt_platform->get(), opt_device->get());
+  std::cout << "Got max alloc: " << max_alloc << "\n";
   auto args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, onegen,
                                    zerogen, 1.0f, 0.0f);
 

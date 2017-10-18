@@ -1,6 +1,5 @@
 #pragma once
 
-#include "cl_device_manager.h"
 #include "cl_memory_manager.h"
 #include "kernel_utils.h"
 #include "opencl_utils.h"

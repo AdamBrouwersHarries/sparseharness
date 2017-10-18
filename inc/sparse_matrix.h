@@ -74,11 +74,9 @@ private:
   int cols;
   int nonz;
 
+  // ellpack data
+
   std::string filename;
-  std::vector<int> row_lengths;
-  int max_row_entries = -1;
-  int min_row_entries = -1;
-  int mean_row_entries = -1;
 };
 
 #endif

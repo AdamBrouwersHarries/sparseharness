@@ -343,8 +343,8 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     }
   }
 
-  printc_vec<int>(matrix.indices, matrix.indices.size());
-  printc_vec<T>(matrix.values, matrix.values.size());
+  // printc_vec<int>(matrix.indices, matrix.indices.size());
+  // printc_vec<T>(matrix.values, matrix.values.size());
 
   LOG_DEBUG("Done encoding");
   return matrix;
