@@ -58,6 +58,8 @@ protected:
   virtual TimingType executeRun(Run run, unsigned int trial) = 0;
 
   std::chrono::nanoseconds executeKernel(Run run) {
+    start_timer(executeKernel, harness);
+
     cl_event ev;
     const size_t global_range[3] = {run.global1, run.global2, run.global3};
     const size_t local_range[3] = {run.local1, run.local2, run.local3};

@@ -219,16 +219,27 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // -------------------------------------------------------------------------
   // Perform a scan/inclusive scan over each of the data arrays
   // to figure out the offsets
-  std::vector<unsigned int> indices_offsets(concrete_height);
-  std::vector<unsigned int> values_offsets(concrete_height);
-  std::partial_sum(byte_lengths_indices.begin(), byte_lengths_indices.end(),
+  std::vector<unsigned int> indices_offsets(concrete_height, 0);
+  std::vector<unsigned int> values_offsets(concrete_height, 0);
+  std::partial_sum(byte_lengths_indices.begin(), byte_lengths_indices.end() - 1,
                    indices_offsets.begin() + 1);
-  std::partial_sum(byte_lengths_values.begin(), byte_lengths_values.end(),
+  std::partial_sum(byte_lengths_values.begin(), byte_lengths_values.end() - 1,
                    values_offsets.begin() + 1);
+
+  std::cout << "indices offsets: [";
+  for (auto i : indices_offsets) {
+    std::cout << i << ",";
+  }
+  std::cout << "]\n";
+
+  std::cout << "value offsets: [";
+  for (auto i : values_offsets) {
+    std::cout << i << ",";
+  }
+  std::cout << "]\n";
 
   if (vals_arr_size % sizeof(T) != 0) {
     LOG_DEBUG("Potential alignment issue writing to vals buffer!");
-
   } else {
     LOG_DEBUG("Vals arr size ", vals_arr_size, " aligns with sizeof(T), ",
               sizeof(T));
@@ -242,6 +253,11 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     unsigned int column_offset = sizeof(int) * i + (rsa ? sizeof(int) * 2 : 0);
     unsigned int offset = row_offset + column_offset;
     // NEVER EVER EVER EVER DO THIS IN REAL LIFE
+    if (offset > ixs_arr_size) {
+      std::cout << "IXS Indexing outside array bounds: " << offset << " > "
+                << ixs_arr_size << "\n";
+      std::cout << "used: i = " << i << ", y = " << y << "\n";
+    }
     char *cixptr = matrix.indices.data() + offset;
     *reinterpret_cast<int *>(cixptr) = ix;
   };
@@ -251,6 +267,11 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     unsigned int row_offset = values_offsets[rsa ? y + 1 : y];
     unsigned int column_offset = sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
     unsigned int offset = row_offset + column_offset;
+    if (offset > ixs_arr_size) {
+      std::cout << "VALS Indexing outside array bounds: " << offset << " > "
+                << vals_arr_size << "\n";
+      std::cout << "used: i = " << i << ", y = " << y << "\n";
+    }
     // NEVER EVER EVER EVER DO THIS IN REAL LIFE
     char *cvalptr = matrix.values.data() + offset;
     *(reinterpret_cast<T *>(cvalptr)) = val;
@@ -259,6 +280,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // -------------------------------------------------------------------------
   // Step 3.1 use the above information to actually input data into the array!
   // -------------------------------------------------------------------------
+  LOG_DEBUG("Writing array values");
   for (unsigned int y = 0; y < ellpackMatrix.size(); y++) {
     std::vector<std::pair<int, T>> &row = (ellpackMatrix[y]);
     for (unsigned int i = 0; i < row.size(); i++) {
@@ -269,6 +291,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   }
   // if we're RSA, write the offset information, and the row sizes + capacities
   if (rsa) {
+    LOG_DEBUG("Writing RSA offsets and lengths");
     // take a pointer to each array,as an integer
     int *ixptr = (int *)(matrix.indices.data());
     int *valptr = (int *)(matrix.values.data());
@@ -284,7 +307,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       write_val(1, i + 1, byte_lengths_values[i + 1]);
     }
   }
-
+  LOG_DEBUG("Done encoding");
   return matrix;
 }
 
