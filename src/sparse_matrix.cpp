@@ -75,6 +75,7 @@ template <typename T> void SparseMatrix<T>::calculate_ellpack() {
   } else {
     ellpack_calculated = true;
   }
+  start_timer(calculate_ellpack, sparse_matrix);
   // start off by doing a histogram sum of the values in the sparse matrix,
   // and (simultaneously) calculate the maximum row length (we might use this
   // when we're padding the width later)
@@ -128,6 +129,11 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   //           WE CAN ANALYSE TO ACTUALLY BUILD THE ENCODED ARGUMENTS
   // =========================================================================
   calculate_ellpack();
+
+  // typedef some useful sizes
+  typedef unsigned long byte_size;
+  typedef unsigned int value_size;
+
   // =========================================================================
   // STEP TWO: CALCULATE THE SIZE OF OUR FINAL ENCODED MATRIX - THIS IS OUR
   //           CHANCE TO BAIL OUT OF WE'RE GOING TO ALLOCATE TOO MUCH MEMORY
@@ -142,16 +148,17 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     concrete_height = concrete_height + (height_pad_modulo -
                                          (concrete_height % height_pad_modulo));
   }
-  // if we're RSA, add a row for the offsets
+  // and if we're RSA, add a row for the offsets
   if (rsa) {
     concrete_height = concrete_height + 1;
   }
   LOG_DEBUG("concrete height: ", concrete_height);
   // now we have the height, create an array for the actual lengths, and copy
-  // the row lengths - with an offset if we're in RSA!
-  std::vector<unsigned int> concrete_lengths(concrete_height, 0);
+  // the row lengths - copy them along one later if we're rsa
+  std::vector<value_size> concrete_lengths(concrete_height, 0);
   std::copy(row_lengths.begin(), row_lengths.end(),
             concrete_lengths.begin() + (rsa ? 1 : 0));
+
   // -------------------------------------------------------------------------
   // Step 2.2: Horizontal padding, for "splitting" optimisations
   // -------------------------------------------------------------------------
@@ -165,60 +172,73 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     if (pad_width) {
       regular_width =
           max_width + (width_pad_modulo - (max_width % width_pad_modulo));
-      LOG_DEBUG("Padding to regular width: ", pad_width, " mod modulo: ",
-                pad_width & width_pad_modulo);
+      LOG_DEBUG("Padding to regular width: ", regular_width, " mod modulo: ",
+                regular_width % width_pad_modulo);
     }
     std::fill(concrete_lengths.begin(), concrete_lengths.end(), regular_width);
   }
   LOG_DEBUG("regular width: ", regular_width);
+
   // -------------------------------------------------------------------------
   // Step 2.3: Header information, for "RSA" implementations
   // -------------------------------------------------------------------------
   // first, transform the concrete lengths into two lengths arrays that encode
   // the concrete lengths in terms of the number of bytes, if we're generating
   // for a runtime size array, also add on space for the lengths
-  std::vector<unsigned int> byte_lengths_indices(concrete_lengths);
-  std::vector<unsigned int> byte_lengths_values(concrete_lengths);
+  std::vector<value_size> byte_lengths_indices(concrete_lengths);
+  std::vector<value_size> byte_lengths_values(concrete_lengths);
   std::transform(byte_lengths_indices.begin(), byte_lengths_indices.end(),
                  byte_lengths_indices.begin(),
-                 [rsa](unsigned int l) -> unsigned int {
+                 [rsa](value_size l) -> value_size {
                    return (l * sizeof(int)) + (rsa ? 2 * sizeof(int) : 0);
                  });
   std::transform(byte_lengths_values.begin(), byte_lengths_values.end(),
                  byte_lengths_values.begin(),
-                 [rsa](unsigned int l) -> unsigned int {
+                 [rsa](value_size l) -> value_size {
                    return (l * sizeof(T)) + (rsa ? 2 * sizeof(int) : 0);
                  });
   // set the offset sizes if we're RSA, and append size for the offsets
+  // essentially, correct for whatever we just did :P
   if (rsa) {
-    int offset_size = (concrete_height - 1) * sizeof(int);
-    byte_lengths_indices[0] = offset_size;
-    byte_lengths_values[0] = offset_size;
+    int offset_array_size = (concrete_height - 1) * sizeof(int);
+    byte_lengths_indices[0] = offset_array_size;
+    byte_lengths_values[0] = offset_array_size;
   }
   // -------------------------------------------------------------------------
   // Step 2.4: Calculate the overall sizes.
   // -------------------------------------------------------------------------
   // the final sizes we'll need.
   // we can also set the matrix sizes here, as we know them!
-  int cl_height = -1, cl_width = -1;
+  int cl_height = -1;
+  int cl_width = -1;
   if (rsa) {
     cl_height = concrete_height - 1;
   } else {
     cl_height = concrete_height;
     cl_width = regular_width;
   }
-  unsigned int ixs_arr_size = std::accumulate(byte_lengths_indices.begin(),
-                                              byte_lengths_indices.end(), 0);
-  unsigned int vals_arr_size = std::accumulate(byte_lengths_values.begin(),
-                                               byte_lengths_values.end(), 0);
+  byte_size ixs_arr_size = std::accumulate(
+      byte_lengths_indices.begin(), byte_lengths_indices.end(), (byte_size)0);
+  byte_size vals_arr_size = std::accumulate(
+      byte_lengths_values.begin(), byte_lengths_values.end(), (byte_size)0);
 
-  if (ixs_arr_size > device_max_alloc_bytes) {
-    throw ixs_arr_size;
-  }
   LOG_DEBUG("ixs_arr_size: (GB) - ",
             (double)ixs_arr_size / (double)(1024 * 1024 * 1024));
   LOG_DEBUG("ixs_arr_size: (GB) - ",
             (double)vals_arr_size / (double)(1024 * 1024 * 1024));
+
+  if (ixs_arr_size > device_max_alloc_bytes) {
+    throw ixs_arr_size;
+  }
+
+  if (!rsa && !pad_height &&
+      ((regular_width * concrete_height * sizeof(int)) != ixs_arr_size)) {
+    LOG_ERROR("Something has gone catastrophically wrong building the regular "
+              "size! Expected array size to be ",
+              (regular_width * concrete_height * sizeof(int)), " is actually ",
+              ixs_arr_size);
+    throw ixs_arr_size;
+  }
   // =========================================================================
   // STEP THREE: CREATE THE TWO ARRAYS, AND FILL WITH MATRIX INFORMATION
   // =========================================================================
@@ -234,9 +254,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   //          for each array
   // -------------------------------------------------------------------------
   // Perform a scan/inclusive scan over each of the data arrays
-  // to figure out the offsets
-  std::vector<unsigned int> indices_offsets(concrete_height, 0);
-  std::vector<unsigned int> values_offsets(concrete_height, 0);
+  // to figure out the offsets. This shouldn't change whether we're in rsa
+  // or not - as it's a concrete piece of information.
+  std::vector<byte_size> indices_offsets(concrete_height, 0);
+  std::vector<byte_size> values_offsets(concrete_height, 0);
   std::partial_sum(byte_lengths_indices.begin(), byte_lengths_indices.end() - 1,
                    indices_offsets.begin() + 1);
   std::partial_sum(byte_lengths_values.begin(), byte_lengths_values.end() - 1,
@@ -275,12 +296,12 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       ixptr[i] = static_cast<int>(indices_offsets[i + 1]);
       valptr[i] = static_cast<int>(values_offsets[i + 1]);
       // write size and capacity information to the headers
-      std::cout << "Writing index length: "
-                << byte_lengths_indices[i + 1] - (2 * sizeof(int)) << "\n";
+      // std::cout << "Writing index length: "
+      //           << byte_lengths_indices[i + 1] - (2 * sizeof(int)) << "\n";
       {
         // write the index
-        unsigned int row_offset = indices_offsets[i + 1];
-        std::cout << "@ " << row_offset << "\n";
+        byte_size row_offset = indices_offsets[i + 1];
+        // std::cout << "@ " << row_offset << "\n";
         int *cixptr =
             reinterpret_cast<int *>(matrix.indices.data() + row_offset);
         cixptr[0] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
@@ -288,8 +309,8 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       }
       {
         // write the value
-        unsigned int row_offset = values_offsets[i + 1];
-        std::cout << "@ " << row_offset << "\n";
+        byte_size row_offset = values_offsets[i + 1];
+        // std::cout << "@ " << row_offset << "\n";
         int *cvalptr =
             reinterpret_cast<int *>(matrix.values.data() + row_offset);
         cvalptr[0] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
@@ -306,10 +327,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     // if not, fill the ixs array with -1, and the vals array with 0
     int *ixptr = reinterpret_cast<int *>(matrix.indices.data());
     T *valptr = reinterpret_cast<T *>(matrix.values.data());
-    for (unsigned int i = 0; i < ixs_arr_size / sizeof(int); ++i) {
+    for (byte_size i = 0; i < ixs_arr_size / sizeof(int); ++i) {
       *(ixptr + i) = -1;
     }
-    for (unsigned int i = 0; i < vals_arr_size / sizeof(T); ++i) {
+    for (byte_size i = 0; i < vals_arr_size / sizeof(T); ++i) {
       *(valptr + i) = zero;
     }
   }
@@ -318,28 +339,40 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   bool ixs_out_of_bounds = false;
   bool vals_out_of_bounds = false;
 
-  for (unsigned int y = 0; y < ellpackMatrix.size(); y++) {
+  // iterate over rows
+  for (value_size y = 0; y < ellpackMatrix.size(); y++) {
+    // get the row, and iterate over the values
     std::vector<std::pair<int, T>> &row = (ellpackMatrix[y]);
-    for (unsigned int i = 0; i < row.size(); i++) {
+    for (value_size i = 0; i < row.size(); i++) {
       std::pair<int, T> t = row[i];
       {
         // write the index
-        unsigned int row_offset = indices_offsets[rsa ? y + 1 : y];
-        unsigned int column_offset =
+        byte_size row_offset = indices_offsets[rsa ? y + 1 : y];
+        byte_size column_offset =
             (sizeof(int) * i) + (rsa ? sizeof(int) * 2 : 0);
-        unsigned int offset = row_offset + column_offset;
+        byte_size offset = row_offset + column_offset;
         if (offset > ixs_arr_size) {
+          std::cout << "Trying to write with:\n\ty: " << y
+                    << "\n\trow_offset: " << row_offset
+                    << "\n\tcolumn_offset: " << column_offset << "\n\ti: " << i
+                    << "\n ";
+
           ixs_out_of_bounds = true;
         }
+        if (column_offset > byte_lengths_indices[rsa ? y + 1 : y]) {
+          std::cout << "Trying to write index at col offset: " << column_offset
+                    << " which is wider than "
+                    << byte_lengths_indices[rsa ? y + 1 : y] << "\n";
+        }
+
         char *cixptr = matrix.indices.data() + offset;
         *reinterpret_cast<int *>(cixptr) = t.first;
       }
       {
         // start off with our offset at zero
-        unsigned int row_offset = values_offsets[rsa ? y + 1 : y];
-        unsigned int column_offset =
-            sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
-        unsigned int offset = row_offset + column_offset;
+        byte_size row_offset = values_offsets[rsa ? y + 1 : y];
+        byte_size column_offset = sizeof(T) * i + (rsa ? sizeof(int) * 2 : 0);
+        byte_size offset = row_offset + column_offset;
         if (offset > ixs_arr_size) {
           vals_out_of_bounds = true;
         }

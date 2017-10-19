@@ -128,10 +128,19 @@ protected:
     }
 
     // iterate over and check
+    int error_count = 0;
+    int max_errors = 20;
     for (unsigned int i = 0; i < gold.size(); i++) {
       if (gold[i] != res_ptr[i]) {
-        return BAD_VALUES;
+        LOG_ERROR("Expected gold value ", gold[i], " at index ", i, " found ",
+                  res_ptr[i], " instead");
+        error_count++;
+        if (error_count == max_errors)
+          break;
       }
+    }
+    if (error_count > 0) {
+      return BAD_VALUES;
     }
 
     return CORRECT;

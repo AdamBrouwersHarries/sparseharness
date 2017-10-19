@@ -44,10 +44,15 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
   // get the configuration patterns of the kernel
   auto kprops = kernel.getProperties();
 
-  auto cl_matrix =
-      matrix.cl_encode(device_max_alloc_bytes, zero, kprops.chunkSize != 1,
-                       kprops.splitSize != 1, kprops.arrayType == "ragged",
-                       kprops.chunkSize, kprops.splitSize);
+  auto cl_matrix = matrix.cl_encode(
+      device_max_alloc_bytes,       // the maximum size of a byte buffer
+      zero,                         // the semiring zero value
+      kprops.chunkSize != -1,       // whether to chunk the input
+      kprops.splitSize != -1,       // whether to split rows into even chunks
+      kprops.arrayType == "ragged", // whether to encode the array "raggedly"
+      kprops.chunkSize,             // the chunk size
+      kprops.splitSize              // the split size
+      );
 
   auto v_MWidth_1 = kprops.arrayType == "ragged"
                         ? matrix.width()

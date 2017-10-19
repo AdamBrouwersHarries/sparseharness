@@ -11,7 +11,7 @@ public:
     start_timer(spmv, gold);
     // get the matrix in ellpack format
     auto ellpack_a = A.ellpack_encode();
-    // create a vector of the right height
+    // // create a vector of the right height
     std::vector<T> result(ellpack_a.size(), 0);
     // iterate over the rows
     for (unsigned int i = 0; i < ellpack_a.size(); i++) {

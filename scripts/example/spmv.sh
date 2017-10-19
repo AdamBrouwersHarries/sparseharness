@@ -5,10 +5,10 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/spmv_harness
 # A kernel to run with the harness
-kernel=$projroot/example/kernel2.json
+kernel=$projroot/example/kernel6.json
 # The matrix to process
 # matrix=$projroot/example/matrix2.mtx
-matrix=~/scratch/mdatasets/gunrock/hollywood-2009/hollywood-2009.mtx
+matrix=~/scratch/mdatasets/parser_speed_tests/hollywood-2009/hollywood-2009.mtx
 # The run parameters - i.e. local and global sizes
 runfile=$projroot/example/runfile.csv
 # our hostname

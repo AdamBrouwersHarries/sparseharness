@@ -214,7 +214,8 @@ cl_device_id getDeviceId(unsigned int platform, unsigned int device) {
   return _deviceIds[device];
 }
 
-unsigned int deviceGetMaxAllocSize(unsigned int platform, unsigned int device) {
+unsigned long deviceGetMaxAllocSize(unsigned int platform,
+                                    unsigned int device) {
 
   cl_device_id device_id = getDeviceId(platform, device);
   // perform the actual query

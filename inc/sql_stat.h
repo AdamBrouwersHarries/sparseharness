@@ -117,6 +117,8 @@ private:
     case GENERIC_BAD_VALUES:
       return "badvalues";
       break;
+    case STATISTIC_VALUE:
+      return "statisticvalue";
     default:
       return "ERROR";
     }

@@ -119,12 +119,8 @@ int main(int argc, char *argv[]) {
   float alpha = 1.0f;
   float beta = 0.0f;
 
-  // calculate the gold value
-
-  auto gold = Gold<float>::spmv(matrix, x, y, alpha, beta, 0.0f);
-
   // get some arguments
-  unsigned int max_alloc =
+  unsigned long max_alloc =
       512 * 1024 * 1024; // 0.5 GB - a conservative estimate
   max_alloc = deviceGetMaxAllocSize(opt_platform->get(), opt_device->get());
   std::cout << "Got max alloc: " << max_alloc << "\n";
@@ -136,6 +132,10 @@ int main(int argc, char *argv[]) {
                       opt_device->get(), args, opt_trials->get(),
                       std::chrono::milliseconds(opt_timeout->get()),
                       opt_float_delta->get());
+
+  // calculate the gold value (it's expensive, so do it after
+  // the things that might fail)
+  auto gold = Gold<float>::spmv(matrix, x, y, alpha, beta, 0.0f);
 
   const std::string &kernel_name = kernel.getName();
   const std::string &host_name = hostname;
