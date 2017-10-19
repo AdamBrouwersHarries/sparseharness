@@ -56,10 +56,11 @@ executorEncodeMatrix(unsigned int device_max_alloc_bytes,
 
   auto v_MWidth_1 = kprops.arrayType == "ragged"
                         ? matrix.width()
-                        : cl_matrix.cl_width / kprops.splitSize;
+                        : cl_matrix.cl_width / abs(kprops.splitSize);
   // change it if we're ragged
   // auto v_MHeight_2 = (int)(cl_matrix.cl_height / kprops.chunkSize);
-  auto v_MHeight_2 = cl_matrix.cl_height;
+  auto v_MHeight_2 =
+      kprops.arrayType == "ragged" ? matrix.height() : cl_matrix.cl_height;
   auto v_VLength_3 = matrix.width();
 
   std::cerr << "Encoding matrix with sizes:"
