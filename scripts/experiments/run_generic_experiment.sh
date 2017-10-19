@@ -1,5 +1,6 @@
 #!/bin/bash
-$dataset = $1
+$dataset=$1
+
 cd ~/projects/sparseharness/
 mkdir -p build
 pushd build 
