@@ -17,7 +17,8 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-oclgrind --check-api --data-races --uninitialized $harness -e $exid -n $hname -m $matrix -f matrix3 -k $kernel -d 0 -r $runfile -i 1 -t 200 
+# oclgrind --check-api --data-races --uninitialized 
+$harness -e $exid -n $hname -m $matrix -f matrix3 -k $kernel -d 0 -r $runfile -i 1 -t 200 
 
 
 # $spmv -p $platform \

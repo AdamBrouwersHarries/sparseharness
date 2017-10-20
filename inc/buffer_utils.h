@@ -26,21 +26,20 @@ template <typename T> void printc_vec(std::vector<char> &v, int stride) {
 }
 
 template <typename T>
-void print_rsa_matrix(std::vector<char> &v,
-                      std::vector<unsigned long> offsets) {
+void print_rsa_matrix(std::vector<char> &v, std::vector<unsigned long> offsets,
+                      unsigned long last_arr_size) {
   start_timer(print_rsa_matrix, buffer_utils);
   // get a pointer to the underlying data
   char *cptr = v.data();
 
-  // initialise the begin/end ptrs
+  offsets.push_back(last_arr_size + offsets.back());
 
   std::cout << "[\n";
   for (unsigned int i = 0; i < offsets.size() - 1; i++) {
     char *begin = cptr + offsets[i];
-    char *end = cptr + offsets[i + 1];
 
     // print between begin and end
-    std::cout << "\t[";
+    std::cout << "\t" << i << ": [";
     // get begin as an int ptr
     int *begin_i = reinterpret_cast<int *>(begin);
     std::cout << begin_i[0] << "," << begin_i[1];

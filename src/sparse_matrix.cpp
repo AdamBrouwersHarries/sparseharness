@@ -200,7 +200,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   // set the offset sizes if we're RSA, and append size for the offsets
   // essentially, correct for whatever we just did :P
   if (rsa) {
-    int offset_array_size = (concrete_height) * sizeof(int);
+    int offset_array_size = (concrete_height - 1) * sizeof(int);
     byte_lengths_indices[0] = offset_array_size;
     byte_lengths_values[0] = offset_array_size;
   }
@@ -217,6 +217,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     cl_height = concrete_height;
     cl_width = regular_width;
   }
+
   byte_size ixs_arr_size = std::accumulate(
       byte_lengths_indices.begin(), byte_lengths_indices.end(), (byte_size)0);
   byte_size vals_arr_size = std::accumulate(
@@ -292,20 +293,20 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     int *ixptr = reinterpret_cast<int *>(matrix.indices.data());
     int *valptr = reinterpret_cast<int *>(matrix.values.data());
     for (int i = 0; i < concrete_height - 1; i++) {
-      // write an offset to ixptr and valptr
+      // write an offset to ixptr and valptr to the header
       ixptr[i] = static_cast<int>(indices_offsets[i + 1]);
       valptr[i] = static_cast<int>(values_offsets[i + 1]);
       // write size and capacity information to the headers
-      // std::cout << "Writing index length: "
-      //           << byte_lengths_indices[i + 1] - (2 * sizeof(int)) << "\n";
       {
         // write the index
         byte_size row_offset = indices_offsets[i + 1];
         // std::cout << "@ " << row_offset << "\n";
         int *cixptr =
             reinterpret_cast<int *>(matrix.indices.data() + row_offset);
-        cixptr[0] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
-        cixptr[1] = byte_lengths_indices[i + 1] - (2 * sizeof(int));
+        int row_length =
+            (byte_lengths_indices[i + 1] - (2 * sizeof(int))) / sizeof(int);
+        cixptr[0] = row_length;
+        cixptr[1] = row_length;
       }
       {
         // write the value
@@ -313,8 +314,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
         // std::cout << "@ " << row_offset << "\n";
         int *cvalptr =
             reinterpret_cast<int *>(matrix.values.data() + row_offset);
-        cvalptr[0] = byte_lengths_values[i + 1] - (2 * sizeof(int));
-        cvalptr[1] = byte_lengths_values[i + 1] - (2 * sizeof(int));
+        int row_length =
+            (byte_lengths_values[i + 1] - (2 * sizeof(int))) / sizeof(int);
+        cvalptr[0] = row_length;
+        cvalptr[1] = row_length;
       }
       // write_ix(0, i + 1, byte_lengths_indices[i + 1]);
       // write_ix(1, i + 1, byte_lengths_indices[i + 1]);
@@ -322,14 +325,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       // write_val(0, i + 1, byte_lengths_values[i + 1]);
       // write_val(1, i + 1, byte_lengths_values[i + 1]);
     }
-    // write the final offsets to the offset array
-    ixptr[concrete_height - 1] = indices_offsets[concrete_height - 1] +
-                                 byte_lengths_indices[concrete_height - 1] +
-                                 (sizeof(int));
-    valptr[concrete_height - 1] = values_offsets[concrete_height - 1] +
-                                  byte_lengths_values[concrete_height - 1] +
-                                  (sizeof(int));
-    ;
+
   } else {
     LOG_DEBUG("Filling with -1 and zero");
     // if not, fill the ixs array with -1, and the vals array with 0
@@ -386,8 +382,10 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
   }
 
   if (rsa) {
-    print_rsa_matrix<int>(matrix.indices, indices_offsets);
-    print_rsa_matrix<T>(matrix.values, values_offsets);
+    print_rsa_matrix<int>(matrix.indices, indices_offsets,
+                          byte_lengths_indices.back());
+    print_rsa_matrix<T>(matrix.values, values_offsets,
+                        byte_lengths_values.back());
   } else {
     printc_vec<int>(matrix.indices, matrix.indices.size());
     printc_vec<T>(matrix.values, matrix.values.size());
