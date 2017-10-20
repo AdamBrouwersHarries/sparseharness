@@ -125,8 +125,14 @@ int main(int argc, char *argv[]) {
   max_alloc = deviceGetMaxAllocSize(opt_platform->get(), opt_device->get());
   std::cout << "Got max alloc: " << max_alloc << "\n";
 
-  auto args =
-      executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, x, y, alpha, beta);
+  ArgContainer<float> args;
+  try {
+    args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, x, y, alpha,
+                                beta);
+  } catch (unsigned long attempted_alloc_size) {
+    LOG_ERROR("Attempted to allocate: ", attempted_alloc_size,
+              " bytes, but this platform's max is ", max_alloc);
+  }
 
   HarnessSPMV harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args, opt_trials->get(),
