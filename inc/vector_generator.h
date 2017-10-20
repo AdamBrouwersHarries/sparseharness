@@ -8,15 +8,16 @@
 // superclass - completely abstract vector generator
 template <typename T> class VectorGenerator {
 public:
-  virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) = 0;
+  // VectorGenerator(SparseMatrix<T> &sm, KernelConfig<T> &kc)
+  //     : _sm(sm), _kc(kc) {}
 
-  std::vector<T> generate(int length, SparseMatrix<T> &sm,
-                          KernelConfig<T> &kc) {
+  virtual T get(int ix) = 0;
+
+  std::vector<T> generate(int length) {
     start_timer(generate, VectorGenerator);
     std::vector<T> v(length);
     int n = {0};
-    std::generate(v.begin(), v.end(),
-                  [&] { return generateValue(n++, sm, kc); });
+    std::generate(v.begin(), v.end(), [&] { return get(n++); });
     return v;
   };
 };
@@ -41,9 +42,7 @@ template <typename T> class ConstXVectorGenerator : public XVectorGenerator<T> {
 public:
   ConstXVectorGenerator(T constv) : value(constv) {}
 
-  virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) {
-    return value;
-  }
+  virtual T get(int ix) { return value; }
 };
 
 template <typename T> class ConstYVectorGenerator : public YVectorGenerator<T> {
@@ -52,7 +51,5 @@ template <typename T> class ConstYVectorGenerator : public YVectorGenerator<T> {
 public:
   ConstYVectorGenerator(T constv) : value(constv) {}
 
-  virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) {
-    return value;
-  }
+  virtual T get(int ix) { return value; }
 };

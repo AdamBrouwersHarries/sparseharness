@@ -30,7 +30,7 @@ template <typename T> KernelConfig<T>::KernelConfig(std::string filename) {
   };
 
   auto unwrap_param = [](boost::optional<std::string> value) {
-    return value ? std::stoi(value.get()) : 1;
+    return value ? std::stoi(value.get()) : -1;
   };
 
   kprops = KernelProperties(unwrap_map(outerMap), unwrap_map(innerMap),

@@ -12,7 +12,7 @@ template <typename TimingType, typename SemiRingType> class Harness {
 public:
   Harness(std::string &kernel_source, unsigned int platform,
           unsigned int device, ArgContainer<SemiRingType> args,
-          unsigned int trials, unsigned int timeout, double delta)
+          unsigned int trials, std::chrono::milliseconds timeout, double delta)
       : _kernel_source(kernel_source), _device(device), _args(args),
         _mem_manager(args), _trials(trials), _timeout(timeout), _delta(delta) {
 
@@ -54,7 +54,6 @@ public:
     _context = clCreateContext(contextProperties, _deviceIdCount,
                                _deviceIds.data(), nullptr, nullptr, &_error);
     checkCLError(_error);
-
     // create a kernel from the source
 
     // recast the std::string as a size_t array and char array
@@ -82,7 +81,21 @@ public:
     checkCLError(_error);
   }
 
-  virtual std::vector<TimingType> benchmark(Run run) = 0;
+  virtual std::vector<TimingType>
+  benchmark(Run run, std::vector<SemiRingType> &gold) = 0;
+
+  // lower the timeout based on new information about the best time
+  // we check (first) to see whether it's within 2x of the new value
+  // if it is, we update the timeout to reflect this.
+  // the idea is that a 2x difference could be noise (probably), so if it's
+  // still within that we should be okay with it
+  void lowerTimeout(std::chrono::nanoseconds measured_time) {
+    auto ms_measured =
+        std::chrono::duration_cast<std::chrono::milliseconds>(measured_time);
+    if (ms_measured * 2 < _timeout) {
+      _timeout = ms_measured * 2;
+    }
+  }
 
   std::string getDeviceName() {
     char name[10240];
@@ -93,24 +106,54 @@ public:
     return std::string(name);
   }
 
-  // lower the timeout based on new information about the best time
-  // we check (first) to see whether it's within 2x of the new value
-  // if it is, we update the timeout to reflect this.
-  // the idea is that a 2x difference could be noise (probably), so if it's
-  // still within that we should be okay with it
-  void lowerTimeout(unsigned int measured_time) {
-    if (measured_time * 2 < _timeout) {
-      _timeout = measured_time * 2;
+protected:
+  virtual TimingType executeRun(Run run, unsigned int trial,
+                                std::vector<SemiRingType> &gold) = 0;
+
+  Correctness check_result(std::vector<SemiRingType> &gold) {
+    if (gold.size() == 0) {
+      std::cout << "Got gold of size " << gold.size() << " \n";
+      return NOT_CHECKED;
     }
+
+    unsigned int output_length =
+        (_mem_manager._output_host_buffer.size() * sizeof(char)) /
+        sizeof(SemiRingType);
+    // recast the output host buffer as a float pointer
+    SemiRingType *res_ptr = reinterpret_cast<SemiRingType *>(
+        _mem_manager._output_host_buffer.data());
+
+    if (output_length < gold.size()) {
+      return BAD_LENGTH;
+    }
+
+    // iterate over and check
+    int error_count = 0;
+    int max_errors = 20;
+    for (unsigned int i = 0; i < gold.size(); i++) {
+      if (gold[i] != res_ptr[i]) {
+        LOG_ERROR("Expected gold value ", gold[i], " at index ", i, " found ",
+                  res_ptr[i], " instead");
+        error_count++;
+        if (error_count == max_errors)
+          break;
+      }
+    }
+    if (error_count > 0) {
+      return BAD_VALUES;
+    }
+
+    return CORRECT;
   }
 
-protected:
-  virtual TimingType executeRun(Run run, unsigned int trial) = 0;
-
   std::chrono::nanoseconds executeKernel(Run run) {
+    start_timer(executeKernel, harness);
+
     cl_event ev;
     const size_t global_range[3] = {run.global1, run.global2, run.global3};
     const size_t local_range[3] = {run.local1, run.local2, run.local3};
+    std::cout << "Running kernel with queue: " << _queue
+              << " kernel : " << _kernel << "\n";
     checkCLError(clEnqueueNDRangeKernel(_queue, _kernel, 3, NULL, global_range,
                                         local_range, 0, NULL, &ev));
     clWaitForEvents(1, &ev);
@@ -369,8 +412,7 @@ protected:
 
   // stateful error code :(
   cl_int _error;
-  std::string _kernel_source;
-  cl_kernel _kernel;
+
   cl_uint _platformIdCount;
   cl_uint _deviceIdCount;
   cl_uint _device;
@@ -380,12 +422,16 @@ protected:
   std::vector<cl_device_id> _deviceIds;
 
   cl_context _context;
+
+  std::string _kernel_source;
+  cl_kernel _kernel;
+
   ArgContainer<SemiRingType> _args;
 
   CLMemoryManager<SemiRingType> _mem_manager;
 
   unsigned int _trials;
-  unsigned int _timeout;
+  std::chrono::milliseconds _timeout;
   double _delta;
 };
 
@@ -397,7 +443,8 @@ class IterativeHarness : public Harness<TimingType, SemiRingType> {
 public:
   IterativeHarness(std::string &kernel_source, unsigned int platform,
                    unsigned int device, ArgContainer<SemiRingType> args,
-                   unsigned int trials, unsigned int timeout, double delta)
+                   unsigned int trials, std::chrono::milliseconds timeout,
+                   double delta)
       : Harness<TimingType, SemiRingType>(kernel_source, platform, device, args,
                                           trials, timeout, delta) {}
 

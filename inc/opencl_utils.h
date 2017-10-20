@@ -10,9 +10,14 @@ std::string getErrorString(cl_int);
 void checkCLError(cl_int);
 
 //  Check to see if an error code is correct etc
-void checkCLError(cl_int error) {
+// define a macro for checkCLError that includes the
+// file and line number of an error
+#define checkCLError(error) checkCLError_impl(error, __FILE__, __LINE__);
+// impl to check the error and report the result
+void checkCLError_impl(cl_int error, std::string file, int line) {
   if (error != CL_SUCCESS) {
-    LOG_ERROR("OpenCL call failed with error ", getErrorString(error));
+    LOG_ERROR("OpenCL call failed with error ", getErrorString(error), " in ",
+              file, " at line ", line);
     std::exit(1);
   }
 }
@@ -163,6 +168,62 @@ std::string getErrorString(cl_int err) {
   }
   ostr << " (code: " << err << ")";
   return ostr.str();
+}
+
+cl_device_id getDeviceId(unsigned int platform, unsigned int device) {
+  cl_int _error;
+
+  cl_uint _platformIdCount;
+  cl_uint _deviceIdCount;
+  cl_uint _device;
+
+  std::vector<cl_device_id> _deviceIds;
+
+  // initialise OpenCL:
+  // get the number of platforms
+  _platformIdCount = 0;
+  _error = clGetPlatformIDs(0, nullptr, &_platformIdCount);
+  checkCLError(_error);
+
+  if (_platformIdCount == 0) {
+    LOG_ERROR("No OpenCL devices found!");
+    exit(1);
+  }
+
+  LOG_DEBUG_INFO("Found ", _platformIdCount, " platforms");
+
+  // make a vector of platform ids
+  std::vector<cl_platform_id> platformIds(_platformIdCount);
+  _error = clGetPlatformIDs(_platformIdCount, platformIds.data(), nullptr);
+  checkCLError(_error);
+
+  // get the number of devices from the platform
+  _deviceIdCount = 0;
+  _error = clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL, 0, nullptr,
+                          &_deviceIdCount);
+  checkCLError(_error);
+
+  LOG_DEBUG_INFO("Found ", _deviceIdCount, " devices on the chosen platform");
+
+  // get a list of devices from the platform
+  _deviceIds.resize(_deviceIdCount);
+  _error = clGetDeviceIDs(platformIds[platform], CL_DEVICE_TYPE_ALL,
+                          _deviceIdCount, _deviceIds.data(), nullptr);
+  checkCLError(_error);
+
+  return _deviceIds[device];
+}
+
+unsigned long deviceGetMaxAllocSize(unsigned int platform,
+                                    unsigned int device) {
+
+  cl_device_id device_id = getDeviceId(platform, device);
+  // perform the actual query
+  cl_ulong size;
+  LOG_DEBUG_INFO("Getting device max alloc size from device", device_id);
+  checkCLError(clGetDeviceInfo(device_id, CL_DEVICE_MAX_MEM_ALLOC_SIZE,
+                               sizeof(size), &size, NULL));
+  return size;
 }
 
 template <typename T>

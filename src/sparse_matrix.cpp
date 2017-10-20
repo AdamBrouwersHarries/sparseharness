@@ -7,8 +7,6 @@ template <typename T> SparseMatrix<T>::SparseMatrix(std::string filename) {
   load_from_file(filename);
 }
 
-// INITIALISERS
-
 template <typename T>
 void SparseMatrix<T>::load_from_file(std::string filename) {
   start_timer(load_from_file, SparseMatrix);
@@ -71,207 +69,345 @@ void SparseMatrix<T>::load_from_file(std::string filename) {
   }
 }
 
-// READERS
-
-template <typename T>
-SparseMatrix<T>::soa_ellpack_matrix<T>
-SparseMatrix<T>::specialise(T zero, bool pad_height, bool pad_width, bool rsa,
-                            int height_pad_val, int width_pad_val) {
-  start_timer(specialise, SparseMatrix);
+template <typename T> void SparseMatrix<T>::calculate_ellpack() {
+  if (ellpack_calculated) {
+    return;
+  } else {
+    ellpack_calculated = true;
+  }
+  start_timer(calculate_ellpack, sparse_matrix);
   // start off by doing a histogram sum of the values in the sparse matrix,
   // and (simultaneously) calculate the maximum row length (we might use this
   // when we're padding the width later)
-  std::vector<int> row_lengths(height(), 0);
-  int max_width = 0;
-  for (int i = 0; i < nz_entries.size(); i++) {
+  // std::vector<unsigned int> row_lengths(height(), 0);
+  row_lengths.resize(height(), 0);
+  // unsigned int max_width = 0;
+  for (unsigned int i = 0; i < nz_entries.size(); i++) {
     int y = std::get<1>(nz_entries[i]);
     row_lengths[y]++;
     if (row_lengths[y] > max_width) {
       max_width = row_lengths[y];
     }
   }
+  LOG_DEBUG("max width: ", max_width);
 
-  // pad out the max width to widthpad
-  max_width = max_width + (width_pad_val - (max_width % width_pad_val));
-
-  // build a set of vectors which we can write our values into
-  // begin by allocating a sparse matrix of the right height
-  SparseMatrix::soa_ellpack_matrix<T> soaellmatrix(
-      std::vector<std::vector<int>>(height(), std::vector<int>(0)),
-      std::vector<std::vector<T>>(height(), std::vector<T>(0)));
-
-  // now iterate over every row, and resize it correctly
+  // based on that, create a "standard" AOS ragged std::vector based structure
+  // to fill with values from the sparse matrix. Reserve the rows to the lengths
+  // we've just calculated with the histogram
+  // SparseMatrix::ellpack_matrix<T> ellpackMatrix(height(), ellpack_row<T>(0));
+  ellpackMatrix.resize(height(), ellpack_row<T>(0));
   for (int i = 0; i < height(); i++) {
-    int sz = pad_width ? max_width : row_lengths[i];
-    soaellmatrix.first[i].resize(sz, -1);
-    soaellmatrix.second[i].resize(sz, zero);
+    ellpackMatrix[i].reserve(row_lengths[i]);
   }
 
-  // finally, iterate over the values again, and insert them into the matrix
-  std::vector<int> ixs(height(), 0);
-  for (int i = 0; i < nz_entries.size(); i++) {
-    int y = std::get<1>(nz_entries[i]);
+  // fill the ellpackMatrix using standard push_back etc from the nz_entries
+  for (unsigned int i = 0; i < nz_entries.size(); i++) {
     int x = std::get<0>(nz_entries[i]);
-    int v = std::get<2>(nz_entries[i]);
-    int ix = ixs[y];
-    soaellmatrix.first[y][ix] = x;
-    soaellmatrix.second[y][ix] = v;
-    ixs[y]++;
-  }
-
-  // finally, sort each row. This will include a lot of copies :(
-  for (int i = 0; i < height(); i++) {
-    std::vector<std::pair<int, T>> tmp;
-    tmp.reserve(row_lengths[i]);
-    for (int j = 0; j < ixs[i]; j++) {
-      tmp[j].first = soaellmatrix.first[i][j];
-      tmp[j].second = soaellmatrix.second[i][j];
-    }
-    std::sort(tmp.begin(), tmp.end(),
-              [](std::pair<int, T> a, std::pair<int, T> b) {
-                return a.first < b.first;
-              });
-    for (int j = 0; j < ixs[i]; j++) {
-      soaellmatrix.first[i][j] = tmp[j].first;
-      soaellmatrix.second[i][j] = tmp[j].second;
-    }
-  }
-
-  return soaellmatrix;
-}
-
-template <typename T>
-SparseMatrix<T>::ellpack_matrix<T> SparseMatrix<T>::asELLPACK(void) {
-  start_timer(asELLPACK, SparseMatrix);
-  // allocate a sparse matrix of the right height
-  ellpack_matrix<T> ellmatrix(height(), ellpack_row<T>(0));
-  // iterate over the raw entries, and push them into the correct rows
-  // first, do a histogram sum over the elements to work out how
-  // long each row will be
-  std::vector<int> row_lengths(height(), 0);
-  for (int i = 0; i < nz_entries.size(); i++) {
-    row_lengths[std::get<1>(nz_entries[i])]++;
-  }
-  for (int i = 0; i < height(); i++) {
-    ellmatrix[i].reserve(row_lengths[i]);
-  }
-
-  for (auto entry : nz_entries) {
-    // y is entry._1 (right?)
-    int x = std::get<0>(entry);
-    int y = std::get<1>(entry);
-    int val = std::get<2>(entry);
+    int y = std::get<1>(nz_entries[i]);
+    int val = std::get<2>(nz_entries[i]);
     std::pair<int, T> r_entry(x, val);
-    ellmatrix[y].push_back(r_entry);
+    ellpackMatrix[y].push_back(r_entry);
   }
-  // sort the rows by the x value
-  for (auto row : ellmatrix) {
+
+  // sort each row by the x values
+  for (auto row : ellpackMatrix) {
     std::sort(row.begin(), row.end(),
               [](std::pair<int, T> a, std::pair<int, T> b) {
                 return a.first < b.first;
               });
   }
-  // return the matrix
-  return ellmatrix;
 }
 
 template <typename T>
-SparseMatrix<T>::soa_ellpack_matrix<T> SparseMatrix<T>::asSOAELLPACK(void) {
-  start_timer(asSOAELLPACK, SparseMatrix);
-  // allocate a sparse matrix of the right height
-  SparseMatrix::soa_ellpack_matrix<T> soaellmatrix(
-      std::vector<std::vector<int>>(height(), std::vector<int>(0)),
-      std::vector<std::vector<T>>(height(), std::vector<T>(0)));
+CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
+                                     T zero, bool pad_height, bool pad_width,
+                                     bool rsa, int height_pad_modulo,
+                                     int width_pad_modulo) {
+  start_timer(cl_encode, sparse_matrix);
+  // =========================================================================
+  // STEP ONE: CREATE AN ELLPACK MATRIX (AS SIMPLE AS POSSIBLE), WHICH
+  //           WE CAN ANALYSE TO ACTUALLY BUILD THE ENCODED ARGUMENTS
+  // =========================================================================
+  calculate_ellpack();
 
-  // build a zipped (AOS) ellpack matrix, and then unzip it
-  auto aosellmatrix = asELLPACK();
+  // typedef some useful sizes
+  typedef unsigned long byte_size;
+  typedef unsigned int value_size;
 
-  // traverse the zipped matrix and push it into our unzipped form
-  int row_idx = 0;
-  for (auto row : aosellmatrix) {
-    for (auto elem : row) {
-      soaellmatrix.first[row_idx].push_back(elem.first);
-      soaellmatrix.second[row_idx].push_back(elem.second);
+  // =========================================================================
+  // STEP TWO: CALCULATE THE SIZE OF OUR FINAL ENCODED MATRIX - THIS IS OUR
+  //           CHANCE TO BAIL OUT OF WE'RE GOING TO ALLOCATE TOO MUCH MEMORY
+  // =========================================================================
+  // -------------------------------------------------------------------------
+  // Step 2.1: Vertical padding, for "chunking" optimisations
+  // -------------------------------------------------------------------------
+  // calculate the actual height to start with
+  int concrete_height = height();
+  // extend the concrete_lengths array if we're padding vertically
+  if (pad_height) {
+    concrete_height = concrete_height + (height_pad_modulo -
+                                         (concrete_height % height_pad_modulo));
+  }
+  // and if we're RSA, add a row for the offsets
+  if (rsa) {
+    concrete_height = concrete_height + 1;
+  }
+  LOG_DEBUG("concrete height: ", concrete_height);
+  // now we have the height, create an array for the actual lengths, and copy
+  // the row lengths - copy them along one later if we're rsa
+  std::vector<value_size> concrete_lengths(concrete_height, 0);
+  std::copy(row_lengths.begin(), row_lengths.end(),
+            concrete_lengths.begin() + (rsa ? 1 : 0));
+
+  // -------------------------------------------------------------------------
+  // Step 2.2: Horizontal padding, for "splitting" optimisations
+  // -------------------------------------------------------------------------
+  // next, pad the sizes horizontally, with behavior dependent on whether
+  // we're in RSA or not
+  int regular_width = max_width;
+  if (rsa) {
+    // we just need to pad each width to the modulo
+    // TODO: IMPLEMENT WHEN WE NEED TO!
+  } else {
+    if (pad_width) {
+      regular_width =
+          max_width + (width_pad_modulo - (max_width % width_pad_modulo));
+      LOG_DEBUG("Padding to regular width: ", regular_width, " mod modulo: ",
+                regular_width % width_pad_modulo);
     }
-    row_idx++;
+    std::fill(concrete_lengths.begin(), concrete_lengths.end(), regular_width);
   }
-  return soaellmatrix;
+  LOG_DEBUG("regular width: ", regular_width);
+
+  // -------------------------------------------------------------------------
+  // Step 2.3: Header information, for "RSA" implementations
+  // -------------------------------------------------------------------------
+  // first, transform the concrete lengths into two lengths arrays that encode
+  // the concrete lengths in terms of the number of bytes, if we're generating
+  // for a runtime size array, also add on space for the lengths
+  std::vector<value_size> byte_lengths_indices(concrete_lengths);
+  std::vector<value_size> byte_lengths_values(concrete_lengths);
+  std::transform(byte_lengths_indices.begin(), byte_lengths_indices.end(),
+                 byte_lengths_indices.begin(),
+                 [rsa](value_size l) -> value_size {
+                   return (l * sizeof(int)) + (rsa ? 2 * sizeof(int) : 0);
+                 });
+  std::transform(byte_lengths_values.begin(), byte_lengths_values.end(),
+                 byte_lengths_values.begin(),
+                 [rsa](value_size l) -> value_size {
+                   return (l * sizeof(T)) + (rsa ? 2 * sizeof(int) : 0);
+                 });
+  // set the offset sizes if we're RSA, and append size for the offsets
+  // essentially, correct for whatever we just did :P
+  if (rsa) {
+    int offset_array_size = (concrete_height - 1) * sizeof(int);
+    byte_lengths_indices[0] = offset_array_size;
+    byte_lengths_values[0] = offset_array_size;
+  }
+  // -------------------------------------------------------------------------
+  // Step 2.4: Calculate the overall sizes.
+  // -------------------------------------------------------------------------
+  // the final sizes we'll need.
+  // we can also set the matrix sizes here, as we know them!
+  int cl_height = -1;
+  int cl_width = -1;
+  if (rsa) {
+    cl_height = concrete_height - 1;
+  } else {
+    cl_height = concrete_height;
+    cl_width = regular_width;
+  }
+
+  byte_size ixs_arr_size = std::accumulate(
+      byte_lengths_indices.begin(), byte_lengths_indices.end(), (byte_size)0);
+  byte_size vals_arr_size = std::accumulate(
+      byte_lengths_values.begin(), byte_lengths_values.end(), (byte_size)0);
+
+  LOG_DEBUG("ixs_arr_size: (GB) - ",
+            (double)ixs_arr_size / (double)(1024 * 1024 * 1024));
+  LOG_DEBUG("ixs_arr_size: (GB) - ",
+            (double)vals_arr_size / (double)(1024 * 1024 * 1024));
+
+  if (ixs_arr_size > device_max_alloc_bytes) {
+    throw ixs_arr_size;
+  }
+
+  if (!rsa && !pad_height &&
+      ((regular_width * concrete_height * sizeof(int)) != ixs_arr_size)) {
+    LOG_ERROR("Something has gone catastrophically wrong building the regular "
+              "size! Expected array size to be ",
+              (regular_width * concrete_height * sizeof(int)), " is actually ",
+              ixs_arr_size);
+    throw ixs_arr_size;
+  }
+  // =========================================================================
+  // STEP THREE: CREATE THE TWO ARRAYS, AND FILL WITH MATRIX INFORMATION
+  // =========================================================================
+  // Create the matrix structure that we're going to fill with data
+  CL_matrix matrix(ixs_arr_size, vals_arr_size, cl_width, cl_height);
+
+  // fill the matrix with garbage
+  std::fill(matrix.indices.begin(), matrix.indices.end(), 0);
+  std::fill(matrix.values.begin(), matrix.values.end(), 0);
+
+  // -------------------------------------------------------------------------
+  // Step 3.1 build offset information and a lambda to quickly access it
+  //          for each array
+  // -------------------------------------------------------------------------
+  // Perform a scan/inclusive scan over each of the data arrays
+  // to figure out the offsets. This shouldn't change whether we're in rsa
+  // or not - as it's a concrete piece of information.
+  std::vector<byte_size> indices_offsets(concrete_height, 0);
+  std::vector<byte_size> values_offsets(concrete_height, 0);
+  std::partial_sum(byte_lengths_indices.begin(), byte_lengths_indices.end() - 1,
+                   indices_offsets.begin() + 1);
+  std::partial_sum(byte_lengths_values.begin(), byte_lengths_values.end() - 1,
+                   values_offsets.begin() + 1);
+
+  // std::cout << "indices offsets: [";
+  // for (auto i : indices_offsets) {
+  //   std::cout << i << ",";
+  // }
+  // std::cout << "]\n";
+
+  // std::cout << "value offsets: [";
+  // for (auto i : values_offsets) {
+  //   std::cout << i << ",";
+  // }
+  // std::cout << "]\n";
+
+  if (vals_arr_size % sizeof(T) != 0) {
+    LOG_DEBUG("Potential alignment issue writing to vals buffer!");
+  } else {
+    LOG_DEBUG("Vals arr size ", vals_arr_size, " aligns with sizeof(T), ",
+              sizeof(T));
+  }
+
+  // -------------------------------------------------------------------------
+  // Step 3.1 use the above information to actually input data into the array!
+  // -------------------------------------------------------------------------
+  // if we're RSA, write the offset information, and the row sizes + capacities
+  if (rsa) {
+    LOG_DEBUG("Writing RSA offsets and lengths");
+    // take a pointer to each array,as an integer
+    int *ixptr = reinterpret_cast<int *>(matrix.indices.data());
+    int *valptr = reinterpret_cast<int *>(matrix.values.data());
+    for (int i = 0; i < concrete_height - 1; i++) {
+      // write an offset to ixptr and valptr to the header
+      ixptr[i] = static_cast<int>(indices_offsets[i + 1]);
+      valptr[i] = static_cast<int>(values_offsets[i + 1]);
+      // write size and capacity information to the headers
+      {
+        // write the index
+        byte_size row_offset = indices_offsets[i + 1];
+        // std::cout << "@ " << row_offset << "\n";
+        int *cixptr =
+            reinterpret_cast<int *>(matrix.indices.data() + row_offset);
+        int row_length =
+            (byte_lengths_indices[i + 1] - (2 * sizeof(int))) / sizeof(int);
+        cixptr[0] = row_length;
+        cixptr[1] = row_length;
+      }
+      {
+        // write the value
+        byte_size row_offset = values_offsets[i + 1];
+        // std::cout << "@ " << row_offset << "\n";
+        int *cvalptr =
+            reinterpret_cast<int *>(matrix.values.data() + row_offset);
+        int row_length =
+            (byte_lengths_values[i + 1] - (2 * sizeof(int))) / sizeof(int);
+        cvalptr[0] = row_length;
+        cvalptr[1] = row_length;
+      }
+      // write_ix(0, i + 1, byte_lengths_indices[i + 1]);
+      // write_ix(1, i + 1, byte_lengths_indices[i + 1]);
+      // // todo - replace with proper solution!
+      // write_val(0, i + 1, byte_lengths_values[i + 1]);
+      // write_val(1, i + 1, byte_lengths_values[i + 1]);
+    }
+
+  } else {
+    LOG_DEBUG("Filling with -1 and zero");
+    // if not, fill the ixs array with -1, and the vals array with 0
+    int *ixptr = reinterpret_cast<int *>(matrix.indices.data());
+    T *valptr = reinterpret_cast<T *>(matrix.values.data());
+    for (byte_size i = 0; i < ixs_arr_size / sizeof(int); ++i) {
+      *(ixptr + i) = -1;
+    }
+    for (byte_size i = 0; i < vals_arr_size / sizeof(T); ++i) {
+      *(valptr + i) = zero;
+    }
+  }
+  // actually write the matrix data (finally!)
+  LOG_DEBUG("Writing array values");
+  bool ixs_out_of_bounds = false;
+  bool vals_out_of_bounds = false;
+
+  // iterate over rows
+  for (value_size y = 0; y < ellpackMatrix.size(); y++) {
+    // get the row, and iterate over the values
+    std::vector<std::pair<int, T>> &row = (ellpackMatrix[y]);
+    for (value_size i = 0; i < row.size(); i++) {
+      std::pair<int, T> t = row[i];
+      {
+        // write the index
+        byte_size row_offset = indices_offsets[rsa ? y + 1 : y];
+        byte_size column_offset =
+            (sizeof(int) * i) + (rsa ? sizeof(int) * 2 : 0);
+        byte_size offset = row_offset + column_offset;
+
+        char *cixptr = matrix.indices.data() + offset;
+        *reinterpret_cast<int *>(cixptr) = t.first;
+      }
+      {
+        // start off with our offset at zero
+        byte_size row_offset = values_offsets[rsa ? y + 1 : y];
+        byte_size column_offset = (sizeof(T) * i) + (rsa ? sizeof(int) * 2 : 0);
+        byte_size offset = row_offset + column_offset;
+        if (offset > ixs_arr_size) {
+          vals_out_of_bounds = true;
+        }
+        // NEVER EVER EVER EVER DO THIS IN REAL LIFE
+        char *cvalptr = matrix.values.data() + offset;
+        *(reinterpret_cast<T *>(cvalptr)) = t.second;
+      }
+    }
+  }
+
+  if (ixs_out_of_bounds) {
+    LOG_WARNING("At least one index was written out of bounds!");
+  }
+  if (vals_out_of_bounds) {
+    LOG_WARNING("At least one value was written out of bounds!");
+  }
+
+  if (rsa) {
+    print_rsa_matrix<int>(matrix.indices, indices_offsets,
+                          byte_lengths_indices.back());
+    print_rsa_matrix<T>(matrix.values, values_offsets,
+                        byte_lengths_values.back());
+  } else {
+    printc_vec<int>(matrix.indices, matrix.indices.size());
+    printc_vec<T>(matrix.values, matrix.values.size());
+  }
+
+  LOG_DEBUG("Done encoding");
+  return matrix;
 }
 
 template <typename T>
-SparseMatrix<T>::soa_ellpack_matrix<T>
-SparseMatrix<T>::asPaddedSOAELLPACK(T zero, int modulo) {
-  start_timer(asPaddedSOAELLPACK, SparseMatrix);
-  // get an unpadded soaell matrix
-  auto soaellmatrix = asSOAELLPACK();
-  // get our padlength - it's the maximum row length
-  auto max_length = getMaxRowEntries();
-  // and pad that out
-  auto padded_length = max_length + (modulo - (max_length % modulo));
-  std::cout << "Max length: " << max_length << ", padded (by " << modulo
-            << "): " << padded_length << ENDL;
-  // iterate over the rows and pad them out
-  for (auto &idx_row : soaellmatrix.first) {
-    idx_row.resize(padded_length, -1);
+SparseMatrix<T>::ellpack_matrix<T> &SparseMatrix<T>::ellpack_encode() {
+  if (!ellpack_calculated) {
+    calculate_ellpack();
   }
-  for (auto &elem_row : soaellmatrix.second) {
-    elem_row.resize(padded_length, zero);
-  }
-  // finally, return our resized matrix
-  return soaellmatrix;
+  return ellpackMatrix;
 }
 
 template <typename T> int SparseMatrix<T>::width() { return cols; }
 
-template <typename T> int SparseMatrix<T>::height() { return rows; }
+template <typename T> inline int SparseMatrix<T>::height() { return rows; }
 
 template <typename T> int SparseMatrix<T>::nonZeros() { return nonz; }
-
-template <typename T>
-std::vector<std::tuple<int, int, T>> SparseMatrix<T>::getEntries() {
-  return nz_entries;
-}
-
-template <typename T> std::vector<int> SparseMatrix<T>::getRowLengths() {
-  if (!(row_lengths.size() > 0)) {
-    std::cerr << "Building row entries for first time." << ENDL;
-    std::vector<int> entries(rows, 0);
-    int y;
-    for (unsigned int i = 0; i < nz_entries.size(); i++) {
-      // get the x/y entries of this coordinate
-      y = std::get<1>(nz_entries[i]);
-      // increment the entry count for this row
-      entries[y]++;
-    }
-    row_lengths = entries;
-  }
-  return row_lengths;
-}
-
-template <typename T> int SparseMatrix<T>::getMaxRowEntries() {
-  if (max_row_entries == -1) {
-    auto entries = getRowLengths();
-    max_row_entries = *std::max_element(entries.begin(), entries.end());
-  }
-  return max_row_entries;
-}
-
-template <typename T> int SparseMatrix<T>::getMinRowEntries() {
-  if (min_row_entries == -1) {
-    auto entries = getRowLengths();
-    min_row_entries = *std::min_element(entries.begin(), entries.end());
-  }
-  return min_row_entries;
-}
-
-template <typename T> int SparseMatrix<T>::getMeanRowEntries() {
-  if (mean_row_entries == -1) {
-    auto entries = getRowLengths();
-    mean_row_entries =
-        std::accumulate(entries.begin(), entries.end(), 0) / entries.size();
-  }
-  return mean_row_entries;
-}
 
 template class SparseMatrix<float>;
 template class SparseMatrix<int>;
