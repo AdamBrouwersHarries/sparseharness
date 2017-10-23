@@ -41,11 +41,10 @@
 
 class HarnessBFS : public IterativeHarness<std::vector<SqlStat>, int> {
 public:
-  HarnessBFS(std::string &kernel_source, unsigned int platform,
-             unsigned int device, ArgContainer<int> args, unsigned int trials,
-             unsigned int timeout, double delta)
-      : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
-                         delta) {
+  HarnessBFS(std::string &kernel_source, CLDeviceManager cldm,
+             ArgContainer<int> args, unsigned int trials, unsigned int timeout,
+             double delta)
+      : IterativeHarness(kernel_source, cldm, args, trials, timeout, delta) {
     allocateBuffers();
   }
 
@@ -209,12 +208,15 @@ int main(int argc, char *argv[]) {
   InitialDistancesGeneratorY<int> inital_distances_y(0);
 
   // get some arguments
-  auto args = executorEncodeMatrix(kernel, matrix, 0, inital_distances_x,
-                                   inital_distances_y, 1, 0);
+  unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
 
-  HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
-                     args, opt_trials->get(), opt_timeout->get(),
-                     opt_float_delta->get());
+  auto args =
+      executorEncodeMatrix(max_alloc, kernel, matrix, 0, inital_distances_x,
+                           inital_distances_y, 1, 0);
+
+  CLDeviceManager cldm(opt_platform->get(), opt_device->get());
+  HarnessBFS harness(kernel.getSource(), cldm, args, opt_trials->get(),
+                     opt_timeout->get(), opt_float_delta->get());
 
   const std::string &kernel_name = kernel.getName();
   const std::string &host_name = hostname;

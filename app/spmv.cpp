@@ -31,6 +31,7 @@
 #include "run.h"
 #include "sparse_matrix.h"
 #include "vector_generator.h"
+#include "spmv_gold.h"
 
 // [OpenCL]
 #ifdef __APPLE__
@@ -43,11 +44,12 @@ class HarnessSPMV : public Harness<SqlStat, float> {
 public:
   HarnessSPMV(std::string &kernel_source, unsigned int platform,
               unsigned int device, ArgContainer<float> args,
-              unsigned int trials, unsigned int timeout, double delta)
+              unsigned int trials, std::chrono::milliseconds timeout,
+              double delta)
       : Harness(kernel_source, platform, device, args, trials, timeout, delta) {
     allocateBuffers();
   }
-  std::vector<SqlStat> benchmark(Run run) {
+  std::vector<SqlStat> benchmark(Run run, std::vector<float> &gold) {
 
     start_timer(benchmark, HarnessSPMV);
 
@@ -59,24 +61,24 @@ public:
       // get pointers to the input + output mem args
       // cl_mem *input_mem_ptr = &(_mem_manager._x_vect);
       // cl_mem *output_mem_ptr = &(_mem_manager._output);
-      LOG_DEBUG_INFO("Host vectors before");
+      // LOG_DEBUG_INFO("Host vectors before");
       printCharVector<float>("Input ", _mem_manager._input_host_buffer);
       printCharVector<float>("Output ", _mem_manager._output_host_buffer);
 
       resetTempBuffers();
       // run the kernel
       // get the runtime and add it to the list of times
-      auto stat = executeRun(run, t);
-      runtimes.push_back(executeRun(run, t));
+      auto stat = executeRun(run, t, gold);
+      runtimes.push_back(stat);
       // check to see if we've breached the timeout
-      // if (stat.getTime() > _timeout) {
-      //   break;
-      // }
+      if (stat.getTime() > _timeout) {
+        break;
+      }
+      // if not, see if we can reduce the timeout (if we have a
+      // particularly good parameter set, for example)
+      lowerTimeout(stat.getTime());
 
-      // copy the output back down
-      readFromGlobalArg(_mem_manager._output_host_buffer, _mem_manager._output);
-
-      LOG_DEBUG_INFO("Host vectors after");
+      // LOG_DEBUG_INFO("Host vectors after");
       printCharVector<float>("Input ", _mem_manager._input_host_buffer);
       printCharVector<float>("Output ", _mem_manager._output_host_buffer);
 
@@ -89,33 +91,57 @@ public:
     std::chrono::nanoseconds median_time =
         runtimes[runtimes.size() / 2].getTime();
 
-    runtimes.push_back(SqlStat(median_time, NOT_CHECKED, run.global1,
+    runtimes.push_back(SqlStat(median_time, STATISTIC_VALUE, run.global1,
                                run.local1, MEDIAN_RESULT));
 
     return runtimes;
   }
 
 private:
-  virtual SqlStat executeRun(Run run, unsigned int trial) {
+  virtual SqlStat executeRun(Run run, unsigned int trial,
+                             std::vector<float> &gold) {
     // get the runtime from a single kernel run
     std::chrono::nanoseconds time = executeKernel(run);
-    return SqlStat(time, NOT_CHECKED, run.global1, run.local1, RAW_RESULT);
+
+    // copy the output back down
+    readFromGlobalArg(_mem_manager._output_host_buffer, _mem_manager._output);
+    auto correctness = check_result(gold);
+    return SqlStat(time, correctness, run.global1, run.local1, RAW_RESULT);
   }
 };
 
 int main(int argc, char *argv[]) {
   COMMON_MAIN_PREAMBLE(float)
 
-  // build vector generators
-  ConstXVectorGenerator<float> onegen(1.0f);
-  ConstYVectorGenerator<float> zerogen(0);
+  // build non-matrix args
+  ConstXVectorGenerator<float> x(1.0f);
+  ConstYVectorGenerator<float> y(0);
+  float alpha = 1.0f;
+  float beta = 0.0f;
 
   // get some arguments
-  auto args =
-      executorEncodeMatrix(kernel, matrix, 0.0f, onegen, zerogen, 1.0f, 0.0f);
+  unsigned long max_alloc =
+      512 * 1024 * 1024; // 0.5 GB - a conservative estimate
+  max_alloc = deviceGetMaxAllocSize(opt_platform->get(), opt_device->get());
+  std::cout << "Got max alloc: " << max_alloc << "\n";
+
+  ArgContainer<float> args;
+  try {
+    args = executorEncodeMatrix(max_alloc, kernel, matrix, 0.0f, x, y, alpha,
+                                beta);
+  } catch (unsigned long attempted_alloc_size) {
+    LOG_ERROR("Attempted to allocate: ", attempted_alloc_size,
+              " bytes, but this platform's max is ", max_alloc);
+  }
+
   HarnessSPMV harness(kernel.getSource(), opt_platform->get(),
                       opt_device->get(), args, opt_trials->get(),
-                      opt_timeout->get(), opt_float_delta->get());
+                      std::chrono::milliseconds(opt_timeout->get()),
+                      opt_float_delta->get());
+
+  // calculate the gold value (it's expensive, so do it after
+  // the things that might fail)
+  auto gold = Gold<float>::spmv(matrix, x, y, alpha, beta, 0.0f);
 
   const std::string &kernel_name = kernel.getName();
   const std::string &host_name = hostname;
@@ -125,7 +151,7 @@ int main(int argc, char *argv[]) {
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<SqlStat> runtimes = harness.benchmark(run);
+    std::vector<SqlStat> runtimes = harness.benchmark(run, gold);
     std::cout << "runtimes: [";
 
     // todo: Get the best runtime, and use that to update the "timeout" value
