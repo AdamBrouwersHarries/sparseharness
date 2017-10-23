@@ -67,6 +67,7 @@ private:
   // private initialisers
   void load_from_file(std::string filename);
   void calculate_ellpack();
+  void calculate_transposed_sum();
 
   // tuples are: x, y, value
   // various members used to load from a file
@@ -78,6 +79,7 @@ private:
   // ellpack data
   bool ellpack_calculated = false;
   std::vector<unsigned int> row_lengths;
+  std::vector<EType> column_sums;
   unsigned int max_width = 0;
   SparseMatrix::ellpack_matrix<EType> ellpackMatrix;
 
