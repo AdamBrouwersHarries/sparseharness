@@ -8,7 +8,7 @@ table=$2
 
 
 # make a temporary folder for the results
-brdir=$(basename $resdir)
+bdir=$(basename $resdir)
 tdir="/tmp/sparseharness/$bdir"
 echo "Making temp directory: $tdir"
 mkdir -p $tdir
