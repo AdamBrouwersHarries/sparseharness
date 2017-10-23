@@ -10,6 +10,7 @@ table=$2
 # make a temporary folder for the results
 brdir=$(basename $resdir)
 tdir="/tmp/scratchharness/$bdir"
+echo "Making temp directory: $tdir"
 mkdir -p $tdir
 
 # grep the results from the folder recursively, 
