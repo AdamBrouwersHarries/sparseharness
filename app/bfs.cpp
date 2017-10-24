@@ -39,23 +39,28 @@
 #include "CL/cl.h"
 #endif
 
-class HarnessBFS : public IterativeHarness<std::vector<SqlStat>, int> {
+typedef int SemiRingType;
+
+class HarnessBFS : public IterativeHarness<std::vector<SqlStat>, SemiRingType> {
 public:
-  HarnessBFS(std::string &kernel_source, CLDeviceManager cldm,
-             ArgContainer<int> args, unsigned int trials, unsigned int timeout,
+  HarnessBFS(std::string &kernel_source, unsigned int platform,
+             unsigned int device, ArgContainer<SemiRingType> args,
+             unsigned int trials, std::chrono::milliseconds timeout,
              double delta)
-      : IterativeHarness(kernel_source, cldm, args, trials, timeout, delta) {
+      : IterativeHarness(kernel_source, platform, device, args, trials, timeout,
+                         delta) {
     allocateBuffers();
   }
 
-  virtual std::vector<std::vector<SqlStat>> benchmark(Run run) {
+  virtual std::vector<std::vector<SqlStat>>
+  benchmark(Run run, std::vector<SemiRingType> &gold) {
     start_timer(benchmark, HarnessBFS);
 
     // run the kernel!
     std::vector<std::vector<SqlStat>> runtimes;
     for (unsigned int t = 0; t < _trials; t++) {
       start_timer(benchmark_iteration, HarnessBFS);
-      std::vector<SqlStat> run_runtimes = executeRun(run, t);
+      std::vector<SqlStat> run_runtimes = executeRun(run, t, gold);
 
       // sum the runtimes, and median it and report that
       // collect the median of the runtimes
@@ -86,7 +91,8 @@ public:
   }
 
 private:
-  std::vector<SqlStat> executeRun(Run run, unsigned int trial) {
+  std::vector<SqlStat> executeRun(Run run, unsigned int trial,
+                                  std::vector<SemiRingType> &gold) {
     start_timer(executeRun, HarnessBFS);
     std::vector<SqlStat> runtimes;
 
@@ -175,7 +181,7 @@ class InitialDistancesGeneratorX : public XVectorGenerator<T> {
 public:
   InitialDistancesGeneratorX(T constv) : value(constv) {}
 
-  virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) {
+  virtual T get(int ix) {
     if (ix == 0) {
       return static_cast<T>(1);
     } else {
@@ -191,7 +197,7 @@ class InitialDistancesGeneratorY : public YVectorGenerator<T> {
 public:
   InitialDistancesGeneratorY(T constv) : value(constv) {}
 
-  virtual T generateValue(int ix, SparseMatrix<T> &sm, KernelConfig<T> &kc) {
+  virtual T get(int ix) {
     if (ix == 0) {
       return static_cast<T>(1);
     } else {
@@ -201,22 +207,35 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  COMMON_MAIN_PREAMBLE(int)
+  COMMON_MAIN_PREAMBLE(SemiRingType)
 
-  // build vector generators
-  InitialDistancesGeneratorX<int> inital_distances_x(0);
-  InitialDistancesGeneratorY<int> inital_distances_y(0);
+  // build non-matrix args
+  InitialDistancesGeneratorX<SemiRingType> x(0);
+  InitialDistancesGeneratorY<SemiRingType> y(0);
+  SemiRingType alpha = 1;
+  SemiRingType beta = 0;
 
-  // get some arguments
-  unsigned int max_alloc = 1 * 1024 * 1024 * 1024; // 1GB
+  unsigned long max_alloc =
+      512 * 1024 * 1024; // 0.5 GB - a conservative estimate
 
-  auto args =
-      executorEncodeMatrix(max_alloc, kernel, matrix, 0, inital_distances_x,
-                           inital_distances_y, 1, 0);
+  max_alloc = deviceGetMaxAllocSize(opt_platform->get(), opt_device->get());
+  std::cout << "Got max alloc: " << max_alloc << "\n";
 
-  CLDeviceManager cldm(opt_platform->get(), opt_device->get());
-  HarnessBFS harness(kernel.getSource(), cldm, args, opt_trials->get(),
-                     opt_timeout->get(), opt_float_delta->get());
+  ArgContainer<SemiRingType> args;
+  try {
+    args =
+        executorEncodeMatrix(max_alloc, kernel, matrix, 0, x, y, alpha, beta);
+  } catch (unsigned long attempted_alloc_size) {
+    LOG_ERROR("Attempted to allocate: ", attempted_alloc_size,
+              " bytes, but this platform's max is ", max_alloc);
+  }
+
+  HarnessBFS harness(kernel.getSource(), opt_platform->get(), opt_device->get(),
+                     args, opt_trials->get(),
+                     std::chrono::milliseconds(opt_timeout->get()),
+                     opt_float_delta->get());
+
+  std::vector<SemiRingType> gold(0, 0);
 
   const std::string &kernel_name = kernel.getName();
   const std::string &host_name = hostname;
@@ -226,7 +245,7 @@ int main(int argc, char *argv[]) {
   for (auto run : runs) {
     start_timer(run_iteration, main);
     std::cout << "Benchmarking run: " << run << ENDL;
-    std::vector<std::vector<SqlStat>> runtimes = harness.benchmark(run);
+    std::vector<std::vector<SqlStat>> runtimes = harness.benchmark(run, gold);
     for (auto statList : runtimes) {
       std::string command =
           SqlStat::makeSqlCommand(statList, kernel_name, host_name, device_name,

@@ -124,7 +124,7 @@ template <typename T> void SparseMatrix<T>::calculate_transposed_sum() {
   column_sums.resize(width(), 0);
   for (unsigned int i = 0; i < nz_entries.size(); i++) {
     int x = std::get<0>(nz_entries[i]);
-    column_sums[x] += std::get<2>(nz_entries[i]);
+    column_sums[x] = column_sums[x] + std::get<2>(nz_entries[i]);
   }
 }
 
