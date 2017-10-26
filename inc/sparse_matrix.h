@@ -3,6 +3,7 @@
 
 #include "Logger.h"
 #include "mmio.h"
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
@@ -52,6 +53,9 @@ public:
                       int height_pad_modulo, int width_pad_modulo);
 
   SparseMatrix::ellpack_matrix<EType> &ellpack_encode(void);
+
+  void pagerank_normalise(float dampingFactor, EType zero);
+  void scc_normalise();
 
   // template ellpack_matrix<float> asFloatELLPACK();
   // ellpack_matrix<double> asDoubleELLPACK();

@@ -109,8 +109,8 @@ private:
     do {
       LOG_DEBUG_INFO("Iteration: ", iteration);
       LOG_DEBUG_INFO("Host vectors before");
-      printCharVector<int>("Input ", *input_host_ptr);
-      printCharVector<int>("Output ", *output_host_ptr);
+      printCharVector<SemiRingType>("Input ", *input_host_ptr);
+      printCharVector<SemiRingType>("Output ", *output_host_ptr);
 
       // cache the output to check that it's actually changed
       std::copy(output_host_ptr->begin(), output_host_ptr->end(),
@@ -126,8 +126,8 @@ private:
       readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
 
       LOG_DEBUG_INFO("Host vectors after");
-      printCharVector<int>("Input ", *input_host_ptr);
-      printCharVector<int>("Output ", *output_host_ptr);
+      printCharVector<SemiRingType>("Input ", *input_host_ptr);
+      printCharVector<SemiRingType>("Output ", *output_host_ptr);
 
       assertBuffersNotEqual(*output_host_ptr, _mem_manager._temp_out_buffer);
 
@@ -156,10 +156,10 @@ private:
     start_timer(should_terminate_iteration, HarnessBFS);
 
     // reinterpret the args as double pointers, and get the lengths
-    auto input_ptr = reinterpret_cast<int *>(input.data());
-    auto output_ptr = reinterpret_cast<int *>(output.data());
-    auto input_length = input.size() / sizeof(int);
-    auto output_length = output.size() / sizeof(int);
+    auto input_ptr = reinterpret_cast<SemiRingType *>(input.data());
+    auto output_ptr = reinterpret_cast<SemiRingType *>(output.data());
+    auto input_length = input.size() / sizeof(SemiRingType);
+    auto output_length = output.size() / sizeof(SemiRingType);
     // perform a comparison across the two of them, based on pointers
     bool equal = true;
     for (unsigned int i = 0;

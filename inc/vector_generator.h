@@ -45,6 +45,8 @@ public:
   virtual T get(int ix) { return value; }
 };
 
+// a custom constant y vector generator, which (given a value) will generate a
+// vector filled with that value
 template <typename T> class ConstYVectorGenerator : public YVectorGenerator<T> {
   T value;
 

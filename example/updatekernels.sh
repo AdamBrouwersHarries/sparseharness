@@ -20,7 +20,7 @@ cp -f $d/awrg-alcl-alcl-edp-split-8.json kernel4.json
 cp -f $d/glb-sdp.json kernel5.json
 cp -f $d/glb-sdp-rsa.json kernel6.json
 
-algorithms=( sssp spmv bfs pr)
+algorithms=( sssp spmv bfs pr scc )
 for alg in "${algorithms[@]}"
 do 
 	echo "Copying algorithm: $alg"

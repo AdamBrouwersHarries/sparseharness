@@ -175,7 +175,6 @@ cl_device_id getDeviceId(unsigned int platform, unsigned int device) {
 
   cl_uint _platformIdCount;
   cl_uint _deviceIdCount;
-  cl_uint _device;
 
   std::vector<cl_device_id> _deviceIds;
 

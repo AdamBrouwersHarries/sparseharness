@@ -5,7 +5,7 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/sssp_harness
 # A kernel to run with the harness
-kernel=$projroot/example/sssp/glb-sdp.json
+kernel=$projroot/example/sssp/kernel5.json
 # The matrix to process
 matrix=$projroot/example/matrix3.mtx
 # The run parameters - i.e. local and global sizes
