@@ -1,42 +1,42 @@
 {
   "name" : "glb-sdp-rsa",
-  "source" : "#ifndef Tuple2_int_float_DEFINED\n#define Tuple2_int_float_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  float _1;\n} Tuple2_int_float;\n#endif\n\nfloat clmin(float a, float b){\n  { return fabs(a) < fabs(b) ? fabs(a) : fabs(b); }\n}\nfloat absadd(float a, float b){\n  { return fabs(a) + fabs(b); }\n}\nfloat doubleMultiplyAdd(float dpRes, float alpha, float rowIdxPair2, float beta){\n  \n{\n  float a = fabs(dpRes) + fabs(alpha);\n  float b = fabs(rowIdxPair2) + fabs(beta);\n  return fabs(a) < fabs(b) ? fabs(a) : fabs(b);\n}\n    \n}\nfloat id(float x){\n  { return x; }\n}\nkernel void KERNEL(const global int* restrict v__59295, const global float* restrict v__59296, const global float* restrict v__59297, const global float* restrict v__59298, float v__59299, float v__59300, global float* v__59314, global float* v__59313, int v_MHeight_2, int v_MWidthC_1){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  float v__59302; \n  float v__59305; \n  /* Private Memory */\n  float v__59307; \n  float v__59309; \n  for (int v_gl_id_59291 = get_global_id(0); v_gl_id_59291 < v_MHeight_2; v_gl_id_59291 = (v_gl_id_59291 + get_global_size(0))) {\n    float v_tmp_59339 = 3.4028235E38f; \n    v__59302 = v_tmp_59339; \n    /* reduce_seq */\n    int v_stop_59340 = min(v__59295[(1 + (v__59295[v_gl_id_59291] / 4))], ((global int*)(v__59296 + (((global int*)(v__59296))[v_gl_id_59291] / 4)))[1]); \n    for (int v_i_59292 = 0; v_i_59292 < v_stop_59340; v_i_59292 = (1 + v_i_59292)) {\n      float v_tmp_59348 = 3.4028235E38f; \n      v__59305 = v_tmp_59348; \n      int v_index_59350 = v__59295[(2 + v_i_59292 + (v__59295[v_gl_id_59291] / 4))]; \n      if (v_index_59350 < 0) {\n        v__59307 = v__59305; \n      } else {\n        if (v_index_59350 >= v_MWidthC_1) {\n          v__59307 = v__59305; \n        } else {\n          v__59307 = v__59297[v_index_59350]; \n        }\n      }\n      v__59309 = absadd(v__59296[(2 + v_i_59292 + (((global int*)(v__59296))[v_gl_id_59291] / 4))], v__59307); \n      v__59302 = clmin(v__59302, v__59309); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_59293 = 0; \n      v__59313[v_gl_id_59291] = doubleMultiplyAdd(v__59302, v__59299, v__59298[v_gl_id_59291], v__59300); \n    }\n    /* end map_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_59294 = 0; \n      v__59314[v_gl_id_59291] = id(v__59313[v_gl_id_59291]); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
+  "source" : "#ifndef Tuple2_int_float_DEFINED\n#define Tuple2_int_float_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  float _1;\n} Tuple2_int_float;\n#endif\n\nfloat clmin(float a, float b){\n  { return fabs(a) < fabs(b) ? fabs(a) : fabs(b); }\n}\nfloat absadd(float a, float b){\n  { return fabs(a) + fabs(b); }\n}\nfloat doubleMultiplyAdd(float dpRes, float alpha, float rowIdxPair2, float beta){\n  \n{\n  float a = fabs(dpRes) + fabs(alpha);\n  float b = fabs(rowIdxPair2) + fabs(beta);\n  return fabs(a) < fabs(b) ? fabs(a) : fabs(b);\n}\n    \n}\nfloat id(float x){\n  { return x; }\n}\nkernel void KERNEL(const global int* restrict v__74835, const global float* restrict v__74836, const global float* restrict v__74837, const global float* restrict v__74838, float v__74839, float v__74840, global float* v__74854, global float* v__74853, int v_MHeight_2, int v_MWidthC_1){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  float v__74842; \n  float v__74845; \n  /* Private Memory */\n  float v__74847; \n  float v__74849; \n  for (int v_gl_id_74831 = get_global_id(0); v_gl_id_74831 < v_MHeight_2; v_gl_id_74831 = (v_gl_id_74831 + get_global_size(0))) {\n    float v_tmp_74879 = 3.4028235E38f; \n    v__74842 = v_tmp_74879; \n    /* reduce_seq */\n    int v_stop_74880 = min(v__74835[(1 + (v__74835[v_gl_id_74831] / 4))], ((global int*)(v__74836 + (((global int*)(v__74836))[v_gl_id_74831] / 4)))[1]); \n    for (int v_i_74832 = 0; v_i_74832 < v_stop_74880; v_i_74832 = (1 + v_i_74832)) {\n      float v_tmp_74888 = 3.4028235E38f; \n      v__74845 = v_tmp_74888; \n      int v_index_74890 = v__74835[(2 + v_i_74832 + (v__74835[v_gl_id_74831] / 4))]; \n      if (v_index_74890 < 0) {\n        v__74847 = v__74845; \n      } else {\n        if (v_index_74890 >= v_MWidthC_1) {\n          v__74847 = v__74845; \n        } else {\n          v__74847 = v__74837[v_index_74890]; \n        }\n      }\n      v__74849 = absadd(v__74836[(2 + v_i_74832 + (((global int*)(v__74836))[v_gl_id_74831] / 4))], v__74847); \n      v__74842 = clmin(v__74842, v__74849); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_74833 = 0; \n      v__74853[v_gl_id_74831] = doubleMultiplyAdd(v__74842, v__74839, v__74838[v_gl_id_74831], v__74840); \n    }\n    /* end map_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_74834 = 0; \n      v__74854[v_gl_id_74831] = id(v__74853[v_gl_id_74831]); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
   "properties" : {
     "outerMap" : "sglb",
     "arrayType" : "ragged"
   },
   "inputArgs" : [ {
-    "variable" : "v__59295",
+    "variable" : "v__74835",
     "addressSpace" : "global",
     "size" : "?"
   }, {
-    "variable" : "v__59296",
+    "variable" : "v__74836",
     "addressSpace" : "global",
     "size" : "?"
   }, {
-    "variable" : "v__59297",
+    "variable" : "v__74837",
     "addressSpace" : "global",
     "size" : "(4*v_MWidthC_1)"
   }, {
-    "variable" : "v__59298",
+    "variable" : "v__74838",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"
   }, {
-    "variable" : "v__59299",
+    "variable" : "v__74839",
     "addressSpace" : "private",
     "size" : "4"
   }, {
-    "variable" : "v__59300",
+    "variable" : "v__74840",
     "addressSpace" : "private",
     "size" : "4"
   } ],
   "tempGlobals" : [ {
-    "variable" : "v__59313",
+    "variable" : "v__74853",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"
   } ],
   "outputArg" : {
-    "variable" : "v__59314",
+    "variable" : "v__74854",
     "addressSpace" : "global",
     "size" : "(4*v_MHeight_2)"
   },
