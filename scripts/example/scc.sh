@@ -5,9 +5,11 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/scc_harness
 # A kernel to run with the harness
-kernel=$projroot/example/scc/kernel5.json
+kernel=$projroot/example/scc/kernel6.json
 # The matrix to process
-matrix=$projroot/example/matrix.mtx
+matrix=$projroot/example/matrix3.mtx
+# matrix=$projroot/example/matrix3.mtx
+# matrix=~/scratch/mdatasets/examplemm/examplemm.mtx
 # The run parameters - i.e. local and global sizes
 runfile=$projroot/example/shortrunfile.csv
 # our hostname
@@ -24,5 +26,5 @@ oclgrind --check-api --data-races $harness \
     -k $kernel \
     -d 0 \
     -r $runfile \
-    -i 10 \
+    -i 1 \
     -t 200 

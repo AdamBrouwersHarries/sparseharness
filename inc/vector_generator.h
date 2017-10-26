@@ -16,8 +16,12 @@ public:
   std::vector<T> generate(int length) {
     start_timer(generate, VectorGenerator);
     std::vector<T> v(length);
-    int n = {0};
-    std::generate(v.begin(), v.end(), [&] { return get(n++); });
+    int n = 0;
+    std::generate(v.begin(), v.end(), [&] {
+      T v = get(n++);
+      // std::cout << "Generated: " << v << "\n";
+      return v;
+    });
     return v;
   };
 };

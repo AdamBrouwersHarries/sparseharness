@@ -39,7 +39,7 @@
 #include "CL/cl.h"
 #endif
 
-typedef float SemiRingType;
+typedef int SemiRingType;
 
 class HarnessSCC : public IterativeHarness<std::vector<SqlStat>, SemiRingType> {
 public:
@@ -166,7 +166,8 @@ private:
     bool equal = true;
     for (unsigned int i = 0;
          equal == true && i < input_length && i < output_length; i++) {
-      equal = fabs(input_ptr[i] - output_ptr[i]) < _delta;
+      equal = input_ptr[i] == output_ptr[i];
+      // equal = fabs(input_ptr[i] - output_ptr[i]) < _delta;
       // std::cout << "Comparing: (" << input_ptr[i] << "," << output_ptr[i]
       //           << "), result: " << equal << "\n";
     }
@@ -184,15 +185,27 @@ public:
   virtual T get(int ix) { return ix; }
 };
 
+template <typename T>
+class InitialComponentsGeneratorY : public YVectorGenerator<T> {
+
+public:
+  InitialComponentsGeneratorY() {}
+
+  virtual T get(int ix) { return ix; }
+};
+
 int main(int argc, char *argv[]) {
   COMMON_MAIN_PREAMBLE(SemiRingType)
 
   // build vector generators
   InitialComponentsGeneratorX<SemiRingType> x;
+  // InitialComponentsGeneratorY<SemiRingType> y;
+
   ConstYVectorGenerator<SemiRingType> y(
       std::numeric_limits<SemiRingType>::min());
   SemiRingType alpha = std::numeric_limits<SemiRingType>::max();
-  SemiRingType beta = std::numeric_limits<SemiRingType>::max();
+  // SemiRingType beta = std::numeric_limits<SemiRingType>::max();
+  SemiRingType beta = std::numeric_limits<SemiRingType>::min();
 
   SemiRingType zero = std::numeric_limits<SemiRingType>::min();
 
