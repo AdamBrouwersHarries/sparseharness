@@ -311,7 +311,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       {
         // write the value
         byte_size row_offset = values_offsets[i + 1];
-        // std::cout << "@ " << row_offset << "\n";
+        // std::cout << "@p " << row_offset << "\n";
         int *cvalptr =
             reinterpret_cast<int *>(matrix.values.data() + row_offset);
         int row_length =
@@ -355,6 +355,9 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
         byte_size column_offset =
             (sizeof(int) * i) + (rsa ? sizeof(int) * 2 : 0);
         byte_size offset = row_offset + column_offset;
+        if (offset > ixs_arr_size) {
+          ixs_out_of_bounds = true;
+        }
 
         char *cixptr = matrix.indices.data() + offset;
         *reinterpret_cast<int *>(cixptr) = t.first;
@@ -364,7 +367,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
         byte_size row_offset = values_offsets[rsa ? y + 1 : y];
         byte_size column_offset = (sizeof(T) * i) + (rsa ? sizeof(int) * 2 : 0);
         byte_size offset = row_offset + column_offset;
-        if (offset > ixs_arr_size) {
+        if (offset > vals_arr_size) {
           vals_out_of_bounds = true;
         }
         // NEVER EVER EVER EVER DO THIS IN REAL LIFE
