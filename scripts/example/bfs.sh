@@ -5,7 +5,7 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/bfs_harness
 # A kernel to run with the harness
-kernel=$projroot/example/bfs/kernel5.json
+kernel=$projroot/example/bfs/kernel3.json
 # The matrix to process
 matrix=$projroot/example/matrix.mtx
 # The run parameters - i.e. local and global sizes
@@ -25,4 +25,4 @@ oclgrind --check-api --data-races $harness \
     -d 0 \
     -r $runfile \
     -i 10 \
-    -t 200 
+    -t 2000 
