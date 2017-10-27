@@ -87,7 +87,7 @@ do
 		# remove the original file
 		# move to the actual directory
 		# reintroduce deleting data later: rm -rf $scratchrdir/result_$kname.txt
-		(tar czvf $scratchrdir/result_$kname.tar.gz $scratchrdir/result_$kname.txt; mv $scratchrdir/result_$kname.tar.gz $rdir/result_$kname.tar.gz; ) &
+		(tar czvf $scratchrdir/result_$kname.tar.gz $scratchrdir/result_$kname.txt; mv $scratchrdir/result_$kname.tar.gz $rdir/result_$kname.tar.gz; grep "INSERT" $scratchrdir/result_$kname.txt > $scratchrdir/result_$kname.sql; rm -rf $scratchrdir/result_$kname.txt) &
 
 		runend=$(date +%s)
 		runtime=$((runend-runstart))
