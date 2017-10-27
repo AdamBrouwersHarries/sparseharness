@@ -16,8 +16,12 @@ public:
   std::vector<T> generate(int length) {
     start_timer(generate, VectorGenerator);
     std::vector<T> v(length);
-    int n = {0};
-    std::generate(v.begin(), v.end(), [&] { return get(n++); });
+    int n = 0;
+    std::generate(v.begin(), v.end(), [&] {
+      T v = get(n++);
+      // std::cout << "Generated: " << v << "\n";
+      return v;
+    });
     return v;
   };
 };
@@ -45,6 +49,8 @@ public:
   virtual T get(int ix) { return value; }
 };
 
+// a custom constant y vector generator, which (given a value) will generate a
+// vector filled with that value
 template <typename T> class ConstYVectorGenerator : public YVectorGenerator<T> {
   T value;
 

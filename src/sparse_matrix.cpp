@@ -118,16 +118,6 @@ template <typename T> void SparseMatrix<T>::calculate_ellpack() {
   }
 }
 
-template <typename T> void SparseMatrix<T>::calculate_transposed_sum() {
-  start_timer(calculate_transposed_sum, sparse_matrix);
-  // make a container for the sums
-  column_sums.resize(width(), 0);
-  for (unsigned int i = 0; i < nz_entries.size(); i++) {
-    int x = std::get<0>(nz_entries[i]);
-    column_sums[x] = column_sums[x] + std::get<2>(nz_entries[i]);
-  }
-}
-
 template <typename T>
 CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
                                      T zero, bool pad_height, bool pad_width,
@@ -182,8 +172,8 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     if (pad_width) {
       regular_width =
           max_width + (width_pad_modulo - (max_width % width_pad_modulo));
-      LOG_DEBUG("Padding to regular width: ", regular_width, " mod modulo: ",
-                regular_width % width_pad_modulo);
+      LOG_DEBUG("Padding to regular width: ", regular_width,
+                " mod modulo: ", regular_width % width_pad_modulo);
     }
     std::fill(concrete_lengths.begin(), concrete_lengths.end(), regular_width);
   }
@@ -321,7 +311,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
       {
         // write the value
         byte_size row_offset = values_offsets[i + 1];
-        // std::cout << "@ " << row_offset << "\n";
+        // std::cout << "@p " << row_offset << "\n";
         int *cvalptr =
             reinterpret_cast<int *>(matrix.values.data() + row_offset);
         int row_length =
@@ -365,6 +355,9 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
         byte_size column_offset =
             (sizeof(int) * i) + (rsa ? sizeof(int) * 2 : 0);
         byte_size offset = row_offset + column_offset;
+        if (offset > ixs_arr_size) {
+          ixs_out_of_bounds = true;
+        }
 
         char *cixptr = matrix.indices.data() + offset;
         *reinterpret_cast<int *>(cixptr) = t.first;
@@ -374,7 +367,7 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
         byte_size row_offset = values_offsets[rsa ? y + 1 : y];
         byte_size column_offset = (sizeof(T) * i) + (rsa ? sizeof(int) * 2 : 0);
         byte_size offset = row_offset + column_offset;
-        if (offset > ixs_arr_size) {
+        if (offset > vals_arr_size) {
           vals_out_of_bounds = true;
         }
         // NEVER EVER EVER EVER DO THIS IN REAL LIFE
@@ -391,15 +384,15 @@ CL_matrix SparseMatrix<T>::cl_encode(unsigned int device_max_alloc_bytes,
     LOG_WARNING("At least one value was written out of bounds!");
   }
 
-  // if (rsa) {
-  //   print_rsa_matrix<int>(matrix.indices, indices_offsets,
-  //                         byte_lengths_indices.back());
-  //   print_rsa_matrix<T>(matrix.values, values_offsets,
-  //                       byte_lengths_values.back());
-  // } else {
-  //   printc_vec<int>(matrix.indices, matrix.indices.size());
-  //   printc_vec<T>(matrix.values, matrix.values.size());
-  // }
+  if (rsa) {
+    print_rsa_matrix<int>(matrix.indices, indices_offsets,
+                          byte_lengths_indices.back());
+    print_rsa_matrix<T>(matrix.values, values_offsets,
+                        byte_lengths_values.back());
+  } else {
+    printc_vec<int>(matrix.indices, matrix.indices.size());
+    printc_vec<T>(matrix.values, matrix.values.size());
+  }
 
   LOG_DEBUG("Done encoding");
   return matrix;
@@ -411,6 +404,65 @@ SparseMatrix<T>::ellpack_matrix<T> &SparseMatrix<T>::ellpack_encode() {
     calculate_ellpack();
   }
   return ellpackMatrix;
+}
+
+template <typename T>
+void SparseMatrix<T>::pagerank_normalise(float dampingFactor, T zero) {
+  start_timer(pagerank_normalise, sparse_matrix);
+  // first, calculate the transposed sums
+  // (i.e. sum the columns)
+  std::vector<T> column_sums(width(), zero);
+  for (unsigned int i = 0; i < nz_entries.size(); i++) {
+    int x = std::get<0>(nz_entries[i]);
+    T val = std::get<2>(nz_entries[i]);
+    column_sums[x] = column_sums[x] + val;
+  }
+
+  // next, iterate over all the values, divide them by the column size
+  // and apply a damping factor
+  std::transform(nz_entries.begin(), nz_entries.end(), nz_entries.begin(),
+                 [&column_sums, &dampingFactor](std::tuple<int, int, T> elem) {
+                   int x = std::get<0>(elem);
+                   int y = std::get<1>(elem);
+                   T val = std::get<2>(elem);
+                   T new_val = (fabs(val) / column_sums[x]) * dampingFactor;
+                   return std::make_tuple(x, y, new_val);
+                 });
+}
+
+template <typename T> void SparseMatrix<T>::scc_normalise() {
+  start_timer(scc_normalise, sparse_matrix);
+  // iterate over the tuples, setting the nz entries values to the row
+  // std::transform(nz_entries.begin(), nz_entries.end(), nz_entries.begin(),
+  //                [](std::tuple<int, int, T> elem) {
+  //                  int x = std::get<0>(elem);
+  //                  int y = std::get<1>(elem);
+  //                  // T val = std::get<2>(elem);
+  //                  return std::make_tuple(x, y, (int)y);
+  //                });
+  for (unsigned int i = 0; i < nz_entries.size(); i++) {
+    auto elem = nz_entries[i];
+    int x = std::get<0>(elem);
+    int y = std::get<1>(elem);
+    // T val = std::get<2>(elem);
+    std::tuple<int, int, T> new_tuple;
+    if (x == y) {
+      new_tuple = std::make_tuple(x, y, std::numeric_limits<T>::min());
+    } else {
+      new_tuple = std::make_tuple(x, y, (int)y);
+    }
+    nz_entries[i] = new_tuple;
+  }
+}
+
+template <typename T> void SparseMatrix<T>::calculate_transposed_sum() {
+  start_timer(calculate_transposed_sum, sparse_matrix);
+  // make a container for the sums
+  column_sums.resize(width(), 0);
+  for (unsigned int i = 0; i < nz_entries.size(); i++) {
+    int x = std::get<0>(nz_entries[i]);
+    column_sums[x] = column_sums[x] + std::get<2>(nz_entries[i]);
+  }
 }
 
 template <typename T> int SparseMatrix<T>::width() { return cols; }

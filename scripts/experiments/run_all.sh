@@ -103,8 +103,6 @@ do
 		echo "Estimated total days: $estimated_total - spent $current_days - i.e $estimated_percentage%" 
 		echo "Estimated total days: $estimated_total - spent $current_days - i.e $estimated_percentage%" >> runstatus.txt
 
-
-
 		i=$(($i + 1))
 	done
 done

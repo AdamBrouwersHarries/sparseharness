@@ -112,8 +112,8 @@ private:
     do {
       LOG_DEBUG_INFO("Iteration: ", iteration);
       LOG_DEBUG_INFO("Host vectors before");
-      printCharVector<float>("Input ", *input_host_ptr);
-      printCharVector<float>("Output ", *output_host_ptr);
+      printCharVector<SemiRingType>("Input ", *input_host_ptr);
+      printCharVector<SemiRingType>("Output ", *output_host_ptr);
 
       // cache the output to check that it's actually changed
       std::copy(output_host_ptr->begin(), output_host_ptr->end(),
@@ -122,10 +122,6 @@ private:
       resetTempBuffers();
       // run the kernel
       auto time = executeKernel(run);
-      // if our time is too long, we should just fail and return nothing.
-      if (time > std::chrono::nanoseconds(_timeout)) {
-        return std::vector<SqlStat>();
-      }
       runtimes.push_back(SqlStat(time, NOT_CHECKED, run.global1, run.local1,
                                  RAW_RESULT, trial, iteration));
 
@@ -133,8 +129,8 @@ private:
       readFromGlobalArg(*output_host_ptr, *output_mem_ptr);
 
       LOG_DEBUG_INFO("Host vectors after");
-      printCharVector<float>("Input ", *input_host_ptr);
-      printCharVector<float>("Output ", *output_host_ptr);
+      printCharVector<SemiRingType>("Input ", *input_host_ptr);
+      printCharVector<SemiRingType>("Output ", *output_host_ptr);
 
       assertBuffersNotEqual(*output_host_ptr, _mem_manager._temp_out_buffer);
 
@@ -163,10 +159,10 @@ private:
     start_timer(should_terminate_iteration, HarnessSSSP);
 
     // reinterpret the args as double pointers, and get the lengths
-    auto input_ptr = reinterpret_cast<float *>(input.data());
-    auto output_ptr = reinterpret_cast<float *>(output.data());
-    auto input_length = input.size() / sizeof(float);
-    auto output_length = output.size() / sizeof(float);
+    auto input_ptr = reinterpret_cast<SemiRingType *>(input.data());
+    auto output_ptr = reinterpret_cast<SemiRingType *>(output.data());
+    auto input_length = input.size() / sizeof(SemiRingType);
+    auto output_length = output.size() / sizeof(SemiRingType);
     // perform a comparison across the two of them, based on pointers
     bool equal = true;
     for (unsigned int i = 0;

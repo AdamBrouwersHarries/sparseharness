@@ -1,0 +1,46 @@
+{
+  "name" : "glb-sdp",
+  "source" : "#ifndef Tuple2_int_int_DEFINED\n#define Tuple2_int_int_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  int _1;\n} Tuple2_int_int;\n#endif\n\nint bool_and(int a, int b){\n  { if((a != 0) && (b != 0 )){ return 1; }else{ return 0; } }\n}\nint bool_or(int a, int b){\n  { if((a != 0) || (b != 0 )){ return 1; }else{ return 0; } }\n}\nint doubleAndOr(int dpRes, int alpha, int rowIdxPair2, int beta){\n  \n{\n int OrRes1;\n if((dpRes != 0) && (alpha !=0)) {\n   OrRes1 = 1;\n } else {\n   OrRes1 = 0;\n }\n int OrRes2;\n if((rowIdxPair2 != 0) && (beta !=0)) {\n   OrRes2 = 1;\n } else {\n   OrRes2 = 0;\n }\n return (OrRes1 || OrRes2);\n}\n    \n}\nkernel void KERNEL(const global int* restrict v__44238, const global int* restrict v__44239, const global int* restrict v__44240, const global int* restrict v__44241, int v__44242, int v__44243, global int* v__44256, global int* v__44250, int v_MHeight_2, int v_MWidthC_1, int v_VLength_3){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  int v__44246; \n  int v__44251; \n  /* Private Memory */\n  int v__44248_0;\n  \n  for (int v_gl_id_44234 = get_global_id(0); v_gl_id_44234 < v_MHeight_2; v_gl_id_44234 = (v_gl_id_44234 + get_global_size(0))) {\n    /* map_seq */\n    for (int v_i_44235 = 0; v_i_44235 < v_MWidthC_1; v_i_44235 = (1 + v_i_44235)) {\n      int v_tmp_44288 = 0; \n      v__44246 = v_tmp_44288; \n      int v_index_44289 = v__44238[(v_i_44235 + (v_MWidthC_1 * v_gl_id_44234))]; \n      if (v_index_44289 < 0) {\n        v__44248_0 = v__44246; \n      } else {\n        if (v_index_44289 >= v_VLength_3) {\n          v__44248_0 = v__44246; \n        } else {\n          v__44248_0 = v__44240[v_index_44289]; \n        }\n      }\n      v__44250[(-1 + v_MWidthC_1 + (-1 * v_i_44235) + (v_MWidthC_1 * v_gl_id_44234))] = bool_and(v__44248_0, v__44239[(v_i_44235 + (v_MWidthC_1 * v_gl_id_44234))]); \n    }\n    /* end map_seq */\n    int v_tmp_44290 = 0; \n    v__44251 = v_tmp_44290; \n    /* reduce_seq */\n    for (int v_i_44236 = 0; v_i_44236 < v_MWidthC_1; v_i_44236 = (1 + v_i_44236)) {\n      v__44251 = bool_or(v__44251, v__44250[(v_i_44236 + (v_MWidthC_1 * v_gl_id_44234))]); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_44237 = 0; \n      v__44256[v_gl_id_44234] = doubleAndOr(v__44251, v__44242, v__44241[v_gl_id_44234], v__44243); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
+  "properties" : {
+    "outerMap" : "sglb",
+    "dotProduct" : "seq"
+  },
+  "inputArgs" : [ {
+    "variable" : "v__44238",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  }, {
+    "variable" : "v__44239",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  }, {
+    "variable" : "v__44240",
+    "addressSpace" : "global",
+    "size" : "(4*v_VLength_3)"
+  }, {
+    "variable" : "v__44241",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  }, {
+    "variable" : "v__44242",
+    "addressSpace" : "private",
+    "size" : "4"
+  }, {
+    "variable" : "v__44243",
+    "addressSpace" : "private",
+    "size" : "4"
+  } ],
+  "tempGlobals" : [ {
+    "variable" : "v__44250",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  } ],
+  "outputArg" : {
+    "variable" : "v__44256",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  },
+  "tempLocals" : [ ],
+  "paramVars" : [ "MHeight", "MWidthC", "VLength" ],
+  "outputSize" : "(4*v_MHeight_2)"
+}

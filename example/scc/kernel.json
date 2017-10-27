@@ -1,0 +1,47 @@
+{
+  "name" : "swrg-slcl-pmdp",
+  "source" : "#ifndef Tuple2_int_int_DEFINED\n#define Tuple2_int_int_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  int _1;\n} Tuple2_int_int;\n#endif\n\nint int_min(int a, int b){\n  \n{\n int result = min(a, b);\n //printf(\"Input: %d, %d, result: %d\\n\", a, b, result);\n return result;\n }\n \n}\nint int_max(int a, int b){\n  \n{\n int result = max(a, b);\n //printf(\"Input: %d, %d, result: %d\\n\", a, b, result);\n return result;\n }\n \n}\nint doubleMinMax(int dpRes, int alpha, int rowIdxPair2, int beta){\n  \n{\n //int min1 = (dpRes < alpha) ? dpRes : alpha;\n //int min2 = (rowIdxPair2 < beta) ? rowIdxPair2 : beta;\n\n int min1 = min(dpRes, alpha);\n int min2 = min(rowIdxPair2, beta);\n int result = max(min1, min2);\n\n //printf(\"Input: dpres: %d, alpha: %d, yvecelem: %d, beta: %d, min1: %d, min2: %d, result: %d\\n\", dpRes, alpha, rowIdxPair2, beta, min1, min2, result);\n\n return result;\n}\n    \n}\nkernel void KERNEL(const global int* restrict v__135705, const global int* restrict v__135706, const global int* restrict v__135707, const global int* restrict v__135708, int v__135709, int v__135710, global int* v__135723, global int* v__135717, int v_MHeight_2, int v_MWidthC_1, int v_VLength_3){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  int v__135713; \n  int v__135718; \n  /* Private Memory */\n  int v__135715_0;\n  \n  for (int v_wg_id_135701 = get_group_id(0); v_wg_id_135701 < v_MHeight_2; v_wg_id_135701 = (v_wg_id_135701 + get_num_groups(0))) {\n    for (int v_l_id_135702 = get_local_id(0); v_l_id_135702 < v_MWidthC_1; v_l_id_135702 = (v_l_id_135702 + get_local_size(0))) {\n      int v_tmp_135763 = -2147483648; \n      v__135713 = v_tmp_135763; \n      int v_index_135764 = v__135705[(v_l_id_135702 + (v_MWidthC_1 * v_wg_id_135701))]; \n      if (v_index_135764 < 0) {\n        v__135715_0 = v__135713; \n      } else {\n        if (v_index_135764 >= v_VLength_3) {\n          v__135715_0 = v__135713; \n        } else {\n          v__135715_0 = v__135707[v_index_135764]; \n        }\n      }\n      v__135717[(-1 + v_MWidthC_1 + (-1 * v_l_id_135702) + (v_MWidthC_1 * v_wg_id_135701))] = int_min(v__135715_0, v__135706[(v_l_id_135702 + (v_MWidthC_1 * v_wg_id_135701))]); \n    }\n    barrier(CLK_GLOBAL_MEM_FENCE);\n    \n    int v_tmp_135765 = -2147483648; \n    v__135718 = v_tmp_135765; \n    /* reduce_seq */\n    for (int v_i_135703 = 0; v_i_135703 < v_MWidthC_1; v_i_135703 = (1 + v_i_135703)) {\n      v__135718 = int_max(v__135718, v__135717[(v_i_135703 + (v_MWidthC_1 * v_wg_id_135701))]); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_135704 = 0; \n      v__135723[v_wg_id_135701] = doubleMinMax(v__135718, v__135709, v__135708[v_wg_id_135701], v__135710); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
+  "properties" : {
+    "outerMap" : "swrg",
+    "innerMap" : "slcl",
+    "dotProduct" : "parallel"
+  },
+  "inputArgs" : [ {
+    "variable" : "v__135705",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  }, {
+    "variable" : "v__135706",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  }, {
+    "variable" : "v__135707",
+    "addressSpace" : "global",
+    "size" : "(4*v_VLength_3)"
+  }, {
+    "variable" : "v__135708",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  }, {
+    "variable" : "v__135709",
+    "addressSpace" : "private",
+    "size" : "4"
+  }, {
+    "variable" : "v__135710",
+    "addressSpace" : "private",
+    "size" : "4"
+  } ],
+  "tempGlobals" : [ {
+    "variable" : "v__135717",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2*v_MWidthC_1)"
+  } ],
+  "outputArg" : {
+    "variable" : "v__135723",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  },
+  "tempLocals" : [ ],
+  "paramVars" : [ "MHeight", "MWidthC", "VLength" ],
+  "outputSize" : "(4*v_MHeight_2)"
+}

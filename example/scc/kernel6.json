@@ -1,0 +1,46 @@
+{
+  "name" : "glb-sdp-rsa",
+  "source" : "#ifndef Tuple2_int_int_DEFINED\n#define Tuple2_int_int_DEFINED\ntypedef struct __attribute__((aligned(4))) {\n  int _0;\n  int _1;\n} Tuple2_int_int;\n#endif\n\nint int_max(int a, int b){\n  \n{\n int result = max(a, b);\n //printf(\"Input: %d, %d, result: %d\\n\", a, b, result);\n return result;\n }\n \n}\nint int_min(int a, int b){\n  \n{\n int result = min(a, b);\n //printf(\"Input: %d, %d, result: %d\\n\", a, b, result);\n return result;\n }\n \n}\nint doubleMinMax(int dpRes, int alpha, int rowIdxPair2, int beta){\n  \n{\n //int min1 = (dpRes < alpha) ? dpRes : alpha;\n //int min2 = (rowIdxPair2 < beta) ? rowIdxPair2 : beta;\n\n int min1 = min(dpRes, alpha);\n int min2 = min(rowIdxPair2, beta);\n int result = max(min1, min2);\n\n //printf(\"Input: dpres: %d, alpha: %d, yvecelem: %d, beta: %d, min1: %d, min2: %d, result: %d\\n\", dpRes, alpha, rowIdxPair2, beta, min1, min2, result);\n\n return result;\n}\n    \n}\nint id(int x){\n  { return x; }\n}\nkernel void KERNEL(const global int* restrict v__135971, const global int* restrict v__135972, const global int* restrict v__135973, const global int* restrict v__135974, int v__135975, int v__135976, global int* v__135990, global int* v__135989, int v_MHeight_2, int v_MWidthC_1){ \n#ifndef WORKGROUP_GUARD\n#define WORKGROUP_GUARD\n#endif\nWORKGROUP_GUARD\n{\n  /* Static local memory */\n  /* Typed Value memory */\n  int v__135978; \n  int v__135981; \n  /* Private Memory */\n  int v__135983; \n  int v__135985; \n  for (int v_gl_id_135967 = get_global_id(0); v_gl_id_135967 < v_MHeight_2; v_gl_id_135967 = (v_gl_id_135967 + get_global_size(0))) {\n    int v_tmp_136015 = -2147483648; \n    v__135978 = v_tmp_136015; \n    /* reduce_seq */\n    int v_stop_136016 = min(v__135971[(1 + (v__135971[v_gl_id_135967] / 4))], v__135972[(1 + (v__135972[v_gl_id_135967] / 4))]); \n    for (int v_i_135968 = 0; v_i_135968 < v_stop_136016; v_i_135968 = (1 + v_i_135968)) {\n      int v_tmp_136021 = -2147483648; \n      v__135981 = v_tmp_136021; \n      int v_index_136023 = v__135971[(2 + v_i_135968 + (v__135971[v_gl_id_135967] / 4))]; \n      if (v_index_136023 < 0) {\n        v__135983 = v__135981; \n      } else {\n        if (v_index_136023 >= v_MWidthC_1) {\n          v__135983 = v__135981; \n        } else {\n          v__135983 = v__135973[v_index_136023]; \n        }\n      }\n      v__135985 = int_min(v__135972[(2 + v_i_135968 + (v__135972[v_gl_id_135967] / 4))], v__135983); \n      v__135978 = int_max(v__135978, v__135985); \n    }\n    /* end reduce_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_135969 = 0; \n      v__135989[v_gl_id_135967] = doubleMinMax(v__135978, v__135975, v__135974[v_gl_id_135967], v__135976); \n    }\n    /* end map_seq */\n    /* map_seq */\n    /* iteration count is exactly 1, no loop emitted */\n    {\n      int v_i_135970 = 0; \n      v__135990[v_gl_id_135967] = id(v__135989[v_gl_id_135967]); \n    }\n    /* end map_seq */\n  }\n}}\n\n",
+  "properties" : {
+    "outerMap" : "sglb",
+    "arrayType" : "ragged"
+  },
+  "inputArgs" : [ {
+    "variable" : "v__135971",
+    "addressSpace" : "global",
+    "size" : "?"
+  }, {
+    "variable" : "v__135972",
+    "addressSpace" : "global",
+    "size" : "?"
+  }, {
+    "variable" : "v__135973",
+    "addressSpace" : "global",
+    "size" : "(4*v_MWidthC_1)"
+  }, {
+    "variable" : "v__135974",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  }, {
+    "variable" : "v__135975",
+    "addressSpace" : "private",
+    "size" : "4"
+  }, {
+    "variable" : "v__135976",
+    "addressSpace" : "private",
+    "size" : "4"
+  } ],
+  "tempGlobals" : [ {
+    "variable" : "v__135989",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  } ],
+  "outputArg" : {
+    "variable" : "v__135990",
+    "addressSpace" : "global",
+    "size" : "(4*v_MHeight_2)"
+  },
+  "tempLocals" : [ ],
+  "paramVars" : [ "MHeight", "MWidthC" ],
+  "outputSize" : "(4*v_MHeight_2)"
+}

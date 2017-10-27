@@ -5,10 +5,10 @@ projroot=$1
 # The harness executable
 harness=$projroot/build/spmv_harness
 # A kernel to run with the harness
-# kernel=$projroot/example/kernel6.json
-kernel=~/scratch/kdatasets/kernels/head/spmv/glb-sdp-rsa.json
+kernel=$projroot/example/kernel7.json
+# kernel=~/scratch/kdatasets/kernels/head/spmv/glb-sdp-rsa.json
 # The matrix to process
-matrix=$projroot/example/matrix3.mtx
+matrix=$projroot/example/matrix.mtx
 # matrix=~/scratch/mdatasets/parser_speed_tests/hollywood-2009/hollywood-2009.mtx
 # The run parameters - i.e. local and global sizes
 runfile=$projroot/example/runfile.csv
@@ -18,8 +18,7 @@ hname=$HOSTNAME
 exid=example_experiment
 
 # run it all!
-# oclgrind --check-api --data-races --uninitialized 
-$harness -e $exid -n $hname -m $matrix -f matrix3 -k $kernel -d 0 -r $runfile -i 1 -t 200 
+oclgrind --check-api --data-races --uninitialized $harness -e $exid -n $hname -m $matrix -f matrix3 -k $kernel -d 0 -r $runfile -i 10 -t 2000 
 
 
 # $spmv -p $platform \
