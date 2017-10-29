@@ -20,6 +20,9 @@ echo "" > $qf
 
 for f in $(find $resdir -name "*.tar.gz");
 do
+	echo "reading: $f"
 	# unzip it to stdout, into grp, then sed, then to the result file
 	tar -xOzf $f | grep "INSERT" | sed "s/.*INSERT/INSERT/g" | sed "s/table_name/$table/g" >> $qf
 done
+
+cp $qf .
