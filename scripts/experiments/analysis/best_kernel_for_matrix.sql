@@ -1,0 +1,1 @@
+select min(time),kernel, matrix from cc_spmv_test where statistic = "MEDIAN_RESULT" group by matrix;

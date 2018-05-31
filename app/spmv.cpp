@@ -62,8 +62,8 @@ public:
       // cl_mem *input_mem_ptr = &(_mem_manager._x_vect);
       // cl_mem *output_mem_ptr = &(_mem_manager._output);
       // LOG_DEBUG_INFO("Host vectors before");
-      printCharVector<float>("Input ", _mem_manager._input_host_buffer);
-      printCharVector<float>("Output ", _mem_manager._output_host_buffer);
+      // printCharVector<float>("Input ", _mem_manager._input_host_buffer);
+      // printCharVector<float>("Output ", _mem_manager._output_host_buffer);
 
       resetTempBuffers();
       // run the kernel
@@ -79,8 +79,8 @@ public:
       lowerTimeout(stat.getTime());
 
       // LOG_DEBUG_INFO("Host vectors after");
-      printCharVector<float>("Input ", _mem_manager._input_host_buffer);
-      printCharVector<float>("Output ", _mem_manager._output_host_buffer);
+      // printCharVector<float>("Input ", _mem_manager._input_host_buffer);
+      // printCharVector<float>("Output ", _mem_manager._output_host_buffer);
 
       // check to see that we've actually done something with our SPMV!
       assertBuffersNotEqual(_mem_manager._output_host_buffer,
